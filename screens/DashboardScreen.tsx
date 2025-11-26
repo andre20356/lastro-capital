@@ -11,6 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { useScreenInsets } from "@/hooks/useScreenInsets";
+import { FinanceChart } from "@/components/FinanceChart";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,6 +40,18 @@ export default function DashboardScreen() {
   const paidTotal = getPaidTotal();
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
+
+  // Generate chart data - sample of past 6 months
+  const today = new Date();
+  const chartData = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date(today);
+    date.setMonth(date.getMonth() - (5 - i));
+    return {
+      label: date.toLocaleDateString("pt-BR", { month: "short" }),
+      borrowed: Math.random() * pendingTotal + 1000,
+      earned: Math.random() * paidTotal + 500,
+    };
+  });
 
   return (
     <ThemedView style={styles.container}>
@@ -76,6 +89,37 @@ export default function DashboardScreen() {
             <ThemedText style={[styles.cardValue, { color: theme.success }]}>
               {formatCurrency(paidTotal)}
             </ThemedText>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.chartCard,
+            { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+          ]}
+        >
+          <ThemedText type="h3" style={styles.chartTitle}>
+            Analise Financeira
+          </ThemedText>
+          <FinanceChart data={chartData} theme={theme} />
+          <View style={styles.chartStats}>
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statLabel, { color: theme.tertiaryText }]}>
+                Total Emprestado
+              </ThemedText>
+              <ThemedText style={[styles.statValue, { color: "#FF6B6B" }]}>
+                {formatCurrency(pendingTotal)}
+              </ThemedText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statLabel, { color: theme.tertiaryText }]}>
+                Total Rendimentos
+              </ThemedText>
+              <ThemedText style={[styles.statValue, { color: "#51CF66" }]}>
+                {formatCurrency(paidTotal)}
+              </ThemedText>
+            </View>
           </View>
         </View>
 
@@ -272,5 +316,35 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+  },
+  chartCard: {
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  chartTitle: {
+    marginBottom: Spacing.md,
+    fontSize: 18,
+  },
+  chartStats: {
+    flexDirection: "row",
+    marginTop: Spacing.lg,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statLabel: {
+    fontSize: 12,
+    marginBottom: Spacing.xs,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: "#e5e7eb",
   },
 });
