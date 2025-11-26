@@ -256,6 +256,24 @@ export default function ClientFormScreen() {
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Juros do Mês (R$)
+          </ThemedText>
+          <View
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, justifyContent: "center", paddingVertical: Spacing.md },
+            ]}
+          >
+            <ThemedText style={[{ fontSize: 16 }, requestedAmount && loanPercentage ? {} : { color: theme.tertiaryText }]}>
+              {requestedAmount && loanPercentage
+                ? `R$ ${((parseFloat(requestedAmount.replace(",", ".")) * parseFloat(loanPercentage.replace(",", "."))) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "Preencha o valor e a porcentagem"}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             Foto do Documento
           </ThemedText>
           {documentPhoto ? (
