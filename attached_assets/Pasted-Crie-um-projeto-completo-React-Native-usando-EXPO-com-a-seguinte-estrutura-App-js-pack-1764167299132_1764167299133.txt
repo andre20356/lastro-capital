@@ -1,0 +1,371 @@
+Crie um projeto completo React Native usando EXPO com a seguinte estrutura:
+
+/
+├─ App.js
+├─ package.json
+├─ app.json
+├─ assets/
+│   ├─ icon.png (criar um placeholder)
+│   └─ splash.png (criar um placeholder)
+└─ src/
+    ├─ App.js
+    ├─ styles.js
+    ├─ components/
+    │   └─ Header.js
+    └─ screens/
+        ├─ HomeScreen.js
+        ├─ LoginScreen.js
+        └─ DetailsScreen.js
+
+======================================================
+### 1) Criar o arquivo principal: App.js (RAIZ)
+======================================================
+
+import App from "./src/App";
+export default App;
+
+======================================================
+### 2) Criar package.json
+======================================================
+
+{
+  "name": "lastro-capital",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~51.0.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0"
+  }
+}
+
+======================================================
+### 3) Criar app.json
+======================================================
+
+{
+  "expo": {
+    "name": "Lastro Capital",
+    "slug": "lastro-capital",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a237e"
+    },
+    "android": {
+      "package": "com.lastro.capital",
+      "versionCode": 1
+    }
+  }
+}
+
+======================================================
+### 4) Criar arquivo: src/App.js
+======================================================
+
+import React, { useState } from "react";
+import { SafeAreaView, View } from "react-native";
+import Header from "./components/Header";
+import HomeScreen from "./screens/HomeScreen";
+import LoginScreen from "./screens/LoginScreen";
+import DetailsScreen from "./screens/DetailsScreen";
+import { globalStyles } from "./styles";
+
+export default function App() {
+  const [route, setRoute] = useState("home");
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  function goTo(screen, params = {}) {
+    if (screen === "details" && params.item) setSelectedItem(params.item);
+    setRoute(screen);
+  }
+
+  return (
+    <SafeAreaView style={globalStyles.container}>
+      <Header title="Lastro Capital" onPressMenu={() => goTo("login")} />
+
+      <View style={globalStyles.content}>
+        {route === "home" && <HomeScreen onOpenDetails={(item) => goTo("details", { item })} />}
+        {route === "login" && <LoginScreen onBack={() => goTo("home")} />}
+        {route === "details" && <DetailsScreen item={selectedItem} onBack={() => goTo("home")} />}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+======================================================
+### 5) Criar arquivo: src/styles.js
+======================================================
+
+import { StyleSheet } from "react-native";
+
+export const globalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0f172a"
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8
+  },
+  header: {
+    height: 64,
+    backgroundColor: "#111827",
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexDirection: "row"
+  },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 18,
+    marginLeft: 8
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    resizeMode: "contain",
+    borderRadius: 6
+  },
+  headerButton: {
+    backgroundColor: "#f97316",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8
+  },
+  screen: {
+    paddingTop: 16
+  },
+  h1: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700"
+  },
+  h2: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600"
+  },
+  p: {
+    color: "#cbd5e1",
+    fontSize: 14,
+    marginTop: 8
+  },
+  card: {
+    backgroundColor: "#0b1220",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#1f2937"
+  },
+  cardTitle: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16
+  },
+  cardSubtitle: {
+    color: "#9ca3af",
+    marginTop: 6
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12
+  },
+  button: {
+    backgroundColor: "#06b6d4",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center"
+  },
+  buttonText: {
+    color: "#04252b",
+    fontWeight: "700"
+  },
+  link: {
+    alignItems: "center"
+  }
+});
+
+======================================================
+### 6) Criar arquivo: src/components/Header.js
+======================================================
+
+import React from "react";
+import { View, Text, TouchableOpacity, Image } from "react-native";
+import { globalStyles } from "../styles";
+
+export default function Header({ title, onPressMenu }) {
+  return (
+    <View style={globalStyles.header}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Image source={require("../../assets/icon.png")} style={globalStyles.headerIcon} />
+        <Text style={globalStyles.headerTitle}>{title}</Text>
+      </View>
+
+      <TouchableOpacity onPress={onPressMenu} style={globalStyles.headerButton}>
+        <Text style={{ color: "#fff" }}>Entrar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+======================================================
+### 7) Criar arquivo: src/screens/HomeScreen.js
+======================================================
+
+import React from "react";
+import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { globalStyles } from "../styles";
+
+const DATA = [
+  { id: "1", title: "Investimento A", subtitle: "Rendimento 8% a.a." },
+  { id: "2", title: "Investimento B", subtitle: "Rendimento 10% a.a." },
+  { id: "3", title: "Investimento C", subtitle: "Rendimento 12% a.a." }
+];
+
+export default function HomeScreen({ onOpenDetails }) {
+  return (
+    <View style={globalStyles.screen}>
+      <Text style={globalStyles.h1}>Bem-vindo à Lastro Capital</Text>
+      <Text style={globalStyles.p}>Selecione um investimento:</Text>
+
+      <FlatList
+        style={{ marginTop: 16 }}
+        data={DATA}
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={globalStyles.card}
+            onPress={() => onOpenDetails(item)}
+          >
+            <Text style={globalStyles.cardTitle}>{item.title}</Text>
+            <Text style={globalStyles.cardSubtitle}>{item.subtitle}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
+
+======================================================
+### 8) Criar arquivo: src/screens/LoginScreen.js
+======================================================
+
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { globalStyles } from "../styles";
+
+export default function LoginScreen({ onBack }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function onLogin() {
+    if (!email || !password) {
+      Alert.alert("Erro", "Preencha e-mail e senha");
+      return;
+    }
+    Alert.alert("Sucesso", `Logado como ${email}`);
+    onBack();
+  }
+
+  return (
+    <View style={globalStyles.screen}>
+      <Text style={globalStyles.h1}>Entrar</Text>
+
+      <TextInput
+        style={globalStyles.input}
+        placeholder="E-mail"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+      />
+
+      <TextInput
+        style={globalStyles.input}
+        placeholder="Senha"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+
+      <TouchableOpacity style={globalStyles.button} onPress={onLogin}>
+        <Text style={globalStyles.buttonText}>Entrar</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={globalStyles.link} onPress={onBack}>
+        <Text>Voltar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+======================================================
+### 9) Criar arquivo: src/screens/DetailsScreen.js
+======================================================
+
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { globalStyles } from "../styles";
+
+export default function DetailsScreen({ item, onBack }) {
+  if (!item) {
+    return (
+      <View style={globalStyles.screen}>
+        <Text style={globalStyles.h1}>Nenhum item selecionado</Text>
+        <TouchableOpacity style={globalStyles.button} onPress={onBack}>
+          <Text style={globalStyles.buttonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={globalStyles.screen}>
+      <Text style={globalStyles.h1}>{item.title}</Text>
+      <Text style={globalStyles.p}>{item.subtitle}</Text>
+
+      <Text style={globalStyles.h2}>Descrição</Text>
+      <Text style={globalStyles.p}>
+        Este é um texto de demonstração. Substitua pela descrição real do investimento.
+      </Text>
+
+      <TouchableOpacity style={[globalStyles.button, { marginTop: 20 }]} onPress={onBack}>
+        <Text style={globalStyles.buttonText}>Voltar</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+======================================================
+### 10) Criar placeholders dos arquivos de imagem
+======================================================
+
+Crie dois arquivos simples:
+- /assets/icon.png (qualquer ícone gerado automaticamente)
+- /assets/splash.png (uma imagem simples com a cor azul)
+
+======================================================
+### 11) Instalar dependências e iniciar o projeto
+======================================================
+
+execute:
+npm install
+npx expo start
+
+======================================================
+
+PRONTO.
+Gere o projeto completo exatamente como descrito acima.
