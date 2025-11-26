@@ -275,7 +275,7 @@ export default function ProfileScreen() {
               onPress={openWhatsApp}
             >
               <Feather name="message-circle" size={18} color="#fff" />
-              <ThemedText style={styles.contactButtonText}>Abrir WhatsApp</ThemedText>
+              <ThemedText style={styles.contactButtonText}>Fale conosco</ThemedText>
             </Pressable>
           </View>
 
