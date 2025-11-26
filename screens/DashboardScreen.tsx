@@ -46,6 +46,12 @@ export default function DashboardScreen() {
     return sum + charge.amount + (charge.delayFee || 0);
   }, 0);
 
+  // Calculate total interest to receive (from all charges)
+  const { charges } = useData();
+  const totalInterestToReceive = charges
+    .filter((c) => c.status === "pending" || c.status === "overdue")
+    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+
   // Generate chart data - sample of past 6 months
   const today = new Date();
   const chartData = Array.from({ length: 6 }, (_, i) => {
@@ -94,6 +100,25 @@ export default function DashboardScreen() {
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.success }]}>
               {formatCurrency(paidTotal)}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.cardsRow}>
+          <View
+            style={[
+              styles.summaryCard,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+            ]}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: "#FFB400" + "20" }]}>
+              <Feather name="percent" size={20} color="#FFB400" />
+            </View>
+            <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
+              Total de Juros
+            </ThemedText>
+            <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
+              {formatCurrency(totalInterestToReceive)}
             </ThemedText>
           </View>
         </View>
@@ -179,6 +204,7 @@ export default function DashboardScreen() {
           ) : (
             upcomingCharges.map((charge) => {
               const client = getClientById(charge.clientId);
+              const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
               return (
                 <Pressable
                   key={charge.id}
@@ -195,6 +221,11 @@ export default function DashboardScreen() {
                     <ThemedText style={[styles.dueDate, { color: theme.secondaryText }]}>
                       Vence em {formatDate(charge.dueDate)}
                     </ThemedText>
+                    {monthlyInterest > 0 ? (
+                      <ThemedText style={[styles.interestValue, { color: "#FFB400" }]}>
+                        Juros: {formatCurrency(monthlyInterest)}
+                      </ThemedText>
+                    ) : null}
                   </View>
                   <ThemedText style={[styles.amount, { color: theme.primaryAccent }]}>
                     {formatCurrency(charge.amount)}
