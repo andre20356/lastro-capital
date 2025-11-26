@@ -10,6 +10,7 @@ export interface Client {
   requestedAmount?: number;
   loanPercentage?: number;
   dailyDelayRate?: number;
+  requestDate?: string;
   notes: string;
   createdAt: string;
 }

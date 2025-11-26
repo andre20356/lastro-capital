@@ -29,6 +29,11 @@ export default function ClientFormScreen() {
   const [requestedAmount, setRequestedAmount] = useState(existingClient?.requestedAmount?.toString() || "");
   const [loanPercentage, setLoanPercentage] = useState(existingClient?.loanPercentage?.toString() || "");
   const [dailyDelayRate, setDailyDelayRate] = useState(existingClient?.dailyDelayRate?.toString() || "");
+  const [requestDate, setRequestDate] = useState(
+    existingClient?.requestDate
+      ? new Date(existingClient.requestDate).toLocaleDateString("pt-BR")
+      : ""
+  );
   const [documentPhoto, setDocumentPhoto] = useState(existingClient?.documentPhoto || "");
   const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
   const [notes, setNotes] = useState(existingClient?.notes || "");
@@ -46,6 +51,31 @@ export default function ClientFormScreen() {
       formatted += "-" + numbers.substring(7, 11);
     }
     return formatted;
+  };
+
+  const formatDateInput = (text: string) => {
+    const numbers = text.replace(/\D/g, "");
+    let formatted = "";
+    if (numbers.length > 0) {
+      formatted = numbers.substring(0, 2);
+    }
+    if (numbers.length > 2) {
+      formatted += "/" + numbers.substring(2, 4);
+    }
+    if (numbers.length > 4) {
+      formatted += "/" + numbers.substring(4, 8);
+    }
+    return formatted;
+  };
+
+  const parseDate = (dateStr: string): Date | null => {
+    const parts = dateStr.split("/");
+    if (parts.length !== 3) return null;
+    const [day, month, year] = parts.map(Number);
+    if (!day || !month || !year) return null;
+    const date = new Date(year, month - 1, day);
+    if (isNaN(date.getTime())) return null;
+    return date;
   };
 
   const pickImage = async (onComplete: (uri: string) => void) => {
@@ -74,30 +104,23 @@ export default function ClientFormScreen() {
     }
 
     try {
+      const clientData = {
+        name: name.trim(),
+        phone,
+        email: email.trim(),
+        requestedAmount: requestedAmount ? parseFloat(requestedAmount.replace(",", ".")) : undefined,
+        loanPercentage: loanPercentage ? parseFloat(loanPercentage.replace(",", ".")) : undefined,
+        dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
+        requestDate: requestDate ? parseDate(requestDate)?.toISOString() : undefined,
+        documentPhoto,
+        addressProof,
+        notes: notes.trim(),
+      };
+
       if (isEditing && existingClient) {
-        await updateClient(existingClient.id, {
-          name: name.trim(),
-          phone,
-          email: email.trim(),
-          requestedAmount: requestedAmount ? parseFloat(requestedAmount) : undefined,
-          loanPercentage: loanPercentage ? parseFloat(loanPercentage) : undefined,
-          dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate) : undefined,
-          documentPhoto,
-          addressProof,
-          notes: notes.trim(),
-        });
+        await updateClient(existingClient.id, clientData);
       } else {
-        await addClient({
-          name: name.trim(),
-          phone,
-          email: email.trim(),
-          requestedAmount: requestedAmount ? parseFloat(requestedAmount) : undefined,
-          loanPercentage: loanPercentage ? parseFloat(loanPercentage) : undefined,
-          dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate) : undefined,
-          documentPhoto,
-          addressProof,
-          notes: notes.trim(),
-        });
+        await addClient(clientData);
       }
       navigation.goBack();
     } catch (error) {
@@ -210,6 +233,24 @@ export default function ClientFormScreen() {
             value={dailyDelayRate}
             onChangeText={setDailyDelayRate}
             keyboardType="decimal-pad"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Data da Solicitação
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="DD/MM/AAAA"
+            placeholderTextColor={theme.tertiaryText}
+            value={requestDate}
+            onChangeText={(text) => setRequestDate(formatDateInput(text))}
+            keyboardType="numeric"
+            maxLength={10}
           />
         </View>
 
