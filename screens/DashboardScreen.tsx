@@ -41,6 +41,11 @@ export default function DashboardScreen() {
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
 
+  // Calculate total overdue with delay fees
+  const overdueTotal = overdueCharges.reduce((sum, charge) => {
+    return sum + charge.amount + (charge.delayFee || 0);
+  }, 0);
+
   // Generate chart data - sample of past 6 months
   const today = new Date();
   const chartData = Array.from({ length: 6 }, (_, i) => {
@@ -50,6 +55,7 @@ export default function DashboardScreen() {
       label: date.toLocaleDateString("pt-BR", { month: "short" }),
       borrowed: Math.random() * pendingTotal + 1000,
       earned: Math.random() * paidTotal + 500,
+      overdue: Math.random() * overdueTotal + 100,
     };
   });
 
@@ -118,6 +124,15 @@ export default function DashboardScreen() {
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#51CF66" }]}>
                 {formatCurrency(paidTotal)}
+              </ThemedText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statLabel, { color: theme.tertiaryText }]}>
+                Negativados
+              </ThemedText>
+              <ThemedText style={[styles.statValue, { color: "#FF922B" }]}>
+                {formatCurrency(overdueTotal)}
               </ThemedText>
             </View>
           </View>

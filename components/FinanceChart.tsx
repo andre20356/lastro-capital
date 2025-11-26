@@ -8,6 +8,7 @@ interface ChartDataPoint {
   label: string;
   borrowed: number;
   earned: number;
+  overdue: number;
 }
 
 interface FinanceChartProps {
@@ -24,7 +25,7 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
 
   // Find max value for scaling
   const maxValue = Math.max(
-    ...data.flatMap((d) => [d.borrowed, d.earned])
+    ...data.flatMap((d) => [d.borrowed, d.earned, d.overdue])
   );
 
   // Generate points for polylines
@@ -40,6 +41,7 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
 
   const borrowedPoints = generatePoints(data.map((d) => d.borrowed));
   const earnedPoints = generatePoints(data.map((d) => d.earned));
+  const overduePoints = generatePoints(data.map((d) => d.overdue));
 
   return (
     <View style={styles.container}>
@@ -56,6 +58,12 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
             Rendimentos
           </ThemedText>
         </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#FF922B" }]} />
+          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
+            Negativados
+          </ThemedText>
+        </View>
       </View>
 
       <Svg width={chartWidth} height={chartHeight} style={styles.chart}>
@@ -67,6 +75,10 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           <LinearGradient id="earnedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor="#51CF66" stopOpacity="0.3" />
             <Stop offset="100%" stopColor="#51CF66" stopOpacity="0" />
+          </LinearGradient>
+          <LinearGradient id="overdueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#FF922B" stopOpacity="0.3" />
+            <Stop offset="100%" stopColor="#FF922B" stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
@@ -114,6 +126,16 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           strokeLinejoin="round"
         />
 
+        {/* Overdue area */}
+        <Polyline
+          points={overduePoints}
+          fill="none"
+          stroke="#FF922B"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
         {/* Borrowed area */}
         <Polyline
           points={borrowedPoints}
@@ -154,6 +176,24 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
               cy={y}
               r="3"
               fill="#51CF66"
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* Data points for overdue */}
+        {data.map((_, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
+          const y =
+            chartHeight - padding - (data[index].overdue / maxValue) * innerHeight;
+          return (
+            <Circle
+              key={`overdue-point-${index}`}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="#FF922B"
               stroke="#fff"
               strokeWidth="1.5"
             />

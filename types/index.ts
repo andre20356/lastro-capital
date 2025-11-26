@@ -18,6 +18,7 @@ export interface Charge {
   dueDate: string;
   status: ChargeStatus;
   description: string;
+  delayFee?: number;
   createdAt: string;
 }
 
