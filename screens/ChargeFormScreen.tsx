@@ -326,6 +326,24 @@ export default function ChargeFormScreen() {
           />
         </View>
 
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Juros do Mês (R$)
+          </ThemedText>
+          <View
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, justifyContent: "center", paddingVertical: Spacing.md },
+            ]}
+          >
+            <ThemedText style={[{ fontSize: 16 }, amount && loanPercentage ? {} : { color: theme.tertiaryText }]}>
+              {amount && loanPercentage
+                ? `R$ ${((parseFloat(amount.replace(",", ".")) * parseFloat(loanPercentage.replace(",", "."))) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "Preencha o valor e a porcentagem"}
+            </ThemedText>
+          </View>
+        </View>
+
         <Pressable
           style={({ pressed }) => [
             styles.saveButton,
