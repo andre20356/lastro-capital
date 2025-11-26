@@ -13,8 +13,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export default function App() {
   return (
-  <ErrorBoundary>
-    <ThemeProvider>
+  <ThemeProvider>
+    <ErrorBoundary>
       <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
@@ -27,8 +27,8 @@ export default function App() {
             </KeyboardProvider>
           </GestureHandlerRootView>
         </SafeAreaProvider>
-    </ThemeProvider>
-  </ErrorBoundary>
+    </ErrorBoundary>
+  </ThemeProvider>
   );
 }
 
