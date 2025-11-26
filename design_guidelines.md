@@ -1,201 +1,184 @@
 # Lastro Capital - Design Guidelines
 
 ## App Overview
-Lastro Capital is a financial investment platform mobile app that allows users to browse investment opportunities, view detailed information about each investment option, and manage their account access.
+Lastro Capital is a billing and charges management mobile app that allows users to manage their receivables, track payments, maintain a client directory, and view payment history.
 
 ## Architecture Decisions
 
-### Authentication
-**Auth Required** - The app includes login functionality for accessing personalized investment portfolios.
-- Email/password authentication (current implementation)
-- Future consideration: Add SSO (Google Sign-In for Android, Apple Sign-In for iOS compliance)
-- Login screen accessible from header button
-- Account screen should include:
-  - User profile information
-  - Log out functionality
-  - Security settings
-
 ### Navigation
-**Stack-Only Navigation** with manual state management
-- Three primary screens: Home → Details, Login (modal-style)
-- Linear flow for investment browsing
-- Header-based navigation controls (login button, back buttons)
-- Future consideration: Implement React Navigation for better UX patterns and transitions
+**Tab-Based Navigation** with Stack overlays
+- Four main tabs: Dashboard, Cobranças, Clientes, Histórico
+- Modal screens for forms (Add/Edit Charge, Add/Edit Client)
+- Stack navigation within each tab for detail views
+
+### Data Persistence
+**AsyncStorage** for local data persistence
+- Charges (cobranças): id, clientId, amount, dueDate, status, description, createdAt
+- Clients: id, name, phone, email, notes, createdAt
+- Payments: id, chargeId, amount, paidAt, notes
 
 ## Screen Specifications
 
-### Home Screen
-**Purpose**: Display available investment opportunities
+### Dashboard Screen
+**Purpose**: Overview of financial status
 
 **Layout**:
-- Header: Custom header (64px height) with logo, app title, and "Entrar" (Login) button
-- Main content: Scrollable list of investment cards
-- Safe area insets: 
-  - Top: headerHeight (64px) + 8px
-  - Bottom: 16px
-  - Horizontal: 16px
+- Summary cards showing:
+  - Total pending amount
+  - Total received this month
+  - Overdue charges count
+- Quick actions: Add new charge
+- Upcoming due dates list (next 7 days)
 
-**Components**:
-- Welcome heading (H1 style)
-- Descriptive text
-- FlatList of investment cards with:
-  - Investment title
-  - Expected return percentage
-  - Touchable with press feedback
-
-### Login Screen
-**Purpose**: User authentication entry point
+### Charges Screen (Cobranças)
+**Purpose**: Manage all charges
 
 **Layout**:
-- Header: Same custom header as Home
-- Main content: Centered form layout
-- Form elements positioned vertically with consistent spacing
-- Bottom safe area inset: 16px
+- Filter tabs: All, Pending, Paid, Overdue
+- List of charge cards with:
+  - Client name
+  - Amount
+  - Due date
+  - Status badge
+- FAB button to add new charge
 
-**Components**:
-- "Entrar" heading (H1 style)
-- Email text input (auto-lowercase)
-- Password text input (secure entry)
-- Submit button ("Entrar")
-- Back link/button to return to Home
-- Form validation with error alerts
+**Charge Form**:
+- Client selector
+- Amount input
+- Due date picker
+- Description (optional)
+- Status selector
 
-**Interaction**:
-- Submit button disabled state if fields are empty (future enhancement)
-- Success alert on login
-- Returns to Home screen after successful login
-
-### Details Screen
-**Purpose**: Show detailed information about selected investment
+### Clients Screen
+**Purpose**: Manage client directory
 
 **Layout**:
-- Header: Same custom header
-- Main content: Scrollable detail view
-- Safe area insets: Same as Home
+- Search bar
+- Alphabetically sorted client list
+- Each card shows:
+  - Client name
+  - Contact info
+  - Total pending amount
+- FAB button to add new client
 
-**Components**:
-- Investment title (H1)
-- Expected return subtitle
-- "Descrição" section heading (H2)
-- Descriptive text content
-- Back button to return to Home
-- Future: Add investment action buttons (Invest, Save, Share)
+**Client Form**:
+- Name (required)
+- Phone
+- Email
+- Notes
+
+### History Screen (Histórico)
+**Purpose**: View payment history
+
+**Layout**:
+- Monthly grouped list of payments
+- Each entry shows:
+  - Client name
+  - Amount received
+  - Payment date
+  - Original charge reference
 
 ## Design System
 
 ### Color Palette
-**Primary Colors**:
-- Background: `#0f172a` (Dark slate)
-- Surface: `#111827` (Slightly lighter slate for header)
-- Card background: `#0b1220` (Deep blue-black)
-- Card border: `#1f2937` (Subtle gray border)
+**Primary Colors (Light Theme)**:
+- Background Root: `#f8fafc` (Light slate)
+- Background Default: `#ffffff` (White - cards)
+- Background Secondary: `#f1f5f9` (Light gray)
+- Background Tertiary: `#e2e8f0` (Dividers)
+- Card Border: `#e2e8f0`
 
 **Accent Colors**:
-- Primary accent: `#f97316` (Vibrant orange - for CTAs like login button)
-- Secondary accent: `#06b6d4` (Cyan - for primary actions)
+- Primary Accent: `#0d9488` (Teal - main actions)
+- Secondary Accent: `#0891b2` (Cyan - secondary actions)
 
 **Text Colors**:
-- Primary text: `#ffffff` (White - headings, titles)
-- Secondary text: `#cbd5e1` (Light gray - body text)
-- Tertiary text: `#9ca3af` (Medium gray - subtitles, metadata)
-- Button text on cyan: `#04252b` (Dark teal - high contrast)
+- Primary Text: `#1f2937` (Dark gray)
+- Secondary Text: `#64748b` (Medium gray)
+- Tertiary Text: `#94a3b8` (Light gray)
+
+**Status Colors**:
+- Success/Paid: `#10b981` (Green)
+- Warning/Pending: `#f59e0b` (Amber)
+- Error/Overdue: `#ef4444` (Red)
 
 ### Typography
 **Heading 1** (Screen titles):
-- Color: White (#fff)
+- Color: Primary text
 - Size: 22px
 - Weight: 700 (Bold)
 
 **Heading 2** (Section titles):
-- Color: White (#fff)
+- Color: Primary text
 - Size: 18px
 - Weight: 600 (Semibold)
 
 **Body Text**:
-- Color: Light gray (#cbd5e1)
+- Color: Secondary text
 - Size: 14px
-- Margin top: 8px for spacing
 
 **Card Title**:
-- Color: White (#fff)
+- Color: Primary text
 - Size: 16px
-- Weight: 700
-
-**Card Subtitle**:
-- Color: Medium gray (#9ca3af)
-- Margin top: 6px
+- Weight: 600
 
 ### Components
 
-**Header**:
-- Height: 64px
-- Background: #111827
-- Horizontal padding: 16px
-- Layout: Icon + Title (left), Action button (right)
-- Logo: 36x36px, rounded 6px corners
-- Title text: 18px white, 8px margin from logo
+**Cards**:
+- Background: White (#ffffff)
+- Border: 1px solid #e2e8f0
+- Border radius: 12px
+- Padding: 16px
+- Shadow: subtle (elevation 1)
 
-**Investment Cards**:
-- Background: #0b1220
-- Border: 1px solid #1f2937
-- Border radius: 8px
-- Padding: 12px
-- Margin bottom: 12px
-- Press feedback: Slight opacity change (0.7)
-
-**Buttons - Primary (Cyan)**:
-- Background: #06b6d4
-- Text color: #04252b
-- Padding: 12px vertical, 16px horizontal
-- Border radius: 10px
-- Font weight: 700
-- Center-aligned text
-
-**Buttons - Accent (Orange)**:
-- Background: #f97316
+**Buttons - Primary**:
+- Background: #0d9488 (Teal)
 - Text color: White
-- Padding: 8px vertical, 12px horizontal
-- Border radius: 8px
+- Padding: 14px vertical, 20px horizontal
+- Border radius: 10px
+- Font weight: 600
+
+**Buttons - Secondary**:
+- Background: transparent
+- Border: 1px solid #0d9488
+- Text color: #0d9488
+- Padding: 14px vertical, 20px horizontal
+- Border radius: 10px
+
+**Status Badges**:
+- Pending: Background #fef3c7, Text #92400e
+- Paid: Background #d1fae5, Text #065f46
+- Overdue: Background #fee2e2, Text #991b1b
+- Border radius: 6px
+- Padding: 4px 8px
+- Font size: 12px, Weight: 600
 
 **Text Inputs**:
-- Background: White (#fff)
+- Background: White
+- Border: 1px solid #d1d5db
 - Border radius: 8px
-- Padding: 12px
-- Margin top: 12px
-- Appropriate keyboard types (email, secure password)
+- Padding: 14px
+- Focus border: #0d9488
 
-**Links**:
-- Center-aligned
-- Default text color with subtle press feedback
+**FAB (Floating Action Button)**:
+- Background: #0d9488
+- Size: 56x56px
+- Border radius: full
+- Icon: Plus, white
+- Position: Bottom right, above tab bar
+- Shadow: elevation 4
 
-### Interaction Design
-- All touchable components have visual feedback (opacity or scale animation)
-- Investment cards: Light press animation when tapped
-- Buttons: ActiveOpacity of 0.8
-- Alerts for validation errors and success messages
-- Smooth transitions between screens (consider adding fade/slide animations)
-
-### Visual Assets
-**Required Assets**:
-- App icon (icon.png): 36x36px logo for header, standard app icon sizes for stores
-- Splash screen (splash.png): Simple design with #1a237e background color
-- Investment category icons (future): Icons representing different investment types
-
-**Icon Usage**:
-- Use Feather icons from @expo/vector-icons for standard UI elements
-- No emojis in the interface
-- System icons for common actions
-
-### Accessibility Requirements
-- Minimum touch target size: 44x44px for all interactive elements
-- High contrast text (WCAG AA compliant)
-- Descriptive button labels
-- Form inputs with proper labels and placeholders
-- Consider adding accessibility labels for screen readers
-- Error messages clearly visible and announced
+### Tab Bar
+- Background: White with subtle top border
+- Active icon/label: Teal (#0d9488)
+- Inactive icon/label: Gray (#9ca3af)
+- Icons: Feather icons
+  - Dashboard: home
+  - Cobranças: file-text
+  - Clientes: users
+  - Histórico: clock
 
 ### Safe Area Considerations
-- All screens wrapped in SafeAreaView
-- Content padding accounts for notches and system UI
-- Horizontal content padding: 16px
-- Vertical spacing between elements: 8-20px depending on hierarchy
+- All screens use safe area insets
+- FAB positioned with bottom inset + tab bar height + spacing
+- Content padding: 16px horizontal

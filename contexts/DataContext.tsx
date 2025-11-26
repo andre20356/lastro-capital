@@ -1,0 +1,245 @@
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Client, Charge, Payment, ChargeStatus, AppData } from "@/types";
+
+const STORAGE_KEY = "@lastro_capital_data";
+
+interface DataContextType {
+  clients: Client[];
+  charges: Charge[];
+  payments: Payment[];
+  isLoading: boolean;
+  addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
+  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  addCharge: (charge: Omit<Charge, "id" | "createdAt">) => Promise<Charge>;
+  updateCharge: (id: string, charge: Partial<Charge>) => Promise<void>;
+  deleteCharge: (id: string) => Promise<void>;
+  markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
+  getClientById: (id: string) => Client | undefined;
+  getChargeById: (id: string) => Charge | undefined;
+  getChargesByClient: (clientId: string) => Charge[];
+  getPendingTotal: () => number;
+  getPaidTotal: () => number;
+  getOverdueCharges: () => Charge[];
+  getUpcomingCharges: (days: number) => Charge[];
+  refreshData: () => Promise<void>;
+}
+
+const DataContext = createContext<DataContextType | undefined>(undefined);
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function checkOverdue(charges: Charge[]): Charge[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return charges.map((charge) => {
+    if (charge.status === "pending") {
+      const dueDate = new Date(charge.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      if (dueDate < today) {
+        return { ...charge, status: "overdue" as ChargeStatus };
+      }
+    }
+    return charge;
+  });
+}
+
+export function DataProvider({ children }: { children: ReactNode }) {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [charges, setCharges] = useState<Charge[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const saveData = useCallback(async (data: AppData) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error("Error saving data:", error);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (storedData) {
+        const data: AppData = JSON.parse(storedData);
+        setClients(data.clients || []);
+        setCharges(checkOverdue(data.charges || []));
+        setPayments(data.payments || []);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      saveData({ clients, charges, payments });
+    }
+  }, [clients, charges, payments, isLoading, saveData]);
+
+  const refreshData = useCallback(async () => {
+    await loadData();
+  }, [loadData]);
+
+  const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
+    const newClient: Client = {
+      ...clientData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    setClients((prev) => [...prev, newClient]);
+    return newClient;
+  }, []);
+
+  const updateClient = useCallback(async (id: string, clientData: Partial<Client>) => {
+    setClients((prev) =>
+      prev.map((client) => (client.id === id ? { ...client, ...clientData } : client))
+    );
+  }, []);
+
+  const deleteClient = useCallback(async (id: string) => {
+    setClients((prev) => prev.filter((client) => client.id !== id));
+    setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
+  }, []);
+
+  const addCharge = useCallback(async (chargeData: Omit<Charge, "id" | "createdAt">): Promise<Charge> => {
+    const newCharge: Charge = {
+      ...chargeData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    setCharges((prev) => checkOverdue([...prev, newCharge]));
+    return newCharge;
+  }, []);
+
+  const updateCharge = useCallback(async (id: string, chargeData: Partial<Charge>) => {
+    setCharges((prev) =>
+      checkOverdue(prev.map((charge) => (charge.id === id ? { ...charge, ...chargeData } : charge)))
+    );
+  }, []);
+
+  const deleteCharge = useCallback(async (id: string) => {
+    setCharges((prev) => prev.filter((charge) => charge.id !== id));
+    setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
+  }, []);
+
+  const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) return;
+
+    const payment: Payment = {
+      id: generateId(),
+      chargeId,
+      clientId: charge.clientId,
+      amount: charge.amount,
+      paidAt: new Date().toISOString(),
+      notes,
+    };
+
+    setPayments((prev) => [...prev, payment]);
+    setCharges((prev) =>
+      prev.map((c) => (c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c))
+    );
+  }, [charges]);
+
+  const getClientById = useCallback(
+    (id: string) => clients.find((client) => client.id === id),
+    [clients]
+  );
+
+  const getChargeById = useCallback(
+    (id: string) => charges.find((charge) => charge.id === id),
+    [charges]
+  );
+
+  const getChargesByClient = useCallback(
+    (clientId: string) => charges.filter((charge) => charge.clientId === clientId),
+    [charges]
+  );
+
+  const getPendingTotal = useCallback(() => {
+    return charges
+      .filter((c) => c.status === "pending" || c.status === "overdue")
+      .reduce((sum, c) => sum + c.amount, 0);
+  }, [charges]);
+
+  const getPaidTotal = useCallback(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return payments
+      .filter((p) => new Date(p.paidAt) >= startOfMonth)
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
+  const getOverdueCharges = useCallback(() => {
+    return charges.filter((c) => c.status === "overdue");
+  }, [charges]);
+
+  const getUpcomingCharges = useCallback(
+    (days: number) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const futureDate = new Date(today);
+      futureDate.setDate(futureDate.getDate() + days);
+
+      return charges
+        .filter((c) => {
+          if (c.status !== "pending") return false;
+          const dueDate = new Date(c.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate >= today && dueDate <= futureDate;
+        })
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    },
+    [charges]
+  );
+
+  return (
+    <DataContext.Provider
+      value={{
+        clients,
+        charges,
+        payments,
+        isLoading,
+        addClient,
+        updateClient,
+        deleteClient,
+        addCharge,
+        updateCharge,
+        deleteCharge,
+        markAsPaid,
+        getClientById,
+        getChargeById,
+        getChargesByClient,
+        getPendingTotal,
+        getPaidTotal,
+        getOverdueCharges,
+        getUpcomingCharges,
+        refreshData,
+      }}
+    >
+      {children}
+    </DataContext.Provider>
+  );
+}
+
+export function useData() {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error("useData must be used within a DataProvider");
+  }
+  return context;
+}
