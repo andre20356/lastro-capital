@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Pressable, Alert, TextInput } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Linking } from "react-native";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -65,6 +66,26 @@ export default function ProfileScreen() {
     if (themeMode === "light") return "Claro";
     if (themeMode === "dark") return "Escuro";
     return "Sistema";
+  };
+
+  const openEmail = async () => {
+    try {
+      await Linking.openURL("mailto:lastrocapitalsuporteaocliente@gmail.com");
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível abrir o email");
+    }
+  };
+
+  const openWhatsApp = async () => {
+    try {
+      // Numero de exemplo - altere para o número real
+      const phoneNumber = "5511987654321";
+      const message = "Olá, gostaria de suporte com o Lastro Capital";
+      const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
+    }
   };
 
   return (
@@ -213,25 +234,50 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
-            Suporte
+            Ajuda e Suporte
           </ThemedText>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.menuItem,
-              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+          <View
+            style={[
+              styles.supportCard,
+              { backgroundColor: theme.backgroundSecondary, borderColor: theme.cardBorder },
             ]}
-            onPress={() => Alert.alert("Ajuda", "Centro de ajuda em desenvolvimento")}
           >
-            <Feather name="help-circle" size={20} color={theme.primaryAccent} />
-            <View style={styles.menuContent}>
-              <ThemedText style={styles.menuLabel}>Ajuda e Suporte</ThemedText>
-              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
-                Dúvidas e problemas
-              </ThemedText>
-            </View>
-            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
-          </Pressable>
+            <ThemedText style={[styles.supportLabel, { color: theme.secondaryText }]}>
+              Email de Contato
+            </ThemedText>
+            <Pressable
+              style={({ pressed }) => [
+                styles.contactButton,
+                { backgroundColor: theme.primaryAccent, opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={openEmail}
+            >
+              <Feather name="mail" size={18} color="#fff" />
+              <ThemedText style={styles.contactButtonText}>lastrocapitalsuporteaocliente@gmail.com</ThemedText>
+            </Pressable>
+          </View>
+
+          <View
+            style={[
+              styles.supportCard,
+              { backgroundColor: theme.backgroundSecondary, borderColor: theme.cardBorder },
+            ]}
+          >
+            <ThemedText style={[styles.supportLabel, { color: theme.secondaryText }]}>
+              WhatsApp
+            </ThemedText>
+            <Pressable
+              style={({ pressed }) => [
+                styles.contactButton,
+                { backgroundColor: "#25D366", opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={openWhatsApp}
+            >
+              <Feather name="message-circle" size={18} color="#fff" />
+              <ThemedText style={styles.contactButtonText}>Abrir WhatsApp</ThemedText>
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [
@@ -341,5 +387,32 @@ const styles = StyleSheet.create({
   },
   menuDescription: {
     fontSize: 12,
+  },
+  supportCard: {
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  supportLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  contactButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.xs,
+    gap: Spacing.sm,
+  },
+  contactButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
