@@ -31,6 +31,7 @@ export default function ChargeFormScreen() {
       ? new Date(existingCharge.dueDate).toLocaleDateString("pt-BR")
       : ""
   );
+  const [paymentDate, setPaymentDate] = useState("");
   const [description, setDescription] = useState(existingCharge?.description || "");
   const [loanPercentage, setLoanPercentage] = useState(existingCharge?.loanPercentage?.toString() || "");
   const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
@@ -166,6 +167,13 @@ export default function ChargeFormScreen() {
                       onPress={() => {
                         setClientId(client.id);
                         setShowClientPicker(false);
+                        // Auto-fill com dados do cliente
+                        if (client.loanPercentage) {
+                          setLoanPercentage(client.loanPercentage.toString());
+                        }
+                        if (client.dailyDelayRate) {
+                          setDailyDelayRate(client.dailyDelayRate.toString());
+                        }
                       }}
                     >
                       <ThemedText>{client.name}</ThemedText>
@@ -222,6 +230,24 @@ export default function ChargeFormScreen() {
             placeholderTextColor={theme.tertiaryText}
             value={dueDate}
             onChangeText={(text) => setDueDate(formatDateInput(text))}
+            keyboardType="numeric"
+            maxLength={10}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Data de Quitação (opcional)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="DD/MM/AAAA"
+            placeholderTextColor={theme.tertiaryText}
+            value={paymentDate}
+            onChangeText={(text) => setPaymentDate(formatDateInput(text))}
             keyboardType="numeric"
             maxLength={10}
           />
