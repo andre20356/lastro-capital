@@ -161,7 +161,7 @@ export default function MainStackNavigator() {
         name="ClientDetail"
         component={ClientDetailScreen}
         options={{
-          title: "Detalhes do Cliente",
+          title: "Dados do Cliente",
           headerBackTitle: "Voltar",
         }}
       />
