@@ -25,6 +25,7 @@ export interface Charge {
   delayFee?: number;
   loanPercentage?: number;
   dailyDelayRate?: number;
+  accumulatedInterest?: number;
   createdAt: string;
 }
 

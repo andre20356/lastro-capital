@@ -37,11 +37,23 @@ function checkOverdue(charges: Charge[]): Charge[] {
   today.setHours(0, 0, 0, 0);
   
   return charges.map((charge) => {
-    if (charge.status === "pending") {
+    if (charge.status === "pending" || charge.status === "overdue") {
       const dueDate = new Date(charge.dueDate);
       dueDate.setHours(0, 0, 0, 0);
+      
       if (dueDate < today) {
-        return { ...charge, status: "overdue" as ChargeStatus };
+        // Calcular juros acumulados por dias de atraso
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        const dailyRate = (charge.dailyDelayRate || 0) / 100;
+        const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
+        const dailyInterestAmount = monthlyInterestAmount / 30;
+        const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
+        
+        return { 
+          ...charge, 
+          status: "overdue" as ChargeStatus,
+          accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
+        };
       }
     }
     return charge;
@@ -172,7 +184,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const getPendingTotal = useCallback(() => {
     return charges
       .filter((c) => c.status === "pending" || c.status === "overdue")
-      .reduce((sum, c) => sum + c.amount, 0);
+      .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   }, [charges]);
 
   const getPaidTotal = useCallback(() => {
