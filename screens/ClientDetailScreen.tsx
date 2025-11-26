@@ -52,6 +52,10 @@ export default function ClientDetailScreen() {
     .filter((c) => c.status === "pending" || c.status === "overdue")
     .reduce((sum, c) => sum + c.amount, 0);
 
+  const totalAccumulatedInterest = charges
+    .filter((c) => c.status === "pending" || c.status === "overdue")
+    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+
   if (!client) {
     return (
       <ThemedView style={styles.container}>
@@ -136,6 +140,17 @@ export default function ClientDetailScreen() {
             </ThemedText>
             <ThemedText style={[styles.pendingAmount, { color: theme.warning }]}>
               {formatCurrency(pendingTotal)}
+            </ThemedText>
+          </View>
+        ) : null}
+
+        {totalAccumulatedInterest > 0 ? (
+          <View style={styles.pendingRow}>
+            <ThemedText style={[styles.pendingLabel, { color: theme.secondaryText }]}>
+              Juros acumulados:
+            </ThemedText>
+            <ThemedText style={[styles.pendingAmount, { color: theme.error }]}>
+              {formatCurrency(totalAccumulatedInterest)}
             </ThemedText>
           </View>
         ) : null}
