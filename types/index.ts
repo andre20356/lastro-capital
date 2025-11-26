@@ -7,6 +7,9 @@ export interface Client {
   email: string;
   documentPhoto?: string;
   addressProof?: string;
+  requestedAmount?: number;
+  loanPercentage?: number;
+  dailyDelayRate?: number;
   notes: string;
   createdAt: string;
 }

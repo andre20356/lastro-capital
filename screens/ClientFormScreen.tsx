@@ -26,6 +26,9 @@ export default function ClientFormScreen() {
   const [name, setName] = useState(existingClient?.name || "");
   const [phone, setPhone] = useState(existingClient?.phone || "");
   const [email, setEmail] = useState(existingClient?.email || "");
+  const [requestedAmount, setRequestedAmount] = useState(existingClient?.requestedAmount?.toString() || "");
+  const [loanPercentage, setLoanPercentage] = useState(existingClient?.loanPercentage?.toString() || "");
+  const [dailyDelayRate, setDailyDelayRate] = useState(existingClient?.dailyDelayRate?.toString() || "");
   const [documentPhoto, setDocumentPhoto] = useState(existingClient?.documentPhoto || "");
   const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
   const [notes, setNotes] = useState(existingClient?.notes || "");
@@ -76,6 +79,9 @@ export default function ClientFormScreen() {
           name: name.trim(),
           phone,
           email: email.trim(),
+          requestedAmount: requestedAmount ? parseFloat(requestedAmount) : undefined,
+          loanPercentage: loanPercentage ? parseFloat(loanPercentage) : undefined,
+          dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate) : undefined,
           documentPhoto,
           addressProof,
           notes: notes.trim(),
@@ -85,6 +91,9 @@ export default function ClientFormScreen() {
           name: name.trim(),
           phone,
           email: email.trim(),
+          requestedAmount: requestedAmount ? parseFloat(requestedAmount) : undefined,
+          loanPercentage: loanPercentage ? parseFloat(loanPercentage) : undefined,
+          dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate) : undefined,
           documentPhoto,
           addressProof,
           notes: notes.trim(),
@@ -150,6 +159,57 @@ export default function ClientFormScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Valor Solicitado
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="R$ 0,00"
+            placeholderTextColor={theme.tertiaryText}
+            value={requestedAmount}
+            onChangeText={setRequestedAmount}
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Percentual do Emprestimo (%)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="0,00"
+            placeholderTextColor={theme.tertiaryText}
+            value={loanPercentage}
+            onChangeText={setLoanPercentage}
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Taxa de Atraso Diaria (%)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="0,00"
+            placeholderTextColor={theme.tertiaryText}
+            value={dailyDelayRate}
+            onChangeText={setDailyDelayRate}
+            keyboardType="decimal-pad"
           />
         </View>
 
