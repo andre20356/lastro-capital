@@ -155,24 +155,38 @@ export default function ChargeFormScreen() {
                   </ThemedText>
                 </Pressable>
               ) : (
-                clients.map((client) => (
+                <>
+                  {clients.map((client) => (
+                    <Pressable
+                      key={client.id}
+                      style={[
+                        styles.pickerOption,
+                        clientId === client.id && { backgroundColor: theme.primaryAccent + "10" },
+                      ]}
+                      onPress={() => {
+                        setClientId(client.id);
+                        setShowClientPicker(false);
+                      }}
+                    >
+                      <ThemedText>{client.name}</ThemedText>
+                      {clientId === client.id ? (
+                        <Feather name="check" size={16} color={theme.primaryAccent} />
+                      ) : null}
+                    </Pressable>
+                  ))}
                   <Pressable
-                    key={client.id}
-                    style={[
-                      styles.pickerOption,
-                      clientId === client.id && { backgroundColor: theme.primaryAccent + "10" },
-                    ]}
+                    style={[styles.pickerOption, { borderTopWidth: 1, borderTopColor: theme.inputBorder }]}
                     onPress={() => {
-                      setClientId(client.id);
                       setShowClientPicker(false);
+                      navigation.navigate("ClientForm", {});
                     }}
                   >
-                    <ThemedText>{client.name}</ThemedText>
-                    {clientId === client.id ? (
-                      <Feather name="check" size={16} color={theme.primaryAccent} />
-                    ) : null}
+                    <Feather name="plus" size={16} color={theme.primaryAccent} />
+                    <ThemedText style={{ color: theme.primaryAccent, marginLeft: Spacing.sm }}>
+                      Adicionar novo cliente
+                    </ThemedText>
                   </Pressable>
-                ))
+                </>
               )}
             </View>
           ) : null}
