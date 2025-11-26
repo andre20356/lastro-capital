@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 10.0.0"
+  },
+  "build": {
+    "production": {
+      "android": {
+        "name": "Lastro Capital Production",
+        "workflow": "managed"
+      }
+    },
+    "preview": {
+      "android": {
+        "name": "Lastro Capital Preview",
+        "workflow": "managed"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
+  }
+}

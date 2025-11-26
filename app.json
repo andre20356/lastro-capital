@@ -18,6 +18,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
