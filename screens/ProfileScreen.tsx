@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Pressable, Alert, TextInput } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Linking } from "react-native";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -9,8 +11,12 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { Feather } from "@expo/vector-icons";
+import { RootStackParamList } from "@/navigation/MainTabNavigator";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { themeMode, setThemeMode } = useThemeContext();
   const [userName, setUserName] = useState("");
@@ -284,7 +290,7 @@ export default function ProfileScreen() {
               styles.menuItem,
               { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
             ]}
-            onPress={() => Alert.alert("Sobre Nós – Lastro Capital", "A Lastro Capital é um aplicativo desenvolvido para facilitar e modernizar o gerenciamento de cobranças. Criado para empreendedores, autônomos e empresas que precisam organizar seus recebimentos com praticidade, o app oferece uma solução completa para controle financeiro, acompanhamento de pagamentos e otimização do processo de cobrança.\n\nNosso objetivo é tornar a gestão de cobranças simples, eficiente e transparente. Através de uma interface intuitiva, o usuário consegue registrar clientes, criar cobranças, acompanhar valores pendentes, receber alertas automáticos e manter todo o fluxo financeiro organizado em um só lugar.\n\nA Lastro Capital foi construída com foco em agilidade, segurança e precisão das informações, permitindo que cada usuário tenha controle total sobre suas movimentações financeiras e decisões de cobrança. Queremos ajudar você a reduzir atrasos, melhorar o fluxo de caixa e aumentar sua eficiência no dia a dia.\n\nAqui, tecnologia e gestão trabalham juntas para trazer mais profissionalismo, organização e resultados para o seu negócio.", [{ text: "Fechar" }])}
+            onPress={() => navigation.navigate("About")}
           >
             <Feather name="info" size={20} color={theme.primaryAccent} />
             <View style={styles.menuContent}>

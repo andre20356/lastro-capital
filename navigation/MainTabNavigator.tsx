@@ -18,6 +18,7 @@ import ClientFormScreen from "@/screens/ClientFormScreen";
 import ChargeDetailScreen from "@/screens/ChargeDetailScreen";
 import ClientDetailScreen from "@/screens/ClientDetailScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import AboutScreen from "@/screens/AboutScreen";
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   ChargeDetail: { chargeId: string };
   ClientDetail: { clientId: string };
   Profile: undefined;
+  About: undefined;
 };
 
 export type MainTabParamList = {
@@ -168,6 +170,14 @@ export default function MainStackNavigator() {
         component={ProfileScreen}
         options={{
           title: "Perfil",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{
+          title: "Sobre Nós",
           headerBackTitle: "Voltar",
         }}
       />
