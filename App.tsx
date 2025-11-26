@@ -6,7 +6,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-import MainTabNavigator from "@/navigation/MainTabNavigator";
+import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function App() {
@@ -16,9 +16,9 @@ export default function App() {
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
             <NavigationContainer>
-              <MainTabNavigator />
+              <RootStackNavigator />
             </NavigationContainer>
-            <StatusBar style="auto" />
+            <StatusBar style="light" />
           </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>

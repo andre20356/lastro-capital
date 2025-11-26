@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
+const tintColorLight = "#f97316";
+const tintColorDark = "#f97316";
 
 export const Colors = {
   light: {
@@ -9,22 +9,36 @@ export const Colors = {
     buttonText: "#FFFFFF",
     tabIconDefault: "#687076",
     tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    link: "#06b6d4",
+    backgroundRoot: "#0f172a",
+    backgroundDefault: "#111827",
+    backgroundSecondary: "#0b1220",
+    backgroundTertiary: "#1f2937",
+    cardBorder: "#1f2937",
+    primaryAccent: "#f97316",
+    secondaryAccent: "#06b6d4",
+    secondaryText: "#cbd5e1",
+    tertiaryText: "#9ca3af",
+    buttonTextOnCyan: "#04252b",
+    inputBackground: "#FFFFFF",
   },
   dark: {
     text: "#ECEDEE",
     buttonText: "#FFFFFF",
     tabIconDefault: "#9BA1A6",
     tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    link: "#06b6d4",
+    backgroundRoot: "#0f172a",
+    backgroundDefault: "#111827",
+    backgroundSecondary: "#0b1220",
+    backgroundTertiary: "#1f2937",
+    cardBorder: "#1f2937",
+    primaryAccent: "#f97316",
+    secondaryAccent: "#06b6d4",
+    secondaryText: "#cbd5e1",
+    tertiaryText: "#9ca3af",
+    buttonTextOnCyan: "#04252b",
+    inputBackground: "#FFFFFF",
   },
 };
 
@@ -55,38 +69,39 @@ export const BorderRadius = {
 
 export const Typography = {
   h1: {
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 22,
     fontWeight: "700" as const,
   },
   h2: {
-    fontSize: 28,
-    lineHeight: 36,
-    fontWeight: "700" as const,
+    fontSize: 18,
+    fontWeight: "600" as const,
   },
   h3: {
     fontSize: 24,
-    lineHeight: 32,
     fontWeight: "600" as const,
   },
   h4: {
     fontSize: 20,
-    lineHeight: 28,
     fontWeight: "600" as const,
   },
   body: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,
     fontWeight: "400" as const,
   },
   small: {
     fontSize: 14,
-    lineHeight: 20,
     fontWeight: "400" as const,
   },
   link: {
     fontSize: 16,
-    lineHeight: 24,
+    fontWeight: "400" as const,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: "400" as const,
   },
 };

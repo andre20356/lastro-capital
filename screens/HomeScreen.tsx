@@ -1,52 +1,93 @@
 import React from "react";
+import { StyleSheet, Pressable, View } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Card } from "@/components/Card";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
-import Spacer from "@/components/Spacer";
-import { Spacing } from "@/constants/theme";
-
-type HomeStackParamList = {
-  Home: undefined;
-  Detail: undefined;
-};
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
+import { RootStackParamList, Investment } from "@/navigation/RootStackNavigator";
+import { Feather } from "@expo/vector-icons";
 
 type HomeScreenProps = {
-  navigation: NativeStackNavigationProp<HomeStackParamList, "Home">;
+  navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
 };
 
-interface CardData {
-  id: string;
-  elevation: number;
-}
-
-const CARD_DATA: CardData[] = [
-  { id: "1", elevation: 1 },
-  { id: "2", elevation: 2 },
-  { id: "3", elevation: 3 },
-  { id: "4", elevation: 1 },
-  { id: "5", elevation: 2 },
-  { id: "6", elevation: 3 },
-  { id: "7", elevation: 1 },
-  { id: "8", elevation: 2 },
-  { id: "9", elevation: 3 },
+const INVESTMENTS: Investment[] = [
+  { id: "1", title: "Investimento A", subtitle: "Rendimento 8% a.a." },
+  { id: "2", title: "Investimento B", subtitle: "Rendimento 10% a.a." },
+  { id: "3", title: "Investimento C", subtitle: "Rendimento 12% a.a." },
 ];
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const renderItem = ({ item }: { item: CardData }) => (
-    <>
-      <Card
-        elevation={item.elevation}
-        onPress={() => navigation.navigate("Detail")}
-      />
-      <Spacer height={Spacing.lg} />
-    </>
+  const { theme } = useTheme();
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <ThemedText type="h1">Bem-vindo à Lastro Capital</ThemedText>
+      <ThemedText style={[styles.subtitle, { color: theme.secondaryText }]}>
+        Selecione um investimento:
+      </ThemedText>
+    </View>
+  );
+
+  const renderItem = ({ item }: { item: Investment }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: theme.backgroundSecondary,
+          borderColor: theme.cardBorder,
+          opacity: pressed ? 0.7 : 1,
+        },
+      ]}
+      onPress={() => navigation.navigate("Details", { item })}
+    >
+      <ThemedText type="cardTitle">{item.title}</ThemedText>
+      <ThemedText style={[styles.cardSubtitle, { color: theme.tertiaryText }]}>
+        {item.subtitle}
+      </ThemedText>
+      <View style={styles.iconContainer}>
+        <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+      </View>
+    </Pressable>
   );
 
   return (
     <ScreenFlatList
-      data={CARD_DATA}
+      data={INVESTMENTS}
       renderItem={renderItem}
       keyExtractor={(item) => item.id}
+      ListHeaderComponent={renderHeader}
+      contentContainerStyle={styles.listContent}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    marginBottom: Spacing.lg,
+  },
+  subtitle: {
+    marginTop: Spacing.sm,
+  },
+  listContent: {
+    paddingHorizontal: Spacing.lg,
+  },
+  card: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.xs,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    position: "relative",
+  },
+  cardSubtitle: {
+    marginTop: 6,
+  },
+  iconContainer: {
+    position: "absolute",
+    right: Spacing.md,
+    top: "50%",
+    marginTop: -10,
+  },
+});
