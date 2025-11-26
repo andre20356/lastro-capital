@@ -5,6 +5,8 @@ export interface Client {
   name: string;
   phone: string;
   email: string;
+  documentPhoto?: string;
+  addressProof?: string;
   notes: string;
   createdAt: string;
 }

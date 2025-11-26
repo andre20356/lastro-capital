@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Pressable, Alert, ScrollView } from "react-native";
+import { StyleSheet, View, TextInput, Pressable, Alert, ScrollView, Image } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -24,6 +26,8 @@ export default function ClientFormScreen() {
   const [name, setName] = useState(existingClient?.name || "");
   const [phone, setPhone] = useState(existingClient?.phone || "");
   const [email, setEmail] = useState(existingClient?.email || "");
+  const [documentPhoto, setDocumentPhoto] = useState(existingClient?.documentPhoto || "");
+  const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
   const [notes, setNotes] = useState(existingClient?.notes || "");
 
   const formatPhone = (text: string) => {
@@ -41,6 +45,25 @@ export default function ClientFormScreen() {
     return formatted;
   };
 
+  const pickImage = async (onComplete: (uri: string) => void) => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0].base64) {
+        const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        onComplete(base64);
+      }
+    } catch (error) {
+      Alert.alert("Erro", "Nao foi possivel selecionar a imagem");
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert("Erro", "Digite o nome do cliente");
@@ -53,6 +76,8 @@ export default function ClientFormScreen() {
           name: name.trim(),
           phone,
           email: email.trim(),
+          documentPhoto,
+          addressProof,
           notes: notes.trim(),
         });
       } else {
@@ -60,6 +85,8 @@ export default function ClientFormScreen() {
           name: name.trim(),
           phone,
           email: email.trim(),
+          documentPhoto,
+          addressProof,
           notes: notes.trim(),
         });
       }
@@ -128,6 +155,78 @@ export default function ClientFormScreen() {
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Foto do Documento
+          </ThemedText>
+          {documentPhoto ? (
+            <View
+              style={[
+                styles.imagePreview,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder },
+              ]}
+            >
+              <Image source={{ uri: documentPhoto }} style={styles.image} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.removeImageButton,
+                  { opacity: pressed ? 0.8 : 1 },
+                ]}
+                onPress={() => setDocumentPhoto("")}
+              >
+                <Feather name="x" size={20} color="#fff" />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.uploadButton,
+                { backgroundColor: theme.primaryAccent, opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={() => pickImage(setDocumentPhoto)}
+            >
+              <Feather name="camera" size={20} color="#fff" />
+              <ThemedText style={styles.uploadButtonText}>Adicionar Foto</ThemedText>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Comprovante de Endereco
+          </ThemedText>
+          {addressProof ? (
+            <View
+              style={[
+                styles.imagePreview,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder },
+              ]}
+            >
+              <Image source={{ uri: addressProof }} style={styles.image} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.removeImageButton,
+                  { opacity: pressed ? 0.8 : 1 },
+                ]}
+                onPress={() => setAddressProof("")}
+              >
+                <Feather name="x" size={20} color="#fff" />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.uploadButton,
+                { backgroundColor: theme.primaryAccent, opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={() => pickImage(setAddressProof)}
+            >
+              <Feather name="camera" size={20} color="#fff" />
+              <ThemedText style={styles.uploadButtonText}>Adicionar Foto</ThemedText>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             Observações
           </ThemedText>
           <TextInput
@@ -186,6 +285,44 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     paddingTop: Spacing.md,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.xs,
+    gap: Spacing.sm,
+  },
+  uploadButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1,
+    overflow: "hidden",
+    position: "relative",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.sm,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#000000cc",
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveButton: {
     padding: Spacing.lg,
