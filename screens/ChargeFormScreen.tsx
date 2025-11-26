@@ -39,6 +39,32 @@ export default function ChargeFormScreen() {
 
   const selectedClient = clients.find((c) => c.id === clientId);
 
+  // Auto-fill fields when client is selected
+  useEffect(() => {
+    if (selectedClient && clientId && !isEditing) {
+      // Preencher valor solicitado
+      if (selectedClient.requestedAmount) {
+        setAmount(selectedClient.requestedAmount.toString());
+      }
+
+      // Calcular data de vencimento (data de solicitação + 1 mês)
+      if (selectedClient.requestDate) {
+        const requestDateObj = new Date(selectedClient.requestDate);
+        const dueDateObj = new Date(requestDateObj.getFullYear(), requestDateObj.getMonth() + 1, requestDateObj.getDate());
+        const formattedDueDate = dueDateObj.toLocaleDateString("pt-BR");
+        setDueDate(formattedDueDate);
+      }
+
+      // Preencher percentuais
+      if (selectedClient.loanPercentage) {
+        setLoanPercentage(selectedClient.loanPercentage.toString());
+      }
+      if (selectedClient.dailyDelayRate) {
+        setDailyDelayRate(selectedClient.dailyDelayRate.toString());
+      }
+    }
+  }, [selectedClient, clientId, isEditing]);
+
   const parseDate = (dateStr: string): Date | null => {
     const parts = dateStr.split("/");
     if (parts.length !== 3) return null;
@@ -167,13 +193,6 @@ export default function ChargeFormScreen() {
                       onPress={() => {
                         setClientId(client.id);
                         setShowClientPicker(false);
-                        // Auto-fill com dados do cliente
-                        if (client.loanPercentage) {
-                          setLoanPercentage(client.loanPercentage.toString());
-                        }
-                        if (client.dailyDelayRate) {
-                          setDailyDelayRate(client.dailyDelayRate.toString());
-                        }
                       }}
                     >
                       <ThemedText>{client.name}</ThemedText>
