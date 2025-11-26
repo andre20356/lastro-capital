@@ -32,6 +32,8 @@ export default function ChargeFormScreen() {
       : ""
   );
   const [description, setDescription] = useState(existingCharge?.description || "");
+  const [loanPercentage, setLoanPercentage] = useState(existingCharge?.loanPercentage?.toString() || "");
+  const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
   const [showClientPicker, setShowClientPicker] = useState(false);
 
   const selectedClient = clients.find((c) => c.id === clientId);
@@ -65,19 +67,20 @@ export default function ChargeFormScreen() {
     }
 
     try {
+      const chargeData = {
+        clientId,
+        amount: amountNum,
+        dueDate: parsedDate.toISOString(),
+        description,
+        loanPercentage: loanPercentage ? parseFloat(loanPercentage.replace(",", ".")) : undefined,
+        dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
+      };
+
       if (isEditing && existingCharge) {
-        await updateCharge(existingCharge.id, {
-          clientId,
-          amount: amountNum,
-          dueDate: parsedDate.toISOString(),
-          description,
-        });
+        await updateCharge(existingCharge.id, chargeData);
       } else {
         await addCharge({
-          clientId,
-          amount: amountNum,
-          dueDate: parsedDate.toISOString(),
-          description,
+          ...chargeData,
           status: "pending" as ChargeStatus,
         });
       }
@@ -227,6 +230,40 @@ export default function ChargeFormScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Porcentagem de Empréstimo (%) (opcional)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="0,00"
+            placeholderTextColor={theme.tertiaryText}
+            value={loanPercentage}
+            onChangeText={setLoanPercentage}
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Taxa de Atraso Diário (%) (opcional)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+            ]}
+            placeholder="0,00"
+            placeholderTextColor={theme.tertiaryText}
+            value={dailyDelayRate}
+            onChangeText={setDailyDelayRate}
+            keyboardType="decimal-pad"
           />
         </View>
 

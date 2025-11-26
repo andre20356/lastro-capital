@@ -22,6 +22,8 @@ export interface Charge {
   status: ChargeStatus;
   description: string;
   delayFee?: number;
+  loanPercentage?: number;
+  dailyDelayRate?: number;
   createdAt: string;
 }
 
