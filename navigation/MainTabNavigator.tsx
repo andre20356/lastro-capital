@@ -1,146 +1,202 @@
 import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StyleSheet, View, Pressable, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { ScreenScrollView } from "@/components/ScreenScrollView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { getCommonScreenOptions } from "@/navigation/screenOptions";
-import { HeaderTitle } from "@/components/HeaderTitle";
-import { Charge, Client } from "@/types";
+import { RootStackParamList } from "@/navigation/MainTabNavigator";
 
-import DashboardScreen from "@/screens/DashboardScreen";
-import ChargesScreen from "@/screens/ChargesScreen";
-import ClientsScreen from "@/screens/ClientsScreen";
-import HistoryScreen from "@/screens/HistoryScreen";
-import ChargeFormScreen from "@/screens/ChargeFormScreen";
-import ClientFormScreen from "@/screens/ClientFormScreen";
-import ChargeDetailScreen from "@/screens/ChargeDetailScreen";
-import ClientDetailScreen from "@/screens/ClientDetailScreen";
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export type RootStackParamList = {
-  MainTabs: undefined;
-  ChargeForm: { charge?: Charge; clientId?: string };
-  ClientForm: { client?: Client };
-  ChargeDetail: { chargeId: string };
-  ClientDetail: { clientId: string };
-};
-
-export type MainTabParamList = {
-  Dashboard: undefined;
-  Charges: undefined;
-  Clients: undefined;
-  History: undefined;
-};
-
-const Tab = createBottomTabNavigator<MainTabParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-function MainTabs() {
+export default function ProfileScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
 
+  const handleAccountSettings = () => {
+    Alert.alert("Configurações", "Funcionalidade em desenvolvimento");
+  };
+
+  const handleSubscription = () => {
+    Alert.alert("Assinatura", "Planos de assinatura em breve");
+  };
+
+  const handleHelp = () => {
+    Alert.alert("Ajuda", "Centro de ajuda em desenvolvimento");
+  };
+
+  const handleAbout = () => {
+    Alert.alert("Sobre", "Lastro Capital v1.0.0\n\nAplicativo de gestão de cobranças");
+  };
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: theme.primaryAccent,
-        tabBarInactiveTintColor: theme.tabIconDefault,
-        tabBarStyle: {
-          backgroundColor: theme.backgroundDefault,
-          borderTopColor: theme.cardBorder,
-        },
-        headerStyle: {
-          backgroundColor: theme.backgroundDefault,
-        },
-        headerTintColor: theme.text,
-        headerShadowVisible: false,
-      }}
-    >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarLabel: "Inicio",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={size} color={color} />
-          ),
-          headerTitle: () => <HeaderTitle title="Lastro Capital" />,
-        }}
-      />
-      <Tab.Screen
-        name="Charges"
-        component={ChargesScreen}
-        options={{
-          tabBarLabel: "Cobranças",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="file-text" size={size} color={color} />
-          ),
-          headerTitle: "Cobranças",
-        }}
-      />
-      <Tab.Screen
-        name="Clients"
-        component={ClientsScreen}
-        options={{
-          tabBarLabel: "Clientes",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="users" size={size} color={color} />
-          ),
-          headerTitle: "Clientes",
-        }}
-      />
-      <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{
-          tabBarLabel: "Historico",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="clock" size={size} color={color} />
-          ),
-          headerTitle: "Historico de Pagamentos",
-        }}
-      />
-    </Tab.Navigator>
+    <ThemedView style={styles.container}>
+      <ScreenScrollView contentContainerStyle={styles.content}>
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+          ]}
+        >
+          <View
+            style={[
+              styles.profileIcon,
+              { backgroundColor: theme.primaryAccent + "20" },
+            ]}
+          >
+            <Feather name="user" size={40} color={theme.primaryAccent} />
+          </View>
+          <ThemedText style={styles.profileName}>Minha Conta</ThemedText>
+          <ThemedText style={[styles.profileEmail, { color: theme.secondaryText }]}>
+            Gerencie sua conta e dados
+          </ThemedText>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
+            Conta
+          </ThemedText>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleAccountSettings}
+          >
+            <Feather name="settings" size={20} color={theme.primaryAccent} />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>Configurações da Conta</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                Perfil, senha e preferências
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleSubscription}
+          >
+            <Feather name="credit-card" size={20} color={theme.warning} />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>Assinatura</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                Planos e faturamento
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
+            Suporte
+          </ThemedText>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleHelp}
+          >
+            <Feather name="help-circle" size={20} color={theme.primaryAccent} />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>Ajuda e Suporte</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                Dúvidas e problemas
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleAbout}
+          >
+            <Feather name="info" size={20} color={theme.primaryAccent} />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>Sobre</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                Versão e informações
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+          </Pressable>
+        </View>
+      </ScreenScrollView>
+    </ThemedView>
   );
 }
 
-export default function MainStackNavigator() {
-  const { theme, isDark } = useTheme();
-
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        ...getCommonScreenOptions({ theme, isDark }),
-      }}
-    >
-      <Stack.Screen
-        name="MainTabs"
-        component={MainTabs}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="ChargeForm"
-        component={ChargeFormScreen}
-        options={({ route }) => ({
-          headerTitle: route.params?.charge ? "Editar Cobrança" : "Nova Cobrança",
-          presentation: "modal",
-        })}
-      />
-      <Stack.Screen
-        name="ClientForm"
-        component={ClientFormScreen}
-        options={({ route }) => ({
-          headerTitle: route.params?.client ? "Editar Cliente" : "Novo Cliente",
-          presentation: "modal",
-        })}
-      />
-      <Stack.Screen
-        name="ChargeDetail"
-        component={ChargeDetailScreen}
-        options={{ headerTitle: "Detalhes da Cobrança" }}
-      />
-      <Stack.Screen
-        name="ClientDetail"
-        component={ClientDetailScreen}
-        options={{ headerTitle: "Detalhes do Cliente" }}
-      />
-    </Stack.Navigator>
-  );
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: Spacing.lg,
+  },
+  profileCard: {
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  profileIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+  },
+  profileEmail: {
+    fontSize: 14,
+  },
+  section: {
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: Spacing.md,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.xs,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  menuContent: {
+    flex: 1,
+  },
+  menuLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: Spacing.xs,
+  },
+  menuDescription: {
+    fontSize: 12,
+  },
+});
