@@ -70,24 +70,8 @@ export default function ChargeDetailScreen() {
   }
 
   const handleQuitacaoDivida = () => {
-    Alert.alert(
-      "Quitação de Dívida",
-      "Deseja confirmar a quitação completa desta dívida? A data será registrada automaticamente.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar Quitação",
-          onPress: async () => {
-            try {
-              await markAsPaid(charge.id);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Erro ao marcar como pago:", error);
-            }
-          },
-        },
-      ]
-    );
+    console.log("DEBUG: handleQuitacaoDivida foi chamado", charge.id);
+    Alert.alert("Teste", "O botão foi clicado!");
   };
 
   const handleDelete = () => {
