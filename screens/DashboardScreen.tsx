@@ -129,7 +129,7 @@ export default function DashboardScreen() {
               Recebido (mes)
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.success }]}>
-              {formatCurrency(paidTotal)}
+              {formatCurrency(totalBorrowed)}
             </ThemedText>
           </View>
         </View>
