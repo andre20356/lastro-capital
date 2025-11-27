@@ -143,18 +143,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deleteCharge = useCallback((id: string) => {
-    setCharges((prev) => {
-      const updated = prev.filter((charge) => charge.id !== id);
-      setPayments((prevPayments) => {
-        const updatedPayments = prevPayments.filter((payment) => payment.chargeId !== id);
-        // Save to AsyncStorage
-        const appData: AppData = { clients, charges: updated, payments: updatedPayments };
-        saveData(appData);
-        return updatedPayments;
-      });
-      return updated;
-    });
-  }, [clients, saveData]);
+    // Atualizar charges
+    const updatedCharges = charges.filter((charge) => charge.id !== id);
+    setCharges(updatedCharges);
+
+    // Atualizar payments
+    const updatedPayments = payments.filter((payment) => payment.chargeId !== id);
+    setPayments(updatedPayments);
+
+    // Salvar em AsyncStorage
+    const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+    saveData(appData);
+  }, [charges, payments, clients, saveData]);
 
   const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
     // Encontrar a cobrança atual
