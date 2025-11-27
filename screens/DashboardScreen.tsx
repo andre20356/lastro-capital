@@ -34,15 +34,7 @@ export default function DashboardScreen() {
     getOverdueCharges,
     getUpcomingCharges,
     getClientById,
-    refreshData,
   } = useData();
-
-  // Refresh data quando a tela fica em foco
-  useFocusEffect(
-    useCallback(() => {
-      refreshData();
-    }, [refreshData])
-  );
 
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
