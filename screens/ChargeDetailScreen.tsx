@@ -221,8 +221,13 @@ export default function ChargeDetailScreen() {
                 Vencimento
               </ThemedText>
               <ThemedText style={styles.infoValue}>
-                {formatDate(charge.dueDate)}
+                {charge.nextInterestDueDate ? formatDate(charge.nextInterestDueDate) : formatDate(charge.dueDate)}
               </ThemedText>
+              {charge.nextInterestDueDate && (
+                <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText, marginTop: Spacing.xs }]}>
+                  Próx. Juros: {formatDate(charge.nextInterestDueDate)} | Original: {formatDate(charge.dueDate)}
+                </ThemedText>
+              )}
             </View>
           </View>
 

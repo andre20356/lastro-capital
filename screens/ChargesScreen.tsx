@@ -126,7 +126,7 @@ export default function ChargesScreen() {
               Vencimento
             </ThemedText>
             <ThemedText style={{ color: theme.secondaryText }}>
-              {formatDate(item.dueDate)}
+              {item.nextInterestDueDate ? formatDate(item.nextInterestDueDate) : formatDate(item.dueDate)}
             </ThemedText>
           </View>
         </View>
