@@ -205,6 +205,15 @@ export default function DashboardScreen() {
             upcomingCharges.map((charge) => {
               const client = getClientById(charge.clientId);
               const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+              
+              // Calculate delay fee if overdue
+              const dueDate = new Date(charge.dueDate);
+              const today = new Date();
+              const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+              const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
+                ? (charge.amount * charge.dailyDelayRate / 100) * daysOverdue 
+                : 0;
+              
               return (
                 <Pressable
                   key={charge.id}
@@ -224,6 +233,11 @@ export default function DashboardScreen() {
                     {monthlyInterest > 0 ? (
                       <ThemedText style={[styles.interestValue, { color: "#FFB400" }]}>
                         Juros: {formatCurrency(monthlyInterest)}
+                      </ThemedText>
+                    ) : null}
+                    {delayFee > 0 ? (
+                      <ThemedText style={[styles.delayFeeValue, { color: theme.error }]}>
+                        Taxa Atraso: {formatCurrency(delayFee)}
                       </ThemedText>
                     ) : null}
                   </View>
