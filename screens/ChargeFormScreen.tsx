@@ -349,6 +349,39 @@ export default function ChargeFormScreen() {
           </View>
         </View>
 
+        {(() => {
+          const parsedDate = parseDate(dueDate);
+          if (!parsedDate) return null;
+          const today = new Date();
+          const daysOverdue = Math.floor((today.getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysOverdue <= 0) return null;
+          
+          const amountNum = parseFloat(amount.replace(",", "."));
+          const dailyRateNum = parseFloat(dailyDelayRate.replace(",", "."));
+          
+          if (isNaN(amountNum) || isNaN(dailyRateNum) || dailyRateNum === 0) return null;
+          
+          const delayFeeValue = (amountNum * dailyRateNum / 100) * daysOverdue;
+          
+          return (
+            <View style={styles.field}>
+              <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+                Taxa de Atraso Atualizada (R$)
+              </ThemedText>
+              <View
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, justifyContent: "center", paddingVertical: Spacing.md },
+                ]}
+              >
+                <ThemedText style={[{ fontSize: 16, color: theme.error }]}>
+                  {`R$ ${delayFeeValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${daysOverdue} dias)`}
+                </ThemedText>
+              </View>
+            </View>
+          );
+        })()}
+
         <Pressable
           style={({ pressed }) => [
             styles.saveButton,
