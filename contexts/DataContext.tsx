@@ -141,7 +141,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const deleteCharge = useCallback(async (id: string) => {
+  const deleteCharge = useCallback((id: string) => {
     setCharges((prev) => prev.filter((charge) => charge.id !== id));
     setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
   }, []);

@@ -92,13 +92,11 @@ export default function ChargeDetailScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCharge(charge.id);
+          onPress: () => {
+            deleteCharge(charge.id);
+            setTimeout(() => {
               navigation.goBack();
-            } catch (error) {
-              Alert.alert("Erro", "Nao foi possivel excluir a cobrança");
-            }
+            }, 100);
           },
         },
       ]
