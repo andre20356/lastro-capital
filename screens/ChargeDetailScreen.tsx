@@ -74,10 +74,10 @@ export default function ChargeDetailScreen() {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar",
-          onPress: async () => {
+          onPress: () => {
             try {
-              await markAsPaid(charge.id);
-              navigation.goBack();
+              markAsPaid(charge.id);
+              setTimeout(() => navigation.goBack(), 300);
             } catch (error) {
               Alert.alert("Erro", "Nao foi possivel marcar como pago");
             }

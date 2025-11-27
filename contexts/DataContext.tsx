@@ -147,32 +147,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
-    return new Promise<void>((resolve, reject) => {
-      setCharges((prevCharges) => {
-        const charge = prevCharges.find((c) => c.id === chargeId);
-        if (!charge) {
-          reject(new Error("Cobrança não encontrada"));
-          return prevCharges;
-        }
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) throw new Error("Cobrança não encontrada");
 
-        const payment: Payment = {
-          id: generateId(),
-          chargeId,
-          clientId: charge.clientId,
-          amount: charge.amount,
-          paidAt: new Date().toISOString(),
-          notes,
-        };
+    const payment: Payment = {
+      id: generateId(),
+      chargeId,
+      clientId: charge.clientId,
+      amount: charge.amount,
+      paidAt: new Date().toISOString(),
+      notes,
+    };
 
-        setPayments((prev) => [...prev, payment]);
-        resolve();
-        
-        return prevCharges.map((c) => 
-          c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
-        );
-      });
-    });
-  }, []);
+    setPayments((prev) => [...prev, payment]);
+    setCharges((prev) =>
+      prev.map((c) => (c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c))
+    );
+  }, [charges]);
 
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),

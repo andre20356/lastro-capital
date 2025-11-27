@@ -90,10 +90,10 @@ export default function ClientDetailScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: async () => {
+          onPress: () => {
             try {
-              await deleteClient(client.id);
-              navigation.goBack();
+              deleteClient(client.id);
+              setTimeout(() => navigation.goBack(), 300);
             } catch (error) {
               Alert.alert("Erro", "Nao foi possivel excluir o cliente");
             }
