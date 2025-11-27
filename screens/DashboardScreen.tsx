@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -34,7 +34,15 @@ export default function DashboardScreen() {
     getOverdueCharges,
     getUpcomingCharges,
     getClientById,
+    refreshData,
   } = useData();
+
+  // Refresh data quando a tela fica em foco
+  useFocusEffect(
+    useCallback(() => {
+      refreshData();
+    }, [refreshData])
+  );
 
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
