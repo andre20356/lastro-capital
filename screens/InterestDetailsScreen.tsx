@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -18,7 +19,15 @@ function formatCurrency(value: number): string {
 export default function InterestDetailsScreen() {
   const { theme } = useTheme();
   const { insets } = useScreenInsets();
-  const { payments, charges } = useData();
+  const { payments, charges, refreshData } = useData();
+
+  // Atualizar dados quando a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      console.log("InterestDetailsScreen focus effect - recarregando dados");
+      refreshData();
+    }, [refreshData])
+  );
 
   // Get current month and year
   const today = new Date();
