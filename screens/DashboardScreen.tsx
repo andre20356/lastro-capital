@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -28,13 +28,23 @@ export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, insets } = useScreenInsets();
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   const {
     getPendingTotal,
     getPaidTotal,
     getOverdueCharges,
     getUpcomingCharges,
     getClientById,
+    charges,
+    payments,
   } = useData();
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
 
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
@@ -47,7 +57,6 @@ export default function DashboardScreen() {
   }, 0);
 
   // Calculate total interest to receive (from all charges)
-  const { charges } = useData();
   const totalInterestToReceive = charges
     .filter((c) => c.status === "pending" || c.status === "overdue")
     .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
@@ -66,7 +75,7 @@ export default function DashboardScreen() {
   });
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView key={`dashboard-${refreshKey}`} style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.cardsRow}>
           <View
