@@ -46,38 +46,10 @@ export default function ClientDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getClientById, getChargesByClient, deleteClient, toggleArchiveClient, payments } = useData();
+  const { getClientById, getChargesByClient, deleteClient, toggleArchiveClient } = useData();
 
   const client = getClientById(route.params.clientId);
   const charges = client ? getChargesByClient(client.id) : [];
-
-  // Função para verificar se há atraso real
-  const hasRealDelay = (charge: Charge): boolean => {
-    const today = new Date();
-    
-    // Verificar taxa de atraso pendente
-    const dueDate = new Date(charge.dueDate);
-    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
-      .reduce((sum, p) => sum + p.amount, 0);
-    
-    const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
-      ? charge.dailyDelayRate * daysOverdue 
-      : 0;
-    
-    const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
-    
-    // Verificar juros em atraso
-    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
-    const interestDaysOverdue = interestDueDate
-      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-    const hasInterestDelay = interestDaysOverdue > 0;
-    
-    return pendingDelayFee > 0 || hasInterestDelay;
-  };
 
   const pendingTotal = charges
     .filter((c) => c.status === "pending" || c.status === "overdue")
@@ -134,33 +106,23 @@ export default function ClientDetailScreen() {
     navigation.navigate("ArchiveClient", { clientId: client.id });
   };
 
-  const renderCharge = ({ item }: { item: Charge }) => {
-    const hasDelay = hasRealDelay(item);
-    
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.chargeCard,
-          { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
-        ]}
-        onPress={() => navigation.navigate("ChargeDetail", { chargeId: item.id })}
-      >
-        <View style={styles.chargeInfo}>
-          <ThemedText style={styles.chargeAmount}>{formatCurrency(item.amount)}</ThemedText>
-          {hasDelay ? (
-            <ThemedText style={[styles.chargeDate, { color: theme.secondaryText }]}>
-              Vence: {formatDate(item.nextInterestDueDate || item.dueDate)}
-            </ThemedText>
-          ) : (
-            <ThemedText style={[styles.chargeDate, { color: "#51CF66", fontWeight: "600" }]}>
-              Em Dia
-            </ThemedText>
-          )}
-        </View>
-        <StatusBadge status={item.status} theme={theme} />
-      </Pressable>
-    );
-  };
+  const renderCharge = ({ item }: { item: Charge }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.chargeCard,
+        { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
+      ]}
+      onPress={() => navigation.navigate("ChargeDetail", { chargeId: item.id })}
+    >
+      <View style={styles.chargeInfo}>
+        <ThemedText style={styles.chargeAmount}>{formatCurrency(item.amount)}</ThemedText>
+        <ThemedText style={[styles.chargeDate, { color: theme.secondaryText }]}>
+          Vence: {formatDate(item.nextInterestDueDate || item.dueDate)}
+        </ThemedText>
+      </View>
+      <StatusBadge status={item.status} theme={theme} />
+    </Pressable>
+  );
 
   const ListHeader = () => (
     <>
