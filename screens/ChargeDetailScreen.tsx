@@ -225,7 +225,7 @@ export default function ChargeDetailScreen() {
   const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView key={`charge-detail-${renderKey}`} style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.content}>
         <View
           style={[
