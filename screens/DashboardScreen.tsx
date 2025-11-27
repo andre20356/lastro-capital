@@ -169,7 +169,7 @@ export default function DashboardScreen() {
               Juros a Receber
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
-              {formatCurrency(interestPaidThisMonth)}
+              {formatCurrency(totalInterestToReceiveMonth)}
             </ThemedText>
           </Pressable>
         </View>
