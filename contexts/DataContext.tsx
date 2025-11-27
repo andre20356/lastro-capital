@@ -120,7 +120,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const deleteClient = useCallback(async (id: string) => {
+  const deleteClient = useCallback((id: string) => {
     setClients((prev) => prev.filter((client) => client.id !== id));
     setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
   }, []);

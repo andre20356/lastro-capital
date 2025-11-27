@@ -92,7 +92,7 @@ export default function ClientDetailScreen() {
           style: "destructive",
           onPress: () => {
             deleteClient(client.id);
-            navigation.goBack();
+            setTimeout(() => navigation.goBack(), 50);
           },
         },
       ]
