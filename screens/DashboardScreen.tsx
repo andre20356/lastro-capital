@@ -49,8 +49,10 @@ export default function DashboardScreen() {
 
   // Chart statistics calculations
   const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
-  const paidCharges = charges.filter((c) => c.status === "paid");
-  const totalEarned = paidCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  
+  // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
+  const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
+  
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   const totalInterestToReceive = charges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
 
