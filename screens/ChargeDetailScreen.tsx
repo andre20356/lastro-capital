@@ -77,8 +77,8 @@ export default function ChargeDetailScreen() {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar",
-          onPress: () => {
-            markAsPaid(charge.id);
+          onPress: async () => {
+            await markAsPaid(charge.id);
             navigation.goBack();
           },
         },
@@ -112,8 +112,8 @@ export default function ChargeDetailScreen() {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar",
-          onPress: () => {
-            payMonthlyInterest(charge.id);
+          onPress: async () => {
+            await payMonthlyInterest(charge.id);
             navigation.goBack();
           },
         },

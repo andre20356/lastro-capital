@@ -186,7 +186,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await saveData(appData);
   }, [charges, payments, clients, saveData]);
 
-  const payMonthlyInterest = useCallback((chargeId: string) => {
+  const payMonthlyInterest = useCallback(async (chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
     const nextDueDate = new Date();
     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
@@ -198,22 +198,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const interestAmount = charge.accumulatedInterest || 0;
     
-    setCharges((prev) => {
-      const updated = prev.map((c) => 
-        c.id === chargeId 
-          ? { 
-              ...c, 
-              lastInterestPaymentDate: today,
-              nextInterestDueDate: nextDueDateStr,
-              accumulatedInterest: 0
-            }
-          : c
-      );
+    const updated = charges.map((c) => 
+      c.id === chargeId 
+        ? { 
+            ...c, 
+            lastInterestPaymentDate: today,
+            nextInterestDueDate: nextDueDateStr,
+            accumulatedInterest: 0
+          }
+        : c
+    );
+    
+    setCharges(updated);
 
-      // Criar pagamento dos juros (se houver juros para pagar)
-      if (interestAmount > 0) {
-        const interestPayment: Payment = {
-          id: generateId(),
+    // Criar pagamento dos juros (se houver juros para pagar)
+    if (interestAmount > 0) {
+      const interestPayment: Payment = {
+        id: generateId(),
           chargeId,
           clientId: charge.clientId,
           amount: interestAmount,
