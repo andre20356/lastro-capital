@@ -36,7 +36,6 @@ export default function DashboardScreen() {
     getPendingTotal,
     getPaidTotal,
     getInterestPaidThisMonth,
-    getTotalDelayFees,
     getOverdueCharges,
     getUpcomingCharges,
     getClientById,
@@ -57,7 +56,6 @@ export default function DashboardScreen() {
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
   const interestPaidThisMonth = getInterestPaidThisMonth();
-  const totalDelayFees = getTotalDelayFees();
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
 
@@ -193,25 +191,6 @@ export default function DashboardScreen() {
               {formatCurrency(totalInterestToReceiveMonth)}
             </ThemedText>
           </Pressable>
-        </View>
-
-        <View style={styles.cardsRow}>
-          <View
-            style={[
-              styles.summaryCard,
-              { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
-            ]}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: "#FF922B" + "20" }]}>
-              <Feather name="alert-circle" size={20} color="#FF922B" />
-            </View>
-            <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
-              Taxa de Atraso
-            </ThemedText>
-            <ThemedText style={[styles.cardValue, { color: "#FF922B" }]}>
-              {formatCurrency(totalDelayFees)}
-            </ThemedText>
-          </View>
         </View>
 
         <View
