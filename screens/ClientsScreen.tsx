@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { StyleSheet, View, Pressable, FlatList, TextInput } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -25,8 +25,14 @@ export default function ClientsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight } = useScreenInsets();
-  const { clients, getChargesByClient } = useData();
+  const { clients, getChargesByClient, refreshData } = useData();
   const [searchQuery, setSearchQuery] = useState("");
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshData();
+    }, [refreshData])
+  );
 
   const filteredClients = useMemo(() => {
     let result = [...clients];
