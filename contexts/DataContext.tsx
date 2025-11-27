@@ -123,10 +123,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const deleteClient = useCallback((id: string) => {
-    setClients((prev) => prev.filter((client) => client.id !== id));
-    setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
-  }, []);
+  const deleteClient = useCallback(async (id: string) => {
+    // Filtrar clientes e cobranças relacionadas
+    const updatedClients = clients.filter((client) => client.id !== id);
+    const updatedCharges = charges.filter((charge) => charge.clientId !== id);
+    const updatedPayments = payments.filter((payment) => {
+      // Remover pagamentos relacionados às cobranças do cliente
+      const chargesForClient = charges.filter((c) => c.clientId === id);
+      return !chargesForClient.some((c) => c.id === payment.chargeId);
+    });
+
+    // Salvar em AsyncStorage PRIMEIRO
+    const appData: AppData = { clients: updatedClients, charges: updatedCharges, payments: updatedPayments };
+    await saveData(appData);
+
+    // Depois atualizar state
+    setClients(updatedClients);
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+  }, [clients, charges, payments, saveData]);
 
   const toggleArchiveClient = useCallback(async (id: string) => {
     setClients((prev) =>

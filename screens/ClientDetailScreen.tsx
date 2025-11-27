@@ -93,9 +93,16 @@ export default function ClientDetailScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => {
-            deleteClient(client.id);
-            setTimeout(() => navigation.goBack(), 150);
+          onPress: async () => {
+            try {
+              console.log("Excluindo cliente:", client.id);
+              await deleteClient(client.id);
+              console.log("Cliente excluído com sucesso!");
+              setTimeout(() => navigation.goBack(), 500);
+            } catch (error) {
+              console.error("Erro ao excluir cliente:", error);
+              alert("Erro ao excluir cliente");
+            }
           },
         },
       ]
