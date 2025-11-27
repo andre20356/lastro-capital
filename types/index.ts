@@ -26,6 +26,8 @@ export interface Charge {
   loanPercentage?: number;
   dailyDelayRate?: number;
   accumulatedInterest?: number;
+  lastInterestPaymentDate?: string;
+  nextInterestDueDate?: string;
   createdAt: string;
 }
 

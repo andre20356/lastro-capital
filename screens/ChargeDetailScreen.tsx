@@ -48,7 +48,7 @@ export default function ChargeDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getChargeById, getClientById, markAsPaid, deleteCharge } = useData();
+  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest } = useData();
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
@@ -94,6 +94,25 @@ export default function ChargeDetailScreen() {
           style: "destructive",
           onPress: () => {
             deleteCharge(charge.id);
+            setTimeout(() => {
+              navigation.goBack();
+            }, 100);
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePayMonthlyInterest = () => {
+    Alert.alert(
+      "Confirmar pagamento de juros",
+      "Deseja registrar o pagamento dos juros deste mês?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () => {
+            payMonthlyInterest(charge.id);
             setTimeout(() => {
               navigation.goBack();
             }, 100);
@@ -166,19 +185,62 @@ export default function ChargeDetailScreen() {
               </ThemedText>
             </View>
           </View>
+
+          {charge.lastInterestPaymentDate ? (
+            <View style={styles.infoRow}>
+              <Feather name="check-circle" size={18} color={theme.success} />
+              <View style={styles.infoContent}>
+                <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText }]}>
+                  Juros Pagos em
+                </ThemedText>
+                <ThemedText style={[styles.infoValue, { color: theme.success }]}>
+                  {formatDate(charge.lastInterestPaymentDate)}
+                </ThemedText>
+              </View>
+            </View>
+          ) : null}
+
+          {charge.nextInterestDueDate ? (
+            <View style={styles.infoRow}>
+              <Feather name="calendar" size={18} color={theme.warning} />
+              <View style={styles.infoContent}>
+                <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText }]}>
+                  Próximo Vencimento Juros
+                </ThemedText>
+                <ThemedText style={[styles.infoValue, { color: theme.warning }]}>
+                  {formatDate(charge.nextInterestDueDate)}
+                </ThemedText>
+              </View>
+            </View>
+          ) : null}
         </View>
 
         {charge.status !== "paid" ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryButton,
-              { backgroundColor: theme.success, opacity: pressed ? 0.9 : 1 },
-            ]}
-            onPress={handleMarkAsPaid}
-          >
-            <Feather name="check-circle" size={20} color="#fff" />
-            <ThemedText style={styles.buttonText}>Marcar como Pago</ThemedText>
-          </Pressable>
+          <>
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                { backgroundColor: theme.success, opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={handleMarkAsPaid}
+            >
+              <Feather name="check-circle" size={20} color="#fff" />
+              <ThemedText style={styles.buttonText}>Marcar como Pago</ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                { borderColor: "#FFB400", opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={handlePayMonthlyInterest}
+            >
+              <Feather name="dollar-sign" size={18} color="#FFB400" />
+              <ThemedText style={[styles.secondaryButtonText, { color: "#FFB400" }]}>
+                Pagar Juros do Mês
+              </ThemedText>
+            </Pressable>
+          </>
         ) : null}
 
         <Pressable

@@ -16,6 +16,7 @@ interface DataContextType {
   updateCharge: (id: string, charge: Partial<Charge>) => Promise<void>;
   deleteCharge: (id: string) => Promise<void>;
   markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
+  payMonthlyInterest: (chargeId: string) => void;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];
@@ -165,6 +166,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, [charges]);
 
+  const payMonthlyInterest = useCallback((chargeId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextDueDate = new Date();
+    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    const nextDueDateStr = nextDueDate.toISOString().split('T')[0];
+    
+    setCharges((prev) =>
+      prev.map((c) => 
+        c.id === chargeId 
+          ? { 
+              ...c, 
+              lastInterestPaymentDate: today,
+              nextInterestDueDate: nextDueDateStr,
+              accumulatedInterest: 0
+            }
+          : c
+      )
+    );
+  }, []);
+
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
     [clients]
@@ -232,6 +253,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updateCharge,
         deleteCharge,
         markAsPaid,
+        payMonthlyInterest,
         getClientById,
         getChargeById,
         getChargesByClient,
