@@ -123,13 +123,13 @@ export default function DashboardScreen() {
             ]}
             onPress={() => navigation.navigate("CashReport")}
           >
-            <View style={[styles.iconCircle, { backgroundColor: theme.success + "20" }]}>
-              <Feather name="check-circle" size={20} color={theme.success} />
+            <View style={[styles.iconCircle, { backgroundColor: "#FF6B6B" + "20" }]}>
+              <Feather name="check-circle" size={20} color="#FF6B6B" />
             </View>
             <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
               Total Emprestado
             </ThemedText>
-            <ThemedText style={[styles.cardValue, { color: theme.success }]}>
+            <ThemedText style={[styles.cardValue, { color: "#FF6B6B" }]}>
               {formatCurrency(totalBorrowed)}
             </ThemedText>
           </Pressable>
