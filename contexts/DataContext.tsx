@@ -44,7 +44,6 @@ function checkOverdue(charges: Charge[]): Charge[] {
       if (dueDate < today) {
         // Calcular juros acumulados por dias de atraso
         const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        const dailyRate = (charge.dailyDelayRate || 0) / 100;
         const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
         const dailyInterestAmount = monthlyInterestAmount / 30;
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
