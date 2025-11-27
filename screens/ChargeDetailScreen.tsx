@@ -95,8 +95,8 @@ export default function ChargeDetailScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => {
-            deleteCharge(charge.id);
+          onPress: async () => {
+            await deleteCharge(charge.id);
             navigation.goBack();
           },
         },

@@ -142,18 +142,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const deleteCharge = useCallback((id: string) => {
-    // Atualizar charges
+  const deleteCharge = useCallback(async (id: string) => {
+    // Filtrar dados
     const updatedCharges = charges.filter((charge) => charge.id !== id);
-    setCharges(updatedCharges);
-
-    // Atualizar payments
     const updatedPayments = payments.filter((payment) => payment.chargeId !== id);
-    setPayments(updatedPayments);
 
-    // Salvar em AsyncStorage
+    // Salvar em AsyncStorage PRIMEIRO
     const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
-    saveData(appData);
+    await saveData(appData);
+
+    // Depois atualizar state
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
   }, [charges, payments, clients, saveData]);
 
   const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
