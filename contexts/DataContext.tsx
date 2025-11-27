@@ -25,6 +25,7 @@ interface DataContextType {
   getPendingTotal: () => number;
   getPaidTotal: () => number;
   getInterestPaidThisMonth: () => number;
+  getTotalDelayFees: () => number;
   getOverdueCharges: () => Charge[];
   getUpcomingCharges: (days: number) => Charge[];
   refreshData: () => Promise<void>;
@@ -371,6 +372,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return result;
   }, [payments]);
 
+  const getTotalDelayFees = useCallback(() => {
+    const today = new Date();
+    const totalDelayFees = charges
+      .filter((c) => c.status === "pending" || c.status === "overdue")
+      .reduce((sum, c) => {
+        const dueDate = new Date(c.dueDate);
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+          ? c.dailyDelayRate * daysOverdue 
+          : 0;
+        return sum + delayFee;
+      }, 0);
+    
+    return totalDelayFees;
+  }, [charges]);
+
   const getOverdueCharges = useCallback(() => {
     return charges.filter((c) => c.status === "overdue");
   }, [charges]);
@@ -417,6 +434,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getPendingTotal,
         getPaidTotal,
         getInterestPaidThisMonth,
+        getTotalDelayFees,
         getOverdueCharges,
         getUpcomingCharges,
         refreshData,
