@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { StyleSheet, View, Pressable, Alert } from "react-native";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -61,7 +61,7 @@ export default function ChargeDetailScreen() {
 
   // Recarregar dados quando a tela ganha foco
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       refreshData();
     }, [refreshData])
   );
@@ -175,7 +175,7 @@ export default function ChargeDetailScreen() {
   };
 
   // Usar useMemo para recalcular todos os valores quando renderKey ou payments mudam
-  const calculations = React.useMemo(() => {
+  const calculations = useMemo(() => {
     const dueDate = new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
