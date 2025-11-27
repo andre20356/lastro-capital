@@ -164,7 +164,6 @@ export default function ChargeDetailScreen() {
   // Mostrar apenas a taxa de atraso ainda não paga
   const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
   const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + pendingDelayFee;
-  const shouldShowTotalDebt = daysOverdue > 30;
 
   // Calculate interest delay (atraso nos juros)
   const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
@@ -176,6 +175,9 @@ export default function ChargeDetailScreen() {
     : 0;
   const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
   const hasInterestDelay = interestDaysOverdue > 0;
+  
+  // Mostrar alerta apenas se tiver taxa de atraso pendente OU juros em atraso
+  const shouldShowTotalDebt = pendingDelayFee > 0 || hasInterestDelay;
 
   return (
     <ThemedView style={styles.container}>
