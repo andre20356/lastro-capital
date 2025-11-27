@@ -117,7 +117,7 @@ export default function ClientDetailScreen() {
       <View style={styles.chargeInfo}>
         <ThemedText style={styles.chargeAmount}>{formatCurrency(item.amount)}</ThemedText>
         <ThemedText style={[styles.chargeDate, { color: theme.secondaryText }]}>
-          Vence: {formatDate(item.dueDate)}
+          Vence: {formatDate(item.nextInterestDueDate || item.dueDate)}
         </ThemedText>
       </View>
       <StatusBadge status={item.status} theme={theme} />
