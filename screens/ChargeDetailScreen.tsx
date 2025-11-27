@@ -373,61 +373,6 @@ export default function ChargeDetailScreen() {
             </View>
           ) : null}
 
-          {charge.accumulatedInterest && charge.accumulatedInterest > 0 ? (
-            <View
-              style={[
-                styles.interestCard,
-                { 
-                  backgroundColor: hasInterestDelay ? theme.error + "15" : theme.warning + "15",
-                  borderColor: hasInterestDelay ? theme.error : theme.warning,
-                },
-              ]}
-            >
-              <View style={styles.debtHeader}>
-                <Feather name="percent" size={20} color={hasInterestDelay ? theme.error : theme.warning} />
-                <ThemedText style={[styles.debtTitle, { color: hasInterestDelay ? theme.error : theme.warning }]}>
-                  {hasInterestDelay ? "Juros em Atraso" : "Juros do Mês"}
-                </ThemedText>
-              </View>
-              <ThemedText style={[styles.debtValue, { color: hasInterestDelay ? theme.error : theme.warning }]}>
-                {formatCurrency(totalInterestToPay)}
-              </ThemedText>
-              {hasInterestDelay && (
-                <View style={styles.debtBreakdown}>
-                  <View style={styles.debtItem}>
-                    <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
-                      Juros Acumulados
-                    </ThemedText>
-                    <ThemedText style={[styles.debtItemValue, { color: "#FFB400" }]}>
-                      {formatCurrency(charge.accumulatedInterest || 0)}
-                    </ThemedText>
-                  </View>
-                  <View style={styles.debtItem}>
-                    <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
-                      Parcelas em Atraso
-                    </ThemedText>
-                    <View>
-                      <ThemedText style={[styles.debtItemValue, { color: theme.error, fontWeight: "700" }]}>
-                        {Math.ceil(interestDaysOverdue / 30)}
-                      </ThemedText>
-                      <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText, marginTop: 2 }]}>
-                        ({interestDaysOverdue} dias)
-                      </ThemedText>
-                    </View>
-                  </View>
-                  <View style={styles.debtItem}>
-                    <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
-                      Taxa de Atraso
-                    </ThemedText>
-                    <ThemedText style={[styles.debtItemValue, { color: theme.error }]}>
-                      {formatCurrency(interestDelayFee)}
-                    </ThemedText>
-                  </View>
-                </View>
-              )}
-            </View>
-          ) : null}
-
           {/* Taxas de Atraso Pagas */}
           {payments.filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso").length > 0 ? (
             <View
