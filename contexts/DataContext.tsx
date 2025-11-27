@@ -16,7 +16,7 @@ interface DataContextType {
   updateCharge: (id: string, charge: Partial<Charge>) => Promise<void>;
   deleteCharge: (id: string) => Promise<void>;
   markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
-  payMonthlyInterest: (chargeId: string) => void;
+  payMonthlyInterest: (chargeId: string) => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];

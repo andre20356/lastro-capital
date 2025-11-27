@@ -78,8 +78,12 @@ export default function ChargeDetailScreen() {
         {
           text: "Confirmar Quitação",
           onPress: async () => {
-            await markAsPaid(charge.id);
-            navigation.goBack();
+            try {
+              await markAsPaid(charge.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Erro ao marcar como pago:", error);
+            }
           },
         },
       ]
@@ -96,8 +100,12 @@ export default function ChargeDetailScreen() {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
-            await deleteCharge(charge.id);
-            navigation.goBack();
+            try {
+              await deleteCharge(charge.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Erro ao excluir cobrança:", error);
+            }
           },
         },
       ]
@@ -113,8 +121,12 @@ export default function ChargeDetailScreen() {
         {
           text: "Confirmar",
           onPress: async () => {
-            await payMonthlyInterest(charge.id);
-            navigation.goBack();
+            try {
+              await payMonthlyInterest(charge.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Erro ao pagar juros:", error);
+            }
           },
         },
       ]
