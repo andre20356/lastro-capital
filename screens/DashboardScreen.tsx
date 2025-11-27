@@ -56,9 +56,8 @@ export default function DashboardScreen() {
     return sum + charge.amount + (charge.delayFee || 0);
   }, 0);
 
-  // Calculate total interest to receive (from all charges)
+  // Calculate total interest to receive (from all charges - all clients)
   const totalInterestToReceive = charges
-    .filter((c) => c.status === "pending" || c.status === "overdue")
     .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
 
   // Generate chart data - sample of past 6 months
