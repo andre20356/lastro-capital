@@ -173,19 +173,25 @@ export default function ChargeDetailScreen() {
   const today = new Date();
   const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Calcular número de parcelas em atraso
-  const numberOfOverdueInstallments = Math.ceil(daysOverdue / 30);
+  // Verificar se já há pagamento de taxa de atraso
+  const delayFeeAlreadyPaid = payments
+    .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+    .reduce((sum, p) => sum + p.amount, 0);
+  
+  // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
+  const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+  
+  // Calcular dias ainda pendentes de pagamento
+  const daysRemainingOverdue = Math.max(0, daysOverdue - daysPaidSoFar);
+  
+  // Calcular número de parcelas em atraso (baseado em dias restantes)
+  const numberOfOverdueInstallments = daysRemainingOverdue > 0 ? Math.ceil(daysRemainingOverdue / 30) : 0;
   
   // Calcular juros mensais por parcela
   const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
   
   // Juros acumulados = juros mensais * número de parcelas em atraso
-  const calculatedAccumulatedInterest = daysOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
-  
-  // Verificar se já há pagamento de taxa de atraso
-  const delayFeeAlreadyPaid = payments
-    .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
-    .reduce((sum, p) => sum + p.amount, 0);
+  const calculatedAccumulatedInterest = daysRemainingOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
   
   const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
     ? charge.dailyDelayRate * daysOverdue 
