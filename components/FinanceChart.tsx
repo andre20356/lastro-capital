@@ -9,6 +9,7 @@ interface ChartDataPoint {
   borrowed: number;
   earned: number;
   overdue: number;
+  clients: number;
 }
 
 interface FinanceChartProps {
@@ -33,6 +34,9 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
     maxValue = 1;
   }
 
+  // For clients count, use a separate scale (it's much smaller)
+  const maxClients = Math.max(...data.map((d) => d.clients), 1);
+
   // Generate points for polylines
   const generatePoints = (values: number[]) => {
     return values
@@ -47,6 +51,15 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
   const borrowedPoints = generatePoints(data.map((d) => d.borrowed));
   const earnedPoints = generatePoints(data.map((d) => d.earned));
   const overduePoints = generatePoints(data.map((d) => d.overdue));
+
+  // Generate points for clients - scale separately
+  const clientsPoints = data
+    .map((value, index) => {
+      const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
+      const y = chartHeight - padding - ((isNaN(value.clients) ? 0 : value.clients) / maxClients) * innerHeight;
+      return `${Math.round(x)},${Math.round(y)}`;
+    })
+    .join(" ");
 
   return (
     <View style={styles.container}>
@@ -67,6 +80,12 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           <View style={[styles.legendColor, { backgroundColor: "#FF922B" }]} />
           <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
             Negativados
+          </ThemedText>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#4C6EF5" }]} />
+          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
+            Clientes
           </ThemedText>
         </View>
       </View>
@@ -151,6 +170,16 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           strokeLinejoin="round"
         />
 
+        {/* Clients line */}
+        <Polyline
+          points={clientsPoints}
+          fill="none"
+          stroke="#4C6EF5"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
         {/* Data points for borrowed */}
         {data.map((_, index) => {
           const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
@@ -199,6 +228,24 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
               cy={Math.round(y)}
               r="3"
               fill="#FF922B"
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* Data points for clients */}
+        {data.map((_, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
+          const clients = isNaN(data[index].clients) ? 0 : data[index].clients;
+          const y = chartHeight - padding - (clients / maxClients) * innerHeight;
+          return (
+            <Circle
+              key={`clients-point-${index}`}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
+              r="3"
+              fill="#4C6EF5"
               stroke="#fff"
               strokeWidth="1.5"
             />
