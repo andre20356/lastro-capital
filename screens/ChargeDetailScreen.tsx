@@ -126,14 +126,23 @@ export default function ChargeDetailScreen() {
 
   const handlePayDelayFee = async () => {
     const daysOverdue = Math.floor((new Date().getTime() - new Date(charge.dueDate).getTime()) / (1000 * 60 * 60 * 24));
-    const delayFeeAmount = daysOverdue > 0 && charge.dailyDelayRate ? charge.dailyDelayRate * daysOverdue : 0;
     
-    if (delayFeeAmount <= 0) {
-      alert("Não há taxa de atraso a pagar");
+    const delayFeeAlreadyPaidLocal = payments
+      .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const delayFeeAmount = daysOverdue > 0 && charge.dailyDelayRate 
+      ? charge.dailyDelayRate * daysOverdue 
+      : 0;
+    
+    const pendingDelayFeeAmount = Math.max(0, delayFeeAmount - delayFeeAlreadyPaidLocal);
+    
+    if (pendingDelayFeeAmount <= 0) {
+      alert("Não há taxa de atraso em aberto");
       return;
     }
     
-    const confirmado = window.confirm(`Deseja pagar a taxa de atraso de R$ ${delayFeeAmount.toFixed(2)}?`);
+    const confirmado = window.confirm(`Deseja pagar a taxa de atraso de R$ ${pendingDelayFeeAmount.toFixed(2)}?`);
     if (confirmado) {
       try {
         console.log("Pagando taxa de atraso para:", charge.id);
