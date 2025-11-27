@@ -11,6 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { ChargeStatus } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeDetail">;
 type RouteType = RouteProp<RootStackParamList, "ChargeDetail">;
@@ -51,7 +52,7 @@ export default function ChargeDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest } = useData();
+  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, refreshData } = useData();
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
@@ -106,10 +107,12 @@ export default function ChargeDetailScreen() {
         console.log("Executando pagamento de juros para:", charge.id);
         await payMonthlyInterest(charge.id);
         console.log("Pagamento de juros realizado com sucesso!");
-        // Aguardar um pouco para garantir que tudo foi salvo
-        setTimeout(() => {
+        
+        // Aguardar e recarregar dados
+        setTimeout(async () => {
+          await refreshData();
           navigation.goBack();
-        }, 500);
+        }, 300);
       } catch (error) {
         console.error("Erro ao pagar juros:", error);
         alert("Erro ao processar pagamento de juros");
