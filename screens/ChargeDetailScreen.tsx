@@ -32,14 +32,18 @@ function formatDate(dateString: string): string {
   });
 }
 
-function StatusBadge({ status, theme }: { status: ChargeStatus; theme: any }) {
-  const config = {
-    pending: { bg: theme.warning + "20", text: theme.warning, label: "Pendente" },
-    paid: { bg: theme.success + "20", text: theme.success, label: "Pago" },
-    overdue: { bg: theme.error + "20", text: theme.error, label: "Vencido" },
-  };
+function StatusBadge({ status, theme, hasDelay }: { status: ChargeStatus; theme: any; hasDelay?: boolean }) {
+  let config;
+  
+  if (status === "paid") {
+    config = { bg: theme.success + "20", text: theme.success, label: "Pago" };
+  } else if (hasDelay) {
+    config = { bg: theme.error + "20", text: theme.error, label: "Vencido" };
+  } else {
+    config = { bg: theme.success + "20", text: theme.success, label: "Em Dia" };
+  }
 
-  const { bg, text, label } = config[status];
+  const { bg, text, label } = config;
 
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
@@ -178,6 +182,9 @@ export default function ChargeDetailScreen() {
   
   // Mostrar alerta apenas se tiver taxa de atraso pendente OU juros em atraso
   const shouldShowTotalDebt = pendingDelayFee > 0 || hasInterestDelay;
+  
+  // Verificar se tem algum atraso (juros ou taxa)
+  const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
 
   return (
     <ThemedView style={styles.container}>
@@ -190,7 +197,7 @@ export default function ChargeDetailScreen() {
         >
           <View style={styles.header}>
             <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
-            <StatusBadge status={charge.status} theme={theme} />
+            <StatusBadge status={charge.status} theme={theme} hasDelay={hasAnyDelay} />
           </View>
 
           <View style={styles.divider} />
