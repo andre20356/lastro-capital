@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View, Pressable, Alert } from "react-native";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -57,6 +57,7 @@ export default function ChargeDetailScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Recarregar dados quando a tela ganha foco
   useFocusEffect(
@@ -67,6 +68,9 @@ export default function ChargeDetailScreen() {
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
+  
+  // Usar refreshCounter para forçar re-render quando payments muda
+  React.useMemo(() => refreshCounter, [refreshCounter, payments]);
 
   if (!charge) {
     return (
@@ -122,6 +126,7 @@ export default function ChargeDetailScreen() {
         
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
+        setRefreshCounter(prev => prev + 1);
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
@@ -159,6 +164,7 @@ export default function ChargeDetailScreen() {
         
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
+        setRefreshCounter(prev => prev + 1);
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
