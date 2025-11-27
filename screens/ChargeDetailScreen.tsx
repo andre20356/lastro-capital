@@ -131,6 +131,17 @@ export default function ChargeDetailScreen() {
   const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + delayFee;
   const shouldShowTotalDebt = daysOverdue > 30;
 
+  // Calculate interest delay (atraso nos juros)
+  const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
+  const interestDaysOverdue = interestDueDate
+    ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const interestDelayFee = interestDaysOverdue > 0 && charge.dailyDelayRate && charge.accumulatedInterest
+    ? charge.dailyDelayRate * interestDaysOverdue
+    : 0;
+  const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
+  const hasInterestDelay = interestDaysOverdue > 0;
+
   return (
     <ThemedView style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.content}>
@@ -265,6 +276,48 @@ export default function ChargeDetailScreen() {
                   {formatDate(charge.nextInterestDueDate)}
                 </ThemedText>
               </View>
+            </View>
+          ) : null}
+
+          {charge.accumulatedInterest && charge.accumulatedInterest > 0 ? (
+            <View
+              style={[
+                styles.interestCard,
+                { 
+                  backgroundColor: hasInterestDelay ? theme.error + "15" : theme.warning + "15",
+                  borderColor: hasInterestDelay ? theme.error : theme.warning,
+                },
+              ]}
+            >
+              <View style={styles.debtHeader}>
+                <Feather name="percent" size={20} color={hasInterestDelay ? theme.error : theme.warning} />
+                <ThemedText style={[styles.debtTitle, { color: hasInterestDelay ? theme.error : theme.warning }]}>
+                  {hasInterestDelay ? "Juros em Atraso" : "Juros do Mês"}
+                </ThemedText>
+              </View>
+              <ThemedText style={[styles.debtValue, { color: hasInterestDelay ? theme.error : theme.warning }]}>
+                {formatCurrency(totalInterestToPay)}
+              </ThemedText>
+              {hasInterestDelay && (
+                <View style={styles.debtBreakdown}>
+                  <View style={styles.debtItem}>
+                    <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                      Juros Acumulados
+                    </ThemedText>
+                    <ThemedText style={[styles.debtItemValue, { color: "#FFB400" }]}>
+                      {formatCurrency(charge.accumulatedInterest || 0)}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.debtItem}>
+                    <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                      Taxa de Atraso ({interestDaysOverdue} dias)
+                    </ThemedText>
+                    <ThemedText style={[styles.debtItemValue, { color: theme.error }]}>
+                      {formatCurrency(interestDelayFee)}
+                    </ThemedText>
+                  </View>
+                </View>
+              )}
             </View>
           ) : null}
         </View>
