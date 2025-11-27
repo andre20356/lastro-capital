@@ -52,7 +52,7 @@ export default function ChargeDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, refreshData } = useData();
+  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData } = useData();
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
@@ -108,18 +108,41 @@ export default function ChargeDetailScreen() {
         await payMonthlyInterest(charge.id);
         console.log("Pagamento de juros realizado com sucesso!");
         
-        // Aguardar sincronização completa
         await new Promise(resolve => setTimeout(resolve, 800));
-        
-        console.log("Recarregando dados após pagamento de juros...");
         await refreshData();
-        
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log("Dados recarregados, voltando ao dashboard...");
         navigation.goBack();
       } catch (error) {
         console.error("Erro ao pagar juros:", error);
         alert("Erro ao processar pagamento de juros");
+      }
+    }
+  };
+
+  const handlePayDelayFee = async () => {
+    const daysOverdue = Math.floor((new Date().getTime() - new Date(charge.dueDate).getTime()) / (1000 * 60 * 60 * 24));
+    const delayFeeAmount = daysOverdue > 0 && charge.dailyDelayRate ? charge.dailyDelayRate * daysOverdue : 0;
+    
+    if (delayFeeAmount <= 0) {
+      alert("Não há taxa de atraso a pagar");
+      return;
+    }
+    
+    const confirmado = window.confirm(`Deseja pagar a taxa de atraso de R$ ${delayFeeAmount.toFixed(2)}?`);
+    if (confirmado) {
+      try {
+        console.log("Pagando taxa de atraso para:", charge.id);
+        await payDelayFee(charge.id);
+        console.log("Taxa de atraso paga com sucesso!");
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await refreshData();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        navigation.goBack();
+      } catch (error) {
+        console.error("Erro ao pagar taxa de atraso:", error);
+        alert("Erro ao processar pagamento");
       }
     }
   };
@@ -352,6 +375,19 @@ export default function ChargeDetailScreen() {
             </Pressable>
           </>
         ) : null}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            { borderColor: "#FF922B", opacity: pressed ? 0.8 : 1 },
+          ]}
+          onPress={handlePayDelayFee}
+        >
+          <Feather name="alert-circle" size={18} color="#FF922B" />
+          <ThemedText style={[styles.secondaryButtonText, { color: "#FF922B" }]}>
+            Pagar Taxa de Atraso
+          </ThemedText>
+        </Pressable>
 
         <Pressable
           style={({ pressed }) => [

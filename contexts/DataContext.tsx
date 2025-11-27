@@ -18,6 +18,7 @@ interface DataContextType {
   deleteCharge: (id: string) => Promise<void>;
   markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
   payMonthlyInterest: (chargeId: string) => Promise<void>;
+  payDelayFee: (chargeId: string) => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];
@@ -291,6 +292,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [charges, payments, clients, saveData]);
 
+  const payDelayFee = useCallback(async (chargeId: string) => {
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) return;
+
+    const dueDate = new Date(charge.dueDate);
+    const today = new Date();
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const delayFeeAmount = daysOverdue > 0 && charge.dailyDelayRate 
+      ? charge.dailyDelayRate * daysOverdue 
+      : 0;
+
+    if (delayFeeAmount > 0) {
+      const delayFeePayment: Payment = {
+        id: generateId(),
+        chargeId,
+        clientId: charge.clientId,
+        amount: delayFeeAmount,
+        paidAt: new Date().toISOString(),
+        notes: "Pagamento de taxa de atraso",
+      };
+
+      const updatedPayments = [...payments, delayFeePayment];
+      const appData: AppData = { clients, charges, payments: updatedPayments };
+      await saveData(appData);
+      setPayments(updatedPayments);
+      console.log("Taxa de atraso paga:", delayFeePayment);
+    }
+  }, [charges, payments, clients, saveData]);
+
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
     [clients]
@@ -380,6 +410,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteCharge,
         markAsPaid,
         payMonthlyInterest,
+        payDelayFee,
         getClientById,
         getChargeById,
         getChargesByClient,
