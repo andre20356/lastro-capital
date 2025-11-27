@@ -60,13 +60,20 @@ export default function DashboardScreen() {
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
 
-  // Calculate total interest to receive this month (accumulated interest from pending charges)
+  // Calculate total interest to receive this month (accumulated interest + delay fees from all pending charges)
+  const today = new Date();
   const totalInterestToReceiveMonth = charges
     .filter(c => c.status === "pending")
-    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+    .reduce((sum, c) => {
+      const dueDate = new Date(c.dueDate);
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+        ? c.dailyDelayRate * daysOverdue 
+        : 0;
+      return sum + (c.accumulatedInterest || 0) + delayFee;
+    }, 0);
 
   // Generate chart data - using actual data instead of random
-  const today = new Date();
   const chartData = Array.from({ length: 6 }, (_, i) => {
     const date = new Date(today);
     date.setMonth(date.getMonth() - (5 - i));
