@@ -75,8 +75,12 @@ export default function ChargeDetailScreen() {
         {
           text: "Confirmar",
           onPress: async () => {
-            await markAsPaid(charge.id);
-            navigation.goBack();
+            try {
+              await markAsPaid(charge.id);
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Erro", "Nao foi possivel marcar como pago");
+            }
           },
         },
       ]
@@ -93,8 +97,12 @@ export default function ChargeDetailScreen() {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
-            await deleteCharge(charge.id);
-            navigation.goBack();
+            try {
+              await deleteCharge(charge.id);
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Erro", "Nao foi possivel excluir a cobrança");
+            }
           },
         },
       ]

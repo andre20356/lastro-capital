@@ -91,8 +91,12 @@ export default function ClientDetailScreen() {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
-            await deleteClient(client.id);
-            navigation.goBack();
+            try {
+              await deleteClient(client.id);
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Erro", "Nao foi possivel excluir o cliente");
+            }
           },
         },
       ]
