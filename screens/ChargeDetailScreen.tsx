@@ -57,7 +57,7 @@ export default function ChargeDetailScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
-  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [renderKey, setRenderKey] = useState(0);
 
   // Recarregar dados quando a tela ganha foco
   useFocusEffect(
@@ -66,11 +66,13 @@ export default function ChargeDetailScreen() {
     }, [refreshData])
   );
 
+  // Monitorar mudanças em payments e forçar re-render
+  useEffect(() => {
+    setRenderKey(prev => prev + 1);
+  }, [payments]);
+
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
-  
-  // Usar refreshCounter para forçar re-render quando payments muda
-  React.useMemo(() => refreshCounter, [refreshCounter, payments]);
 
   if (!charge) {
     return (
@@ -126,7 +128,6 @@ export default function ChargeDetailScreen() {
         
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
-        setRefreshCounter(prev => prev + 1);
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
@@ -164,7 +165,6 @@ export default function ChargeDetailScreen() {
         
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
-        setRefreshCounter(prev => prev + 1);
         await new Promise(resolve => setTimeout(resolve, 500));
         console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
