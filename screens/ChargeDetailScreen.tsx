@@ -52,7 +52,7 @@ export default function ChargeDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData } = useData();
+  const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
@@ -344,6 +344,40 @@ export default function ChargeDetailScreen() {
                   </View>
                 </View>
               )}
+            </View>
+          ) : null}
+
+          {/* Taxas de Atraso Pagas */}
+          {payments.filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso").length > 0 ? (
+            <View
+              style={[
+                styles.interestCard,
+                { 
+                  backgroundColor: theme.success + "15",
+                  borderColor: theme.success,
+                },
+              ]}
+            >
+              <View style={styles.debtHeader}>
+                <Feather name="check-circle" size={20} color={theme.success} />
+                <ThemedText style={[styles.debtTitle, { color: theme.success }]}>
+                  Taxas de Atraso Pagas
+                </ThemedText>
+              </View>
+              {payments
+                .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+                .map((payment) => (
+                  <View key={payment.id} style={styles.debtBreakdown}>
+                    <View style={styles.debtItem}>
+                      <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                        {formatDate(payment.paidAt)}
+                      </ThemedText>
+                      <ThemedText style={[styles.debtItemValue, { color: theme.success }]}>
+                        {formatCurrency(payment.amount)}
+                      </ThemedText>
+                    </View>
+                  </View>
+                ))}
             </View>
           ) : null}
         </View>
