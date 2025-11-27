@@ -168,7 +168,7 @@ export default function DashboardScreen() {
               styles.alertCard,
               { backgroundColor: theme.error + "15", borderColor: theme.error + "30", opacity: pressed ? 0.8 : 1 },
             ]}
-            onPress={() => navigation.navigate("MainTabs")}
+            onPress={() => navigation.navigate("MainTabs", { screen: "Charges" })}
           >
             <Feather name="alert-circle" size={24} color={theme.error} />
             <View style={styles.alertContent}>
