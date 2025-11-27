@@ -23,18 +23,23 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
   const innerWidth = chartWidth - padding * 2;
   const innerHeight = chartHeight - padding * 2;
 
-  // Find max value for scaling
-  const maxValue = Math.max(
+  // Find max value for scaling, ensure it's not 0
+  let maxValue = Math.max(
     ...data.flatMap((d) => [d.borrowed, d.earned, d.overdue])
   );
+  
+  // If maxValue is 0 or NaN, set a default value
+  if (maxValue <= 0 || isNaN(maxValue)) {
+    maxValue = 1;
+  }
 
   // Generate points for polylines
   const generatePoints = (values: number[]) => {
     return values
       .map((value, index) => {
         const x = padding + (index / (values.length - 1 || 1)) * innerWidth;
-        const y = chartHeight - padding - (value / maxValue) * innerHeight;
-        return `${x},${y}`;
+        const y = chartHeight - padding - ((isNaN(value) ? 0 : value) / maxValue) * innerHeight;
+        return `${Math.round(x)},${Math.round(y)}`;
       })
       .join(" ");
   };
@@ -149,13 +154,13 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
         {/* Data points for borrowed */}
         {data.map((_, index) => {
           const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const y =
-            chartHeight - padding - (data[index].borrowed / maxValue) * innerHeight;
+          const borrowed = isNaN(data[index].borrowed) ? 0 : data[index].borrowed;
+          const y = chartHeight - padding - (borrowed / maxValue) * innerHeight;
           return (
             <Circle
               key={`borrowed-point-${index}`}
-              cx={x}
-              cy={y}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
               r="3"
               fill="#FF6B6B"
               stroke="#fff"
@@ -167,13 +172,13 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
         {/* Data points for earned */}
         {data.map((_, index) => {
           const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const y =
-            chartHeight - padding - (data[index].earned / maxValue) * innerHeight;
+          const earned = isNaN(data[index].earned) ? 0 : data[index].earned;
+          const y = chartHeight - padding - (earned / maxValue) * innerHeight;
           return (
             <Circle
               key={`earned-point-${index}`}
-              cx={x}
-              cy={y}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
               r="3"
               fill="#51CF66"
               stroke="#fff"
@@ -185,13 +190,13 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
         {/* Data points for overdue */}
         {data.map((_, index) => {
           const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const y =
-            chartHeight - padding - (data[index].overdue / maxValue) * innerHeight;
+          const overdue = isNaN(data[index].overdue) ? 0 : data[index].overdue;
+          const y = chartHeight - padding - (overdue / maxValue) * innerHeight;
           return (
             <Circle
               key={`overdue-point-${index}`}
-              cx={x}
-              cy={y}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
               r="3"
               fill="#FF922B"
               stroke="#fff"
