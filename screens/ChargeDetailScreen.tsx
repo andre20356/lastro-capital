@@ -76,9 +76,7 @@ export default function ChargeDetailScreen() {
           text: "Confirmar",
           onPress: () => {
             markAsPaid(charge.id);
-            setTimeout(() => {
-              navigation.goBack();
-            }, 200);
+            navigation.goBack();
           },
         },
       ]
@@ -96,9 +94,7 @@ export default function ChargeDetailScreen() {
           style: "destructive",
           onPress: () => {
             deleteCharge(charge.id);
-            setTimeout(() => {
-              navigation.goBack();
-            }, 200);
+            navigation.goBack();
           },
         },
       ]
