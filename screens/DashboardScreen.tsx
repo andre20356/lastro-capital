@@ -75,10 +75,10 @@ export default function DashboardScreen() {
 
   // Generate chart data - using actual data instead of random
   const chartData = Array.from({ length: 6 }, (_, i) => {
-    const date = new Date(today);
-    date.setMonth(date.getMonth() - (5 - i));
+    const dateForChart = new Date(today);
+    dateForChart.setMonth(dateForChart.getMonth() - (5 - i));
     return {
-      label: date.toLocaleDateString("pt-BR", { month: "short" }),
+      label: dateForChart.toLocaleDateString("pt-BR", { month: "short" }),
       borrowed: totalBorrowed,
       earned: totalEarned,
       overdue: totalOverdueInterest,
@@ -142,11 +142,12 @@ export default function DashboardScreen() {
             </ThemedText>
           </View>
 
-          <View
+          <Pressable
             style={[
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
+            onPress={() => navigation.navigate("InterestDetails")}
           >
             <View style={[styles.iconCircle, { backgroundColor: "#FFB400" + "20" }]}>
               <Feather name="percent" size={20} color="#FFB400" />
@@ -157,7 +158,7 @@ export default function DashboardScreen() {
             <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
               {formatCurrency(totalInterestToReceiveMonth)}
             </ThemedText>
-          </View>
+          </Pressable>
         </View>
 
         <View
