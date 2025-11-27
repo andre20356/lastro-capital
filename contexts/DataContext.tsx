@@ -389,8 +389,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [charges]);
 
   const getOverdueCharges = useCallback(() => {
-    return charges.filter((c) => c.status === "overdue");
-  }, [charges]);
+    const today = new Date();
+    return charges.filter((c) => {
+      if (c.status !== "pending" && c.status !== "overdue") return false;
+      
+      // Verificar se tem taxa de atraso pendente
+      const dueDate = new Date(c.dueDate);
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const delayFeeAlreadyPaid = payments
+        .filter((p) => p.chargeId === c.id && p.notes === "Pagamento de taxa de atraso")
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+        ? c.dailyDelayRate * daysOverdue 
+        : 0;
+      
+      const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+      
+      // Verificar se tem juros em atraso
+      const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : null;
+      const interestDaysOverdue = interestDueDate
+        ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      const hasInterestDelay = interestDaysOverdue > 0;
+      
+      // Retornar true apenas se houver REAL atraso
+      return pendingDelayFee > 0 || hasInterestDelay;
+    });
+  }, [charges, payments]);
 
   const getUpcomingCharges = useCallback(
     (days: number) => {
