@@ -59,6 +59,30 @@ export default function DashboardScreen() {
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
 
+  // Verificar se há realmente algum atraso (juros ou taxa)
+  const chargesWithRealDelay = charges.filter((c) => {
+    const dueDate = new Date(c.dueDate);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === c.id && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+      ? c.dailyDelayRate * daysOverdue 
+      : 0;
+    
+    const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+    
+    const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : null;
+    const interestDaysOverdue = interestDueDate
+      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const hasInterestDelay = interestDaysOverdue > 0;
+    
+    return pendingDelayFee > 0 || hasInterestDelay;
+  });
+
   // Chart statistics calculations
   const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
   
@@ -233,7 +257,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {overdueCharges.length > 0 ? (
+        {chargesWithRealDelay.length > 0 ? (
           <Pressable
             style={({ pressed }) => [
               styles.alertCard,
@@ -244,7 +268,7 @@ export default function DashboardScreen() {
             <Feather name="alert-circle" size={24} color={theme.error} />
             <View style={styles.alertContent}>
               <ThemedText style={[styles.alertTitle, { color: theme.error }]}>
-                {overdueCharges.length} cobrança(s) vencida(s)
+                {chargesWithRealDelay.length} cobrança(s) com atraso
               </ThemedText>
               <ThemedText style={[styles.alertSubtitle, { color: theme.secondaryText }]}>
                 Toque para ver detalhes
