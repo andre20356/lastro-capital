@@ -106,7 +106,10 @@ export default function ChargeDetailScreen() {
         console.log("Executando pagamento de juros para:", charge.id);
         await payMonthlyInterest(charge.id);
         console.log("Pagamento de juros realizado com sucesso!");
-        navigation.goBack();
+        // Aguardar um pouco para garantir que tudo foi salvo
+        setTimeout(() => {
+          navigation.goBack();
+        }, 500);
       } catch (error) {
         console.error("Erro ao pagar juros:", error);
         alert("Erro ao processar pagamento de juros");
