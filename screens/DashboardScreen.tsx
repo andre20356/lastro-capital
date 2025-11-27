@@ -116,11 +116,12 @@ export default function DashboardScreen() {
             </ThemedText>
           </View>
 
-          <View
+          <Pressable
             style={[
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
+            onPress={() => navigation.navigate("CashReport")}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.success + "20" }]}>
               <Feather name="check-circle" size={20} color={theme.success} />
@@ -131,7 +132,7 @@ export default function DashboardScreen() {
             <ThemedText style={[styles.cardValue, { color: theme.success }]}>
               {formatCurrency(totalBorrowed)}
             </ThemedText>
-          </View>
+          </Pressable>
         </View>
 
         <View style={styles.cardsRow}>

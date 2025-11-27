@@ -20,6 +20,7 @@ import ClientDetailScreen from "@/screens/ClientDetailScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import InterestDetailsScreen from "@/screens/InterestDetailsScreen";
+import CashReportScreen from "@/screens/CashReportScreen";
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   Profile: undefined;
   About: undefined;
   InterestDetails: undefined;
+  CashReport: undefined;
 };
 
 export type MainTabParamList = {
@@ -188,6 +190,14 @@ export default function MainStackNavigator() {
         component={InterestDetailsScreen}
         options={{
           title: "Detalhes de Juros",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="CashReport"
+        component={CashReportScreen}
+        options={{
+          title: "Relatório de Caixa",
           headerBackTitle: "Voltar",
         }}
       />
