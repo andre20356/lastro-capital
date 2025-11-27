@@ -105,7 +105,8 @@ export default function ChargeDetailScreen() {
   };
 
   const handlePayMonthlyInterest = async () => {
-    const confirmado = window.confirm("Deseja registrar o pagamento dos juros deste mês?");
+    const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    const confirmado = window.confirm(`Deseja registrar o pagamento de 1 parcela de juros no valor de R$ ${monthlyInterestPerInstallment.toFixed(2)}?`);
     if (confirmado) {
       try {
         console.log("Executando pagamento de juros para:", charge.id);

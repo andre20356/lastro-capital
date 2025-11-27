@@ -234,24 +234,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
+    // Calcular juros mensais por parcela
+    const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    
     // Se já tem nextInterestDueDate, usar como base. Senão, usar dueDate
     const baseDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const nextInterestDate = new Date(baseDate);
     nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
     const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
-    // Calcular valor dos juros: juros acumulados + juros mensais esperados
+    // Pagar apenas 1 parcela de juros (descontar do accumulatedInterest)
     const accumulatedInterest = charge.accumulatedInterest || 0;
-    const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
-    const totalInterestAmount = accumulatedInterest + monthlyInterest;
+    const remainingAccumulatedInterest = Math.max(0, accumulatedInterest - monthlyInterestPerInstallment);
     
     console.log("Pagamento de juros - detalhes:", {
       chargeId,
       accumulatedInterest,
-      monthlyInterest,
+      monthlyInterestPerInstallment,
+      remainingAccumulatedInterest,
       loanPercentage: charge.loanPercentage,
-      amount: charge.amount,
-      totalInterestAmount
+      amount: charge.amount
     });
     
     const updated = charges.map((c) => 
@@ -260,20 +262,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...c, 
             lastInterestPaymentDate: today,
             nextInterestDueDate: nextDueDateStr,
-            accumulatedInterest: 0
+            accumulatedInterest: remainingAccumulatedInterest
           }
         : c
     );
     
     setCharges(updated);
 
-    // SEMPRE criar pagamento dos juros (acumulados + mensais)
-    if (totalInterestAmount > 0) {
+    // Criar pagamento apenas da parcela de juros
+    if (monthlyInterestPerInstallment > 0) {
       const interestPayment: Payment = {
         id: generateId(),
         chargeId,
         clientId: charge.clientId,
-        amount: totalInterestAmount,
+        amount: monthlyInterestPerInstallment,
         paidAt: new Date().toISOString(),
         notes: "Pagamento de juros mensais",
       };
