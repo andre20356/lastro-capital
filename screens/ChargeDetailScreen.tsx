@@ -78,7 +78,7 @@ export default function ChargeDetailScreen() {
             markAsPaid(charge.id);
             setTimeout(() => {
               navigation.goBack();
-            }, 100);
+            }, 200);
           },
         },
       ]
@@ -98,7 +98,7 @@ export default function ChargeDetailScreen() {
             deleteCharge(charge.id);
             setTimeout(() => {
               navigation.goBack();
-            }, 100);
+            }, 200);
           },
         },
       ]
