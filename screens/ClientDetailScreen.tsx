@@ -26,12 +26,21 @@ function formatDate(dateString: string): string {
   return date.toLocaleDateString("pt-BR");
 }
 
-function StatusBadge({ status, theme }: { status: ChargeStatus; theme: any }) {
+function StatusBadge({ status, theme, hasRealDelay }: { status: ChargeStatus; theme: any; hasRealDelay?: boolean }) {
   const config = {
     pending: { bg: theme.warning + "20", text: theme.warning, label: "Pendente" },
     paid: { bg: theme.success + "20", text: theme.success, label: "Pago" },
     overdue: { bg: theme.error + "20", text: theme.error, label: "Vencido" },
   };
+
+  // Se status é overdue mas não tem atraso real (juros em dia), mostrar "Em Dia" em verde
+  if (status === "overdue" && !hasRealDelay) {
+    return (
+      <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
+        <ThemedText style={[styles.badgeText, { color: theme.success }]}>Em Dia</ThemedText>
+      </View>
+    );
+  }
 
   const { bg, text, label } = config[status];
 
@@ -42,14 +51,25 @@ function StatusBadge({ status, theme }: { status: ChargeStatus; theme: any }) {
   );
 }
 
+
 export default function ClientDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
-  const { getClientById, getChargesByClient, deleteClient, toggleArchiveClient } = useData();
+  const { getClientById, getChargesByClient, deleteClient, toggleArchiveClient, payments } = useData();
 
   const client = getClientById(route.params.clientId);
   const charges = client ? getChargesByClient(client.id) : [];
+
+  // Função para verificar se tem juros em atraso
+  const hasInterestDelay = (charge: Charge): boolean => {
+    const today = new Date();
+    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
+    const interestDaysOverdue = interestDueDate
+      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    return interestDaysOverdue > 0;
+  };
 
   const pendingTotal = charges
     .filter((c) => c.status === "pending" || c.status === "overdue")
@@ -120,7 +140,7 @@ export default function ClientDetailScreen() {
           Vence: {formatDate(item.nextInterestDueDate || item.dueDate)}
         </ThemedText>
       </View>
-      <StatusBadge status={item.status} theme={theme} />
+      <StatusBadge status={item.status} theme={theme} hasRealDelay={hasInterestDelay(item)} />
     </Pressable>
   );
 
