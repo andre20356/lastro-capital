@@ -60,6 +60,11 @@ export default function DashboardScreen() {
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
 
+  // Calculate total interest to receive this month (accumulated interest from pending charges)
+  const totalInterestToReceiveMonth = charges
+    .filter(c => c.status === "pending")
+    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+
   // Generate chart data - using actual data instead of random
   const today = new Date();
   const chartData = Array.from({ length: 6 }, (_, i) => {
@@ -127,6 +132,23 @@ export default function DashboardScreen() {
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.primaryAccent }]}>
               {activeClientsCount}
+            </ThemedText>
+          </View>
+
+          <View
+            style={[
+              styles.summaryCard,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+            ]}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: "#FFB400" + "20" }]}>
+              <Feather name="percent" size={20} color="#FFB400" />
+            </View>
+            <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
+              Juros a Receber
+            </ThemedText>
+            <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
+              {formatCurrency(totalInterestToReceiveMonth)}
             </ThemedText>
           </View>
         </View>
