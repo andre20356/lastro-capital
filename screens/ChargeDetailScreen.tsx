@@ -69,9 +69,19 @@ export default function ChargeDetailScreen() {
     );
   }
 
-  const handleQuitacaoDivida = () => {
-    console.log("DEBUG: handleQuitacaoDivida foi chamado", charge.id);
-    Alert.alert("Teste", "O botão foi clicado!");
+  const handleQuitacaoDivida = async () => {
+    const confirmado = window.confirm("Deseja confirmar a quitação completa desta dívida? A data será registrada automaticamente.");
+    if (confirmado) {
+      try {
+        console.log("Executando markAsPaid para:", charge.id);
+        await markAsPaid(charge.id);
+        console.log("Quitação realizada com sucesso!");
+        navigation.goBack();
+      } catch (error) {
+        console.error("Erro ao marcar como pago:", error);
+        alert("Erro ao processar quitação");
+      }
+    }
   };
 
   const handleDelete = () => {
