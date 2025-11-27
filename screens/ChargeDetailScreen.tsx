@@ -151,10 +151,19 @@ export default function ChargeDetailScreen() {
   const dueDate = new Date(charge.dueDate);
   const today = new Date();
   const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Verificar se já há pagamento de taxa de atraso
+  const delayFeeAlreadyPaid = payments
+    .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+    .reduce((sum, p) => sum + p.amount, 0);
+  
   const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
     ? charge.dailyDelayRate * daysOverdue 
     : 0;
-  const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + delayFee;
+  
+  // Mostrar apenas a taxa de atraso ainda não paga
+  const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+  const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + pendingDelayFee;
   const shouldShowTotalDebt = daysOverdue > 30;
 
   // Calculate interest delay (atraso nos juros)
@@ -269,9 +278,16 @@ export default function ChargeDetailScreen() {
                   <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
                     Taxa de Atraso ({daysOverdue} dias)
                   </ThemedText>
-                  <ThemedText style={[styles.debtItemValue, { color: theme.error }]}>
-                    {formatCurrency(delayFee)}
-                  </ThemedText>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <ThemedText style={[styles.debtItemValue, { color: delayFeeAlreadyPaid > 0 ? theme.success : theme.error, textDecorationLine: delayFeeAlreadyPaid > 0 ? "line-through" : "none" }]}>
+                      {formatCurrency(delayFee)}
+                    </ThemedText>
+                    {delayFeeAlreadyPaid > 0 && (
+                      <ThemedText style={[styles.debtItemValue, { color: theme.success }]}>
+                        {formatCurrency(pendingDelayFee)}
+                      </ThemedText>
+                    )}
+                  </View>
                 </View>
               </View>
             </View>
