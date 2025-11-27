@@ -69,14 +69,14 @@ export default function ChargeDetailScreen() {
     );
   }
 
-  const handleMarkAsPaid = () => {
+  const handleQuitacaoDivida = () => {
     Alert.alert(
-      "Confirmar pagamento",
-      "Deseja marcar esta cobrança como paga?",
+      "Quitação de Dívida",
+      "Deseja confirmar a quitação completa desta dívida? A data será registrada automaticamente.",
       [
         { text: "Cancelar", style: "cancel" },
         {
-          text: "Confirmar",
+          text: "Confirmar Quitação",
           onPress: async () => {
             await markAsPaid(charge.id);
             navigation.goBack();
@@ -329,10 +329,10 @@ export default function ChargeDetailScreen() {
                 styles.primaryButton,
                 { backgroundColor: theme.success, opacity: pressed ? 0.9 : 1 },
               ]}
-              onPress={handleMarkAsPaid}
+              onPress={handleQuitacaoDivida}
             >
               <Feather name="check-circle" size={20} color="#fff" />
-              <ThemedText style={styles.buttonText}>Marcar como Pago</ThemedText>
+              <ThemedText style={styles.buttonText}>Quitação de Dívida</ThemedText>
             </Pressable>
 
             <Pressable

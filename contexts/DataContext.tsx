@@ -161,9 +161,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    // Atualizar charges
+    // Data de quitação
+    const paidDate = new Date().toISOString();
+
+    // Atualizar charges com data de quitação
     const updatedCharges = charges.map((c) =>
-      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
+      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
     );
     setCharges(updatedCharges);
 
@@ -173,7 +176,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       chargeId,
       clientId: charge.clientId,
       amount: charge.amount,
-      paidAt: new Date().toISOString(),
+      paidAt: paidDate,
       notes,
     };
 
@@ -215,28 +218,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (interestAmount > 0) {
       const interestPayment: Payment = {
         id: generateId(),
-          chargeId,
-          clientId: charge.clientId,
-          amount: interestAmount,
-          paidAt: new Date().toISOString(),
-          notes: "Pagamento de juros mensais",
-        };
+        chargeId,
+        clientId: charge.clientId,
+        amount: interestAmount,
+        paidAt: new Date().toISOString(),
+        notes: "Pagamento de juros mensais",
+      };
 
-        const updatedPayments = [...payments, interestPayment];
+      const updatedPayments = [...payments, interestPayment];
 
-        // Save to AsyncStorage
-        const appData: AppData = { clients, charges: updated, payments: updatedPayments };
-        saveData(appData);
+      // Save to AsyncStorage
+      const appData: AppData = { clients, charges: updated, payments: updatedPayments };
+      await saveData(appData);
 
-        setPayments(updatedPayments);
-      } else {
-        // Se não há juros, apenas salva as charges
-        const appData: AppData = { clients, charges: updated, payments };
-        saveData(appData);
-      }
-      
-      return updated;
-    });
+      setPayments(updatedPayments);
+    } else {
+      // Se não há juros, apenas salva as charges
+      const appData: AppData = { clients, charges: updated, payments };
+      await saveData(appData);
+    }
   }, [charges, payments, clients, saveData]);
 
   const getClientById = useCallback(
