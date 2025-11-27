@@ -148,16 +148,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAsPaid = useCallback((chargeId: string, notes: string = "") => {
-    setCharges((prevCharges) => {
-      const charge = prevCharges.find((c) => c.id === chargeId);
-      if (!charge) {
-        console.error("Cobrança não encontrada");
-        return prevCharges;
-      }
-
-      const updatedCharges = prevCharges.map((c) => 
+    setCharges((prevCharges) =>
+      prevCharges.map((c) => 
         c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
-      );
+      )
+    );
+
+    setPayments((prev) => {
+      const charge = charges.find((c) => c.id === chargeId);
+      if (!charge) return prev;
 
       const payment: Payment = {
         id: generateId(),
@@ -167,18 +166,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paidAt: new Date().toISOString(),
         notes,
       };
-
-      setPayments((prev) => {
-        const updatedPayments = [...prev, payment];
-        // Save to AsyncStorage
-        const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
-        saveData(appData);
-        return updatedPayments;
-      });
       
-      return updatedCharges;
+      return [...prev, payment];
     });
-  }, [clients, saveData]);
+  }, [charges]);
 
   const payMonthlyInterest = useCallback((chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
