@@ -76,7 +76,9 @@ export default function ChargeDetailScreen() {
           text: "Confirmar",
           onPress: () => {
             markAsPaid(charge.id);
-            navigation.goBack();
+            setTimeout(() => {
+              navigation.goBack();
+            }, 100);
           },
         },
       ]
