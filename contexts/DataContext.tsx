@@ -178,8 +178,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
     const nextDueDateStr = nextDueDate.toISOString().split('T')[0];
     
-    setCharges((prev) =>
-      prev.map((c) => 
+    setCharges((prev) => {
+      const updated = prev.map((c) => 
         c.id === chargeId 
           ? { 
               ...c, 
@@ -188,9 +188,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
               accumulatedInterest: 0
             }
           : c
-      )
-    );
-  }, []);
+      );
+      
+      // Save to AsyncStorage
+      const appData: AppData = { clients, charges: updated, payments };
+      saveData(appData);
+      
+      return updated;
+    });
+  }, [clients, payments, saveData]);
 
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
