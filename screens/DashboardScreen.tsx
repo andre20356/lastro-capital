@@ -71,24 +71,36 @@ export default function DashboardScreen() {
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
 
-  // Calculate total interest to receive this month (accumulated interest + delay fees from all pending charges)
+  // Calculate total interest to receive this month (accumulated interest + expected monthly interest)
   const today = new Date();
   const totalInterestToReceiveMonth = charges
     .filter(c => c.status === "pending" || c.status === "overdue")
     .reduce((sum, c) => {
+      // Juros acumulados (atraso + atraso fees)
       const dueDate = new Date(c.dueDate);
       const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       const delayFee = daysOverdue > 0 && c.dailyDelayRate 
         ? c.dailyDelayRate * daysOverdue 
         : 0;
-      return sum + (c.accumulatedInterest || 0) + delayFee;
+      const accumulatedInterest = (c.accumulatedInterest || 0) + delayFee;
+      
+      // Juros mensais esperados (loanPercentage mensal)
+      const monthlyInterest = c.loanPercentage ? (c.amount * c.loanPercentage) / 100 : 0;
+      
+      return sum + accumulatedInterest + monthlyInterest;
     }, 0);
   
   console.log("Dashboard - Total Interest to Receive:", {
     chargesCount: charges.length,
     pendingCharges: charges.filter(c => c.status === "pending" || c.status === "overdue").length,
     totalInterestToReceiveMonth,
-    charges: charges.map(c => ({ id: c.id, accumulatedInterest: c.accumulatedInterest, status: c.status }))
+    charges: charges.map(c => ({ 
+      id: c.id, 
+      accumulatedInterest: c.accumulatedInterest, 
+      loanPercentage: c.loanPercentage,
+      amount: c.amount,
+      status: c.status 
+    }))
   });
 
   // Generate chart data - using actual data instead of random
