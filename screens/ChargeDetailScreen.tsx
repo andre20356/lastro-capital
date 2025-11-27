@@ -174,55 +174,87 @@ export default function ChargeDetailScreen() {
     }
   };
 
-  // Calculate days overdue and total debt
-  const dueDate = new Date(charge.dueDate);
-  const today = new Date();
-  const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Verificar se já há pagamento de taxa de atraso
-  const delayFeeAlreadyPaid = payments
-    .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
-    .reduce((sum, p) => sum + p.amount, 0);
-  
-  // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
-  const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
-  
-  // Calcular dias ainda pendentes de pagamento
-  const daysRemainingOverdue = Math.max(0, daysOverdue - daysPaidSoFar);
-  
-  // Calcular número de parcelas em atraso (baseado em dias restantes)
-  const numberOfOverdueInstallments = daysRemainingOverdue > 0 ? Math.ceil(daysRemainingOverdue / 30) : 0;
-  
-  // Calcular juros mensais por parcela
-  const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
-  
-  // Juros acumulados = juros mensais * número de parcelas em atraso
-  const calculatedAccumulatedInterest = daysRemainingOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
-  
-  const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
-    ? charge.dailyDelayRate * daysOverdue 
-    : 0;
-  
-  // Mostrar apenas a taxa de atraso ainda não paga
-  const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
-  const totalDebt = charge.amount + calculatedAccumulatedInterest + pendingDelayFee;
+  // Usar useMemo para recalcular todos os valores quando renderKey ou payments mudam
+  const calculations = React.useMemo(() => {
+    const dueDate = new Date(charge.dueDate);
+    const today = new Date();
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Verificar se já há pagamento de taxa de atraso
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
+    const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+    
+    // Calcular dias ainda pendentes de pagamento
+    const daysRemainingOverdue = Math.max(0, daysOverdue - daysPaidSoFar);
+    
+    // Calcular número de parcelas em atraso (baseado em dias restantes)
+    const numberOfOverdueInstallments = daysRemainingOverdue > 0 ? Math.ceil(daysRemainingOverdue / 30) : 0;
+    
+    // Calcular juros mensais por parcela
+    const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    
+    // Juros acumulados = juros mensais * número de parcelas em atraso
+    const calculatedAccumulatedInterest = daysRemainingOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+    
+    const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
+      ? charge.dailyDelayRate * daysOverdue 
+      : 0;
+    
+    // Mostrar apenas a taxa de atraso ainda não paga
+    const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+    const totalDebt = charge.amount + calculatedAccumulatedInterest + pendingDelayFee;
 
-  // Calculate interest delay (atraso nos juros)
-  const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
-  const interestDaysOverdue = interestDueDate
-    ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
-  const interestDelayFee = interestDaysOverdue > 0 && charge.dailyDelayRate && charge.accumulatedInterest
-    ? charge.dailyDelayRate * interestDaysOverdue
-    : 0;
-  const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
-  const hasInterestDelay = interestDaysOverdue > 0;
-  
-  // Mostrar alerta apenas se tiver taxa de atraso pendente OU juros em atraso
-  const shouldShowTotalDebt = pendingDelayFee > 0 || hasInterestDelay;
-  
-  // Verificar se tem algum atraso (juros ou taxa)
-  const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
+    // Calculate interest delay (atraso nos juros)
+    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
+    const interestDaysOverdue = interestDueDate
+      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const interestDelayFee = interestDaysOverdue > 0 && charge.dailyDelayRate && charge.accumulatedInterest
+      ? charge.dailyDelayRate * interestDaysOverdue
+      : 0;
+    const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
+    const hasInterestDelay = interestDaysOverdue > 0;
+    
+    // Mostrar alerta apenas se tiver taxa de atraso pendente OU juros em atraso
+    const shouldShowTotalDebt = pendingDelayFee > 0 || hasInterestDelay;
+    
+    // Verificar se tem algum atraso (juros ou taxa)
+    const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
+
+    return {
+      daysOverdue,
+      delayFeeAlreadyPaid,
+      daysPaidSoFar,
+      daysRemainingOverdue,
+      numberOfOverdueInstallments,
+      calculatedAccumulatedInterest,
+      delayFee,
+      pendingDelayFee,
+      totalDebt,
+      interestDaysOverdue,
+      interestDelayFee,
+      totalInterestToPay,
+      hasInterestDelay,
+      shouldShowTotalDebt,
+      hasAnyDelay,
+    };
+  }, [renderKey, payments, charge.id, charge.dueDate, charge.dailyDelayRate, charge.loanPercentage, charge.amount, charge.nextInterestDueDate, charge.accumulatedInterest]);
+
+  const {
+    daysOverdue,
+    numberOfOverdueInstallments,
+    calculatedAccumulatedInterest,
+    daysRemainingOverdue,
+    pendingDelayFee,
+    totalDebt,
+    hasInterestDelay,
+    shouldShowTotalDebt,
+    hasAnyDelay,
+  } = calculations;
 
   return (
     <ThemedView key={`charge-detail-${renderKey}`} style={styles.container}>
