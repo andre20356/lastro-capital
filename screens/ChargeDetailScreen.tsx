@@ -159,7 +159,7 @@ export default function ChargeDetailScreen() {
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
         await new Promise(resolve => setTimeout(resolve, 500));
-        navigation.goBack();
+        console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
         console.error("Erro ao pagar taxa de atraso:", error);
         alert("Erro ao processar pagamento");
