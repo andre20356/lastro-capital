@@ -44,17 +44,28 @@ function checkOverdue(charges: Charge[]): Charge[] {
       const dueDate = new Date(charge.dueDate);
       dueDate.setHours(0, 0, 0, 0);
       
-      if (dueDate < today) {
-        // Calcular juros acumulados por dias de atraso
-        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
-        const dailyInterestAmount = monthlyInterestAmount / 30;
+      // Para todas as cobranças pendentes/vencidas, calcular juros acumulados
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
+      const dailyInterestAmount = monthlyInterestAmount / 30;
+      
+      if (daysOverdue > 0) {
+        // Se está vencida, acumula juros
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
-        
         return { 
           ...charge, 
           status: "overdue" as ChargeStatus,
           accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
+        };
+      } else if (daysOverdue === 0 && dueDate.getTime() === today.getTime()) {
+        // Se vence hoje, ainda não há atraso
+        return charge;
+      } else {
+        // Se ainda não venceu, mas tem juros mensais configurados, mostrar juros esperados
+        // Isso permite visualizar os juros que serão cobrados quando vencer
+        return {
+          ...charge,
+          accumulatedInterest: charge.accumulatedInterest || 0
         };
       }
     }
