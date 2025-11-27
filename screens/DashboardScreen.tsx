@@ -211,7 +211,7 @@ export default function DashboardScreen() {
               const today = new Date();
               const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
               const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
-                ? (charge.amount * charge.dailyDelayRate / 100) * daysOverdue 
+                ? charge.dailyDelayRate * daysOverdue 
                 : 0;
               
               return (

@@ -316,7 +316,7 @@ export default function ChargeFormScreen() {
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
-            Taxa de Atraso Diário (%) (opcional)
+            Taxa de Atraso por Dia (R$) (opcional)
           </ThemedText>
           <TextInput
             style={[
@@ -356,12 +356,11 @@ export default function ChargeFormScreen() {
           const daysOverdue = Math.floor((today.getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24));
           if (daysOverdue <= 0) return null;
           
-          const amountNum = parseFloat(amount.replace(",", "."));
           const dailyRateNum = parseFloat(dailyDelayRate.replace(",", "."));
           
-          if (isNaN(amountNum) || isNaN(dailyRateNum) || dailyRateNum === 0) return null;
+          if (isNaN(dailyRateNum) || dailyRateNum === 0) return null;
           
-          const delayFeeValue = (amountNum * dailyRateNum / 100) * daysOverdue;
+          const delayFeeValue = dailyRateNum * daysOverdue;
           
           return (
             <View style={styles.field}>
