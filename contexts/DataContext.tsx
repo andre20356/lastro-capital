@@ -302,16 +302,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const dueDate = new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    const delayFeeAmount = daysOverdue > 0 && charge.dailyDelayRate 
-      ? charge.dailyDelayRate * daysOverdue 
-      : 0;
+    
+    // Calcular quanto de taxa de atraso já foi pago (em dias)
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === chargeId && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+    const daysRemainingToPay = Math.max(0, daysOverdue - daysPaidSoFar);
+    
+    // Pagar apenas 1 parcela (30 dias)
+    const daysPerInstallment = 30;
+    const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * charge.dailyDelayRate;
 
-    if (delayFeeAmount > 0) {
+    if (delayFeeInstallment > 0) {
       const delayFeePayment: Payment = {
         id: generateId(),
         chargeId,
         clientId: charge.clientId,
-        amount: delayFeeAmount,
+        amount: delayFeeInstallment,
         paidAt: new Date().toISOString(),
         notes: "Pagamento de taxa de atraso",
       };
@@ -320,7 +329,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const appData: AppData = { clients, charges, payments: updatedPayments };
       await saveData(appData);
       setPayments(updatedPayments);
-      console.log("Taxa de atraso paga:", delayFeePayment);
+      console.log("Taxa de atraso paga (1 parcela):", delayFeePayment, "dias:", Math.min(daysPerInstallment, daysRemainingToPay));
     }
   }, [charges, payments, clients, saveData]);
 
