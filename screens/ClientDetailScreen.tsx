@@ -384,11 +384,13 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
   },
   actionButton: {
     flex: 1,
+    minWidth: "45%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
