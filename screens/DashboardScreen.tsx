@@ -70,7 +70,6 @@ export default function DashboardScreen() {
       borrowed: totalBorrowed,
       earned: totalEarned,
       overdue: totalOverdueInterest,
-      clients: activeClientsCount,
     };
   });
 
