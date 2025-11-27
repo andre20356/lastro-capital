@@ -192,6 +192,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
     const nextDueDateStr = nextDueDate.toISOString().split('T')[0];
     
+    // Encontrar a cobrança para obter o valor dos juros
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) return;
+
+    const interestAmount = charge.accumulatedInterest || 0;
+    
     setCharges((prev) => {
       const updated = prev.map((c) => 
         c.id === chargeId 
@@ -203,14 +209,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
           : c
       );
-      
-      // Save to AsyncStorage
-      const appData: AppData = { clients, charges: updated, payments };
-      saveData(appData);
+
+      // Criar pagamento dos juros (se houver juros para pagar)
+      if (interestAmount > 0) {
+        const interestPayment: Payment = {
+          id: generateId(),
+          chargeId,
+          clientId: charge.clientId,
+          amount: interestAmount,
+          paidAt: new Date().toISOString(),
+          notes: "Pagamento de juros mensais",
+        };
+
+        const updatedPayments = [...payments, interestPayment];
+
+        // Save to AsyncStorage
+        const appData: AppData = { clients, charges: updated, payments: updatedPayments };
+        saveData(appData);
+
+        setPayments(updatedPayments);
+      } else {
+        // Se não há juros, apenas salva as charges
+        const appData: AppData = { clients, charges: updated, payments };
+        saveData(appData);
+      }
       
       return updated;
     });
-  }, [clients, payments, saveData]);
+  }, [charges, payments, clients, saveData]);
 
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
