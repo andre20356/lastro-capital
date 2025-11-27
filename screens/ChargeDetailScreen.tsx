@@ -375,11 +375,16 @@ export default function ChargeDetailScreen() {
                   </View>
                   <View style={styles.debtItem}>
                     <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
-                      Parcelas em Atraso: {Math.ceil(interestDaysOverdue / 30)}
+                      Parcelas em Atraso
                     </ThemedText>
-                    <ThemedText style={[styles.debtItemValue, { color: theme.secondaryText }]}>
-                      ({interestDaysOverdue} dias)
-                    </ThemedText>
+                    <View>
+                      <ThemedText style={[styles.debtItemValue, { color: theme.error, fontWeight: "700" }]}>
+                        {Math.ceil(interestDaysOverdue / 30)}
+                      </ThemedText>
+                      <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText, marginTop: 2 }]}>
+                        ({interestDaysOverdue} dias)
+                      </ThemedText>
+                    </View>
                   </View>
                   <View style={styles.debtItem}>
                     <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
