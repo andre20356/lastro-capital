@@ -28,14 +28,18 @@ function formatDate(dateString: string): string {
   return date.toLocaleDateString("pt-BR");
 }
 
-function StatusBadge({ status, theme }: { status: ChargeStatus; theme: any }) {
-  const config = {
-    pending: { bg: theme.warning + "20", text: theme.warning, label: "Pendente" },
-    paid: { bg: theme.success + "20", text: theme.success, label: "Pago" },
-    overdue: { bg: theme.error + "20", text: theme.error, label: "Vencido" },
-  };
+function StatusBadge({ status, theme, hasDelay }: { status: ChargeStatus; theme: any; hasDelay?: boolean }) {
+  let config;
+  
+  if (status === "paid") {
+    config = { bg: theme.success + "20", text: theme.success, label: "Pago" };
+  } else if (hasDelay) {
+    config = { bg: theme.error + "20", text: theme.error, label: "Vencido" };
+  } else {
+    config = { bg: theme.success + "20", text: theme.success, label: "Em Dia" };
+  }
 
-  const { bg, text, label } = config[status];
+  const { bg, text, label } = config;
 
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
@@ -48,7 +52,7 @@ export default function ChargesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, paddingTop } = useScreenInsets();
-  const { charges, getClientById } = useData();
+  const { charges, getClientById, payments } = useData();
   const [filter, setFilter] = useState<FilterType>("all");
 
   const filteredCharges = useMemo(() => {
@@ -71,6 +75,28 @@ export default function ChargesScreen() {
   const renderItem = ({ item }: { item: Charge }) => {
     const client = getClientById(item.clientId);
     
+    // Calcular se tem atraso de taxa ou juros
+    const today = new Date();
+    const dueDate = new Date(item.dueDate);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === item.id && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const delayFee = daysOverdue > 0 && item.dailyDelayRate 
+      ? item.dailyDelayRate * daysOverdue 
+      : 0;
+    
+    const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+    
+    const interestDueDate = item.nextInterestDueDate ? new Date(item.nextInterestDueDate) : null;
+    const interestDaysOverdue = interestDueDate
+      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const hasInterestDelay = interestDaysOverdue > 0;
+    const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
+    
     return (
       <Pressable
         style={({ pressed }) => [
@@ -83,7 +109,7 @@ export default function ChargesScreen() {
           <ThemedText style={styles.clientName}>
             {client?.name || "Cliente removido"}
           </ThemedText>
-          <StatusBadge status={item.status} theme={theme} />
+          <StatusBadge status={item.status} theme={theme} hasDelay={hasAnyDelay} />
         </View>
         
         <View style={styles.cardBody}>
