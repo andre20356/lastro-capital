@@ -135,11 +135,12 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.cardsRow}>
-          <View
+          <Pressable
             style={[
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
+            onPress={() => navigation.navigate("Clients")}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.primaryAccent + "20" }]}>
               <Feather name="users" size={20} color={theme.primaryAccent} />
@@ -150,7 +151,7 @@ export default function DashboardScreen() {
             <ThemedText style={[styles.cardValue, { color: theme.primaryAccent }]}>
               {activeClientsCount}
             </ThemedText>
-          </View>
+          </Pressable>
 
           <Pressable
             style={[
