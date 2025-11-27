@@ -51,16 +51,16 @@ export default function DashboardScreen() {
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   const totalInterestToReceive = charges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
 
-  // Generate chart data
+  // Generate chart data - using actual data instead of random
   const today = new Date();
   const chartData = Array.from({ length: 6 }, (_, i) => {
     const date = new Date(today);
     date.setMonth(date.getMonth() - (5 - i));
     return {
       label: date.toLocaleDateString("pt-BR", { month: "short" }),
-      borrowed: pendingTotal * 0.8 + Math.random() * 500,
-      earned: totalEarned * 0.8 + Math.random() * 300,
-      overdue: totalOverdueInterest * 0.8 + Math.random() * 100,
+      borrowed: totalBorrowed,
+      earned: totalEarned,
+      overdue: totalOverdueInterest,
     };
   });
 
