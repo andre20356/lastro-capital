@@ -111,9 +111,7 @@ export default function ChargeDetailScreen() {
           text: "Confirmar",
           onPress: () => {
             payMonthlyInterest(charge.id);
-            setTimeout(() => {
-              navigation.goBack();
-            }, 100);
+            navigation.goBack();
           },
         },
       ]

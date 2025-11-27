@@ -143,31 +143,50 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deleteCharge = useCallback((id: string) => {
-    setCharges((prev) => prev.filter((charge) => charge.id !== id));
-    setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
-  }, []);
+    setCharges((prev) => {
+      const updated = prev.filter((charge) => charge.id !== id);
+      setPayments((prevPayments) => {
+        const updatedPayments = prevPayments.filter((payment) => payment.chargeId !== id);
+        // Save to AsyncStorage
+        const appData: AppData = { clients, charges: updated, payments: updatedPayments };
+        saveData(appData);
+        return updatedPayments;
+      });
+      return updated;
+    });
+  }, [clients, saveData]);
 
   const markAsPaid = useCallback((chargeId: string, notes: string = "") => {
-    // Atualizar charges para "paid"
-    const updatedCharges = charges.map((c) => 
-      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
-    );
-    setCharges(updatedCharges);
+    setCharges((prevCharges) => {
+      const updatedCharges = prevCharges.map((c) => 
+        c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
+      );
 
-    // Criar pagamento
-    const charge = charges.find((c) => c.id === chargeId);
-    if (charge) {
-      const payment: Payment = {
-        id: generateId(),
-        chargeId,
-        clientId: charge.clientId,
-        amount: charge.amount,
-        paidAt: new Date().toISOString(),
-        notes,
-      };
-      setPayments((prev) => [...prev, payment]);
-    }
-  }, [charges]);
+      // Encontrar a cobrança nos dados atualizados
+      const charge = updatedCharges.find((c) => c.id === chargeId);
+      
+      if (charge) {
+        const payment: Payment = {
+          id: generateId(),
+          chargeId,
+          clientId: charge.clientId,
+          amount: charge.amount,
+          paidAt: new Date().toISOString(),
+          notes,
+        };
+
+        setPayments((prevPayments) => {
+          const updatedPayments = [...prevPayments, payment];
+          // Save to AsyncStorage
+          const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+          saveData(appData);
+          return updatedPayments;
+        });
+      }
+
+      return updatedCharges;
+    });
+  }, [clients, saveData]);
 
   const payMonthlyInterest = useCallback((chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
