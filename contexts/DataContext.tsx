@@ -192,13 +192,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const payMonthlyInterest = useCallback(async (chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
-    const nextDueDate = new Date();
-    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-    const nextDueDateStr = nextDueDate.toISOString().split('T')[0];
     
     // Encontrar a cobrança para obter o valor dos juros
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
+
+    // Calcular próximo vencimento baseado na data de vencimento ORIGINAL + 1 mês
+    // Isso garante que sempre seja no mesmo dia do mês
+    const originalDueDate = new Date(charge.dueDate);
+    const nextInterestDate = new Date(originalDueDate);
+    nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
+    const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
     const interestAmount = charge.accumulatedInterest || 0;
     
