@@ -35,6 +35,7 @@ export default function DashboardScreen() {
   const {
     getPendingTotal,
     getPaidTotal,
+    getInterestPaidThisMonth,
     getOverdueCharges,
     getUpcomingCharges,
     getClientById,
@@ -53,6 +54,7 @@ export default function DashboardScreen() {
 
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
+  const interestPaidThisMonth = getInterestPaidThisMonth();
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
 

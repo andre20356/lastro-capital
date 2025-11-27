@@ -22,6 +22,7 @@ interface DataContextType {
   getChargesByClient: (clientId: string) => Charge[];
   getPendingTotal: () => number;
   getPaidTotal: () => number;
+  getInterestPaidThisMonth: () => number;
   getOverdueCharges: () => Charge[];
   getUpcomingCharges: (days: number) => Charge[];
   refreshData: () => Promise<void>;
@@ -269,6 +270,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .reduce((sum, p) => sum + p.amount, 0);
   }, [payments]);
 
+  const getInterestPaidThisMonth = useCallback(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return payments
+      .filter((p) => 
+        new Date(p.paidAt) >= startOfMonth && 
+        p.notes === "Pagamento de juros mensais"
+      )
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
   const getOverdueCharges = useCallback(() => {
     return charges.filter((c) => c.status === "overdue");
   }, [charges]);
@@ -312,6 +325,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getChargesByClient,
         getPendingTotal,
         getPaidTotal,
+        getInterestPaidThisMonth,
         getOverdueCharges,
         getUpcomingCharges,
         refreshData,
