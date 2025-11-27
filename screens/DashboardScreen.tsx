@@ -126,7 +126,7 @@ export default function DashboardScreen() {
               <Feather name="check-circle" size={20} color={theme.success} />
             </View>
             <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
-              Recebido (mes)
+              Total Emprestado
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.success }]}>
               {formatCurrency(totalBorrowed)}
