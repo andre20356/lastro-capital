@@ -17,6 +17,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = "all" | "pending" | "paid" | "overdue";
 
 function formatCurrency(value: number): string {
+  if (isNaN(value) || value === undefined || value === null) {
+    return "R$ 0,00";
+  }
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
