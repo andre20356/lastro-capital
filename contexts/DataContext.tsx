@@ -155,6 +155,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return prevCharges;
       }
 
+      const updatedCharges = prevCharges.map((c) => 
+        c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
+      );
+
       const payment: Payment = {
         id: generateId(),
         chargeId,
@@ -164,13 +168,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notes,
       };
 
-      setPayments((prev) => [...prev, payment]);
+      setPayments((prev) => {
+        const updatedPayments = [...prev, payment];
+        // Save to AsyncStorage
+        const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+        saveData(appData);
+        return updatedPayments;
+      });
       
-      return prevCharges.map((c) => 
-        c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
-      );
+      return updatedCharges;
     });
-  }, []);
+  }, [clients, saveData]);
 
   const payMonthlyInterest = useCallback((chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
