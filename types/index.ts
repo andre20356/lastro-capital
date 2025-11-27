@@ -13,6 +13,7 @@ export interface Client {
   requestDate?: string;
   notes: string;
   createdAt: string;
+  archived?: boolean;
 }
 
 export interface Charge {

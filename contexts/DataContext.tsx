@@ -127,6 +127,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
   }, []);
 
+  const toggleArchiveClient = useCallback(async (id: string) => {
+    setClients((prev) =>
+      prev.map((client) => 
+        client.id === id ? { ...client, archived: !client.archived } : client
+      )
+    );
+  }, []);
+
   const addCharge = useCallback(async (chargeData: Omit<Charge, "id" | "createdAt">): Promise<Charge> => {
     const newCharge: Charge = {
       ...chargeData,
