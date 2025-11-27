@@ -230,18 +230,20 @@ export default function ClientDetailScreen() {
           </ThemedText>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionButton,
-            { borderColor: theme.warning, opacity: pressed ? 0.8 : 1, display: client.archived ? "none" : "flex" },
-          ]}
-          onPress={handleArchive}
-        >
-          <Feather name="archive" size={16} color={theme.warning} />
-          <ThemedText style={[styles.actionButtonText, { color: theme.warning }]}>
-            Arquivar
-          </ThemedText>
-        </Pressable>
+        {!client.archived && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              { borderColor: theme.warning, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleArchive}
+          >
+            <Feather name="archive" size={16} color={theme.warning} />
+            <ThemedText style={[styles.actionButtonText, { color: theme.warning }]}>
+              Arquivar
+            </ThemedText>
+          </Pressable>
+        )}
       </View>
 
       <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
