@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, Pressable, Alert } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -57,6 +57,13 @@ export default function ChargeDetailScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
+
+  // Recarregar dados quando a tela ganha foco
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshData();
+    }, [refreshData])
+  );
 
   const charge = getChargeById(route.params.chargeId);
   const client = charge ? getClientById(charge.clientId) : null;
@@ -116,8 +123,7 @@ export default function ChargeDetailScreen() {
         await new Promise(resolve => setTimeout(resolve, 800));
         await refreshData();
         await new Promise(resolve => setTimeout(resolve, 500));
-        console.log("Dados recarregados, voltando ao dashboard...");
-        navigation.goBack();
+        console.log("Dados recarregados na tela de detalhe...");
       } catch (error) {
         console.error("Erro ao pagar juros:", error);
         alert("Erro ao processar pagamento de juros");
