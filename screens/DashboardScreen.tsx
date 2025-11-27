@@ -1,6 +1,6 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React from "react";
 import { StyleSheet, View, Pressable } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -28,7 +28,6 @@ export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, insets } = useScreenInsets();
-  const [refreshKey, setRefreshKey] = useState(0);
   
   const {
     getPendingTotal,
@@ -39,12 +38,6 @@ export default function DashboardScreen() {
     charges,
     payments,
   } = useData();
-
-  useFocusEffect(
-    useCallback(() => {
-      setRefreshKey(prev => prev + 1);
-    }, [])
-  );
 
   const pendingTotal = getPendingTotal();
   const paidTotal = getPaidTotal();
@@ -76,7 +69,7 @@ export default function DashboardScreen() {
   });
 
   return (
-    <ThemedView key={`dashboard-${refreshKey}`} style={styles.container}>
+    <ThemedView style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.cardsRow}>
           <View
