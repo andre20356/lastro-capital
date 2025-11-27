@@ -84,47 +84,34 @@ export default function ChargeDetailScreen() {
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Excluir cobrança",
-      "Tem certeza que deseja excluir esta cobrança? Esta ação nao pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCharge(charge.id);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Erro ao excluir cobrança:", error);
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async () => {
+    const confirmado = window.confirm("Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.");
+    if (confirmado) {
+      try {
+        console.log("Excluindo cobrança:", charge.id);
+        await deleteCharge(charge.id);
+        console.log("Cobrança excluída com sucesso!");
+        navigation.goBack();
+      } catch (error) {
+        console.error("Erro ao excluir cobrança:", error);
+        alert("Erro ao excluir cobrança");
+      }
+    }
   };
 
-  const handlePayMonthlyInterest = () => {
-    Alert.alert(
-      "Confirmar pagamento de juros",
-      "Deseja registrar o pagamento dos juros deste mês?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            try {
-              await payMonthlyInterest(charge.id);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Erro ao pagar juros:", error);
-            }
-          },
-        },
-      ]
-    );
+  const handlePayMonthlyInterest = async () => {
+    const confirmado = window.confirm("Deseja registrar o pagamento dos juros deste mês?");
+    if (confirmado) {
+      try {
+        console.log("Executando pagamento de juros para:", charge.id);
+        await payMonthlyInterest(charge.id);
+        console.log("Pagamento de juros realizado com sucesso!");
+        navigation.goBack();
+      } catch (error) {
+        console.error("Erro ao pagar juros:", error);
+        alert("Erro ao processar pagamento de juros");
+      }
+    }
   };
 
   // Calculate days overdue and total debt
