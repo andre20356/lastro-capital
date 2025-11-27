@@ -238,7 +238,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
     const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
-    const interestAmount = charge.accumulatedInterest || 0;
+    // Calcular valor dos juros: juros acumulados + juros mensais esperados
+    const accumulatedInterest = charge.accumulatedInterest || 0;
+    const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    const totalInterestAmount = accumulatedInterest + monthlyInterest;
+    
+    console.log("Pagamento de juros - detalhes:", {
+      chargeId,
+      accumulatedInterest,
+      monthlyInterest,
+      loanPercentage: charge.loanPercentage,
+      amount: charge.amount,
+      totalInterestAmount
+    });
     
     const updated = charges.map((c) => 
       c.id === chargeId 
@@ -253,13 +265,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     setCharges(updated);
 
-    // Criar pagamento dos juros (se houver juros para pagar)
-    if (interestAmount > 0) {
+    // SEMPRE criar pagamento dos juros (acumulados + mensais)
+    if (totalInterestAmount > 0) {
       const interestPayment: Payment = {
         id: generateId(),
         chargeId,
         clientId: charge.clientId,
-        amount: interestAmount,
+        amount: totalInterestAmount,
         paidAt: new Date().toISOString(),
         notes: "Pagamento de juros mensais",
       };
@@ -271,6 +283,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await saveData(appData);
 
       setPayments(updatedPayments);
+      console.log("Pagamento de juros criado:", interestPayment);
     } else {
       // Se não há juros, apenas salva as charges
       const appData: AppData = { clients, charges: updated, payments };
