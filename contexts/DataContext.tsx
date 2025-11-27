@@ -286,12 +286,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    return payments
+    const result = payments
       .filter((p) => 
         new Date(p.paidAt) >= startOfMonth && 
         p.notes === "Pagamento de juros mensais"
       )
       .reduce((sum, p) => sum + p.amount, 0);
+    
+    console.log("Calculating interest paid this month:", {
+      totalPayments: payments.length,
+      filteredPayments: payments.filter((p) => new Date(p.paidAt) >= startOfMonth && p.notes === "Pagamento de juros mensais").length,
+      result
+    });
+    
+    return result;
   }, [payments]);
 
   const getOverdueCharges = useCallback(() => {

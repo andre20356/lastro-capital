@@ -108,13 +108,15 @@ export default function ChargeDetailScreen() {
         await payMonthlyInterest(charge.id);
         console.log("Pagamento de juros realizado com sucesso!");
         
-        // Aguardar e recarregar dados com delay maior
+        // Aguardar mais tempo para sincronizar completamente
         setTimeout(async () => {
+          console.log("Recarregando dados após pagamento de juros...");
           await refreshData();
+          console.log("Dados recarregados, voltando ao dashboard...");
           setTimeout(() => {
             navigation.goBack();
-          }, 500);
-        }, 500);
+          }, 1000);
+        }, 1000);
       } catch (error) {
         console.error("Erro ao pagar juros:", error);
         alert("Erro ao processar pagamento de juros");

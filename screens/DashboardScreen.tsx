@@ -48,6 +48,7 @@ export default function DashboardScreen() {
   // Refrescar dados quando a tela entra em foco (volta de outras telas)
   useFocusEffect(
     React.useCallback(() => {
+      console.log("Dashboard focus effect - recarregando dados");
       refreshData();
     }, [refreshData])
   );
