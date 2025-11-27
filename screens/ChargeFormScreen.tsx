@@ -24,12 +24,19 @@ export default function ChargeFormScreen() {
   const preselectedClientId = route.params?.clientId;
   const isEditing = !!existingCharge;
 
+  // Calculate default due date: today + 1 month
+  const getDefaultDueDate = () => {
+    const today = new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    return nextMonth.toLocaleDateString("pt-BR");
+  };
+
   const [clientId, setClientId] = useState(existingCharge?.clientId || preselectedClientId || "");
   const [amount, setAmount] = useState(existingCharge?.amount.toString() || "");
   const [dueDate, setDueDate] = useState(
     existingCharge?.dueDate
       ? new Date(existingCharge.dueDate).toLocaleDateString("pt-BR")
-      : ""
+      : getDefaultDueDate()
   );
   const [paymentDate, setPaymentDate] = useState("");
   const [description, setDescription] = useState(existingCharge?.description || "");
