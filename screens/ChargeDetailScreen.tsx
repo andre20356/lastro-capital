@@ -75,12 +75,8 @@ export default function ChargeDetailScreen() {
         {
           text: "Confirmar",
           onPress: () => {
-            try {
-              markAsPaid(charge.id);
-              setTimeout(() => navigation.goBack(), 300);
-            } catch (error) {
-              Alert.alert("Erro", "Nao foi possivel marcar como pago");
-            }
+            markAsPaid(charge.id);
+            setTimeout(() => navigation.goBack(), 100);
           },
         },
       ]

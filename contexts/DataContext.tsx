@@ -146,7 +146,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
   }, []);
 
-  const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
+  const markAsPaid = useCallback((chargeId: string, notes: string = "") => {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) throw new Error("Cobrança não encontrada");
 

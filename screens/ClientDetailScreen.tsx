@@ -91,12 +91,8 @@ export default function ClientDetailScreen() {
           text: "Excluir",
           style: "destructive",
           onPress: () => {
-            try {
-              deleteClient(client.id);
-              setTimeout(() => navigation.goBack(), 300);
-            } catch (error) {
-              Alert.alert("Erro", "Nao foi possivel excluir o cliente");
-            }
+            deleteClient(client.id);
+            setTimeout(() => navigation.goBack(), 100);
           },
         },
       ]
