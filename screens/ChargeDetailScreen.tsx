@@ -165,6 +165,15 @@ export default function ChargeDetailScreen() {
   const today = new Date();
   const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
   
+  // Calcular número de parcelas em atraso
+  const numberOfOverdueInstallments = Math.ceil(daysOverdue / 30);
+  
+  // Calcular juros mensais por parcela
+  const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+  
+  // Juros acumulados = juros mensais * número de parcelas em atraso
+  const calculatedAccumulatedInterest = daysOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+  
   // Verificar se já há pagamento de taxa de atraso
   const delayFeeAlreadyPaid = payments
     .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
@@ -176,7 +185,7 @@ export default function ChargeDetailScreen() {
   
   // Mostrar apenas a taxa de atraso ainda não paga
   const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
-  const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + pendingDelayFee;
+  const totalDebt = charge.amount + calculatedAccumulatedInterest + pendingDelayFee;
 
   // Calculate interest delay (atraso nos juros)
   const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
@@ -294,7 +303,7 @@ export default function ChargeDetailScreen() {
                     Juros Acumulados
                   </ThemedText>
                   <ThemedText style={[styles.debtItemValue, { color: "#FFB400" }]}>
-                    {formatCurrency(charge.accumulatedInterest || 0)}
+                    {formatCurrency(calculatedAccumulatedInterest)}
                   </ThemedText>
                 </View>
                 <View style={styles.debtItem}>
