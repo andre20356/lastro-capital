@@ -12,6 +12,7 @@ interface DataContextType {
   addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
+  toggleArchiveClient: (id: string) => Promise<void>;
   addCharge: (charge: Omit<Charge, "id" | "createdAt">) => Promise<Charge>;
   updateCharge: (id: string, charge: Partial<Charge>) => Promise<void>;
   deleteCharge: (id: string) => Promise<void>;
@@ -326,6 +327,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addClient,
         updateClient,
         deleteClient,
+        toggleArchiveClient,
         addCharge,
         updateCharge,
         deleteCharge,
