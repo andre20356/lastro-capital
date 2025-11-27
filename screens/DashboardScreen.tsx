@@ -51,14 +51,16 @@ export default function DashboardScreen() {
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(7);
 
-  // Calculate total overdue with delay fees
-  const overdueTotal = overdueCharges.reduce((sum, charge) => {
-    return sum + charge.amount + (charge.delayFee || 0);
-  }, 0);
-
-  // Calculate total interest to receive (from all charges - all clients)
-  const totalInterestToReceive = charges
-    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  // Chart statistics calculations
+  // Total Emprestado = sum of ALL charge amounts
+  const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
+  
+  // Total Rendimentos = sum of interest from all paid charges
+  const paidCharges = charges.filter((c) => c.status === "paid");
+  const totalEarned = paidCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  
+  // Negativados = sum of overdue interest
+  const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
 
   // Generate chart data - sample of past 6 months
   const today = new Date();
@@ -67,9 +69,9 @@ export default function DashboardScreen() {
     date.setMonth(date.getMonth() - (5 - i));
     return {
       label: date.toLocaleDateString("pt-BR", { month: "short" }),
-      borrowed: Math.random() * pendingTotal + 1000,
-      earned: Math.random() * paidTotal + 500,
-      overdue: Math.random() * overdueTotal + 100,
+      borrowed: Math.random() * totalBorrowed + 1000,
+      earned: Math.random() * totalEarned + 500,
+      overdue: Math.random() * totalOverdueInterest + 100,
     };
   });
 
@@ -147,7 +149,7 @@ export default function DashboardScreen() {
                 Total Emprestado
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#FF6B6B" }]}>
-                {formatCurrency(pendingTotal)}
+                {formatCurrency(totalBorrowed)}
               </ThemedText>
             </View>
             <View style={styles.statDivider} />
@@ -156,7 +158,7 @@ export default function DashboardScreen() {
                 Total Rendimentos
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#51CF66" }]}>
-                {formatCurrency(paidTotal)}
+                {formatCurrency(totalEarned)}
               </ThemedText>
             </View>
             <View style={styles.statDivider} />
@@ -165,7 +167,7 @@ export default function DashboardScreen() {
                 Negativados
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#FF922B" }]}>
-                {formatCurrency(overdueTotal)}
+                {formatCurrency(totalOverdueInterest)}
               </ThemedText>
             </View>
           </View>
