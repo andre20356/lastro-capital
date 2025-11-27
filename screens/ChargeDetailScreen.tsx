@@ -332,26 +332,21 @@ export default function ChargeDetailScreen() {
                   </ThemedText>
                   <View>
                     <ThemedText style={[styles.debtItemValue, { color: theme.error, fontWeight: "700" }]}>
-                      {Math.ceil(daysOverdue / 30)}
+                      {numberOfOverdueInstallments}
                     </ThemedText>
                     <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText, marginTop: 2 }]}>
-                      ({daysOverdue} dias)
+                      ({daysRemainingOverdue} dias)
                     </ThemedText>
                   </View>
                 </View>
                 <View style={styles.debtItem}>
                   <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
-                    Taxa de Atraso ({daysOverdue} dias)
+                    Taxa de Atraso ({daysRemainingOverdue} dias)
                   </ThemedText>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <ThemedText style={[styles.debtItemValue, { color: delayFeeAlreadyPaid > 0 ? theme.success : theme.error, textDecorationLine: delayFeeAlreadyPaid > 0 ? "line-through" : "none" }]}>
-                      {formatCurrency(delayFee)}
+                      {formatCurrency(pendingDelayFee)}
                     </ThemedText>
-                    {delayFeeAlreadyPaid > 0 && (
-                      <ThemedText style={[styles.debtItemValue, { color: theme.success }]}>
-                        {formatCurrency(pendingDelayFee)}
-                      </ThemedText>
-                    )}
                   </View>
                 </View>
               </View>
