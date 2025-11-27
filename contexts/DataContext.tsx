@@ -197,10 +197,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    // Calcular próximo vencimento baseado na data de vencimento ORIGINAL + 1 mês
-    // Isso garante que sempre seja no mesmo dia do mês
-    const originalDueDate = new Date(charge.dueDate);
-    const nextInterestDate = new Date(originalDueDate);
+    // Se já tem nextInterestDueDate, usar como base. Senão, usar dueDate
+    const baseDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+    const nextInterestDate = new Date(baseDate);
     nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
     const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
