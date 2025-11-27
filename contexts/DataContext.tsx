@@ -148,28 +148,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAsPaid = useCallback((chargeId: string, notes: string = "") => {
-    setCharges((prevCharges) =>
-      prevCharges.map((c) => 
+    setCharges((prevCharges) => {
+      const updatedCharges = prevCharges.map((c) => 
         c.id === chargeId ? { ...c, status: "paid" as ChargeStatus } : c
-      )
-    );
+      );
 
-    setPayments((prev) => {
-      const charge = charges.find((c) => c.id === chargeId);
-      if (!charge) return prev;
-
-      const payment: Payment = {
-        id: generateId(),
-        chargeId,
-        clientId: charge.clientId,
-        amount: charge.amount,
-        paidAt: new Date().toISOString(),
-        notes,
-      };
+      // Encontrar a cobrança nos dados atualizados
+      const charge = updatedCharges.find((c) => c.id === chargeId);
       
-      return [...prev, payment];
+      if (charge) {
+        const payment: Payment = {
+          id: generateId(),
+          chargeId,
+          clientId: charge.clientId,
+          amount: charge.amount,
+          paidAt: new Date().toISOString(),
+          notes,
+        };
+
+        setPayments((prev) => [...prev, payment]);
+      }
+
+      return updatedCharges;
     });
-  }, [charges]);
+  }, []);
 
   const payMonthlyInterest = useCallback((chargeId: string) => {
     const today = new Date().toISOString().split('T')[0];
