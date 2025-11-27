@@ -122,6 +122,16 @@ export default function ChargeDetailScreen() {
     );
   };
 
+  // Calculate days overdue and total debt
+  const dueDate = new Date(charge.dueDate);
+  const today = new Date();
+  const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+  const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
+    ? charge.dailyDelayRate * daysOverdue 
+    : 0;
+  const totalDebt = charge.amount + (charge.accumulatedInterest || 0) + delayFee;
+  const shouldShowTotalDebt = daysOverdue > 30;
+
   return (
     <ThemedView style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.content}>
@@ -185,6 +195,51 @@ export default function ChargeDetailScreen() {
               </ThemedText>
             </View>
           </View>
+
+          {shouldShowTotalDebt ? (
+            <View
+              style={[
+                styles.totalDebtCard,
+                { backgroundColor: theme.error + "15", borderColor: theme.error },
+              ]}
+            >
+              <View style={styles.debtHeader}>
+                <Feather name="alert-triangle" size={20} color={theme.error} />
+                <ThemedText style={[styles.debtTitle, { color: theme.error }]}>
+                  Valor Total da Dívida
+                </ThemedText>
+              </View>
+              <ThemedText style={[styles.debtValue, { color: theme.error }]}>
+                {formatCurrency(totalDebt)}
+              </ThemedText>
+              <View style={styles.debtBreakdown}>
+                <View style={styles.debtItem}>
+                  <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                    Valor Solicitado
+                  </ThemedText>
+                  <ThemedText style={[styles.debtItemValue, { color: theme.secondaryText }]}>
+                    {formatCurrency(charge.amount)}
+                  </ThemedText>
+                </View>
+                <View style={styles.debtItem}>
+                  <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                    Juros Acumulados
+                  </ThemedText>
+                  <ThemedText style={[styles.debtItemValue, { color: "#FFB400" }]}>
+                    {formatCurrency(charge.accumulatedInterest || 0)}
+                  </ThemedText>
+                </View>
+                <View style={styles.debtItem}>
+                  <ThemedText style={[styles.debtItemLabel, { color: theme.secondaryText }]}>
+                    Taxa de Atraso ({daysOverdue} dias)
+                  </ThemedText>
+                  <ThemedText style={[styles.debtItemValue, { color: theme.error }]}>
+                    {formatCurrency(delayFee)}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {charge.lastInterestPaymentDate ? (
             <View style={styles.infoRow}>
@@ -372,5 +427,42 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginTop: Spacing.md,
+  },
+  totalDebtCard: {
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  debtHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  debtTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  debtValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: Spacing.md,
+  },
+  debtBreakdown: {
+    gap: Spacing.sm,
+  },
+  debtItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.xs,
+  },
+  debtItemLabel: {
+    fontSize: 12,
+  },
+  debtItemValue: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
