@@ -62,6 +62,11 @@ export default function ChargeFormScreen() {
       if (selectedClient.dailyDelayRate) {
         setDailyDelayRate(selectedClient.dailyDelayRate.toString());
       }
+
+      // Preencher descrição do cliente
+      if (selectedClient.notes) {
+        setDescription(selectedClient.notes);
+      }
     }
   }, [selectedClient, clientId, isEditing]);
 
