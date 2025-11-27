@@ -40,6 +40,7 @@ export default function DashboardScreen() {
     getClientById,
     charges,
     payments,
+    clients,
   } = useData();
 
   const pendingTotal = getPendingTotal();
@@ -54,7 +55,10 @@ export default function DashboardScreen() {
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
   
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
-  const totalInterestToReceive = charges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  
+  // Count active clients (those with at least one charge)
+  const activeClientsSet = new Set(charges.map(c => c.clientId));
+  const activeClientsCount = activeClientsSet.size;
 
   // Generate chart data - using actual data instead of random
   const today = new Date();
@@ -115,14 +119,14 @@ export default function DashboardScreen() {
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
           >
-            <View style={[styles.iconCircle, { backgroundColor: "#FFB400" + "20" }]}>
-              <Feather name="percent" size={20} color="#FFB400" />
+            <View style={[styles.iconCircle, { backgroundColor: theme.primaryAccent + "20" }]}>
+              <Feather name="users" size={20} color={theme.primaryAccent} />
             </View>
             <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
-              Total de Juros
+              Clientes Ativos
             </ThemedText>
-            <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
-              {formatCurrency(totalInterestToReceive)}
+            <ThemedText style={[styles.cardValue, { color: theme.primaryAccent }]}>
+              {activeClientsCount}
             </ThemedText>
           </View>
         </View>
