@@ -381,6 +381,44 @@ export default function ChargeFormScreen() {
           );
         })()}
 
+        {(() => {
+          const amountNum = parseFloat(amount.replace(",", "."));
+          const loanPercentageNum = parseFloat(loanPercentage.replace(",", "."));
+          const monthlyInterest = amount && loanPercentage && !isNaN(amountNum) && !isNaN(loanPercentageNum)
+            ? (amountNum * loanPercentageNum) / 100
+            : 0;
+          
+          const parsedDate = parseDate(dueDate);
+          const today = new Date();
+          const daysOverdue = parsedDate ? Math.floor((today.getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          const dailyRateNum = parseFloat(dailyDelayRate.replace(",", "."));
+          const delayFee = daysOverdue > 0 && !isNaN(dailyRateNum) && dailyRateNum > 0
+            ? dailyRateNum * daysOverdue
+            : 0;
+          
+          const totalValue = monthlyInterest + delayFee;
+          
+          if (totalValue === 0) return null;
+          
+          return (
+            <View style={styles.field}>
+              <ThemedText style={[styles.label, { color: theme.secondaryText, fontWeight: "700" }]}>
+                Total de Acréscimos (R$)
+              </ThemedText>
+              <View
+                style={[
+                  styles.input,
+                  { backgroundColor: theme.backgroundDefault, borderColor: theme.primaryAccent, borderWidth: 2, justifyContent: "center", paddingVertical: Spacing.md },
+                ]}
+              >
+                <ThemedText style={[{ fontSize: 18, fontWeight: "700", color: theme.primaryAccent }]}>
+                  {`R$ ${totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </ThemedText>
+              </View>
+            </View>
+          );
+        })()}
+
         <Pressable
           style={({ pressed }) => [
             styles.saveButton,
