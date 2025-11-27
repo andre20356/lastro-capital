@@ -18,7 +18,7 @@ function formatCurrency(value: number): string {
 export default function InterestDetailsScreen() {
   const { theme } = useTheme();
   const { insets } = useScreenInsets();
-  const { payments, charges } = useData();
+  const { payments, charges, getTotalDelayFees } = useData();
 
   // Get current month and year
   const today = new Date();
@@ -32,24 +32,15 @@ export default function InterestDetailsScreen() {
       return (
         paymentDate.getMonth() === currentMonth &&
         paymentDate.getFullYear() === currentYear &&
-        p.notes?.includes("interesse") ||
+        (p.notes?.includes("interesse") ||
         p.notes?.includes("juros") ||
-        p.notes?.includes("interest")
+        p.notes?.includes("interest"))
       );
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
-  // Calculate taxa de atraso total (delay fees from paid charges this month)
-  const taxasAtraso = charges
-    .filter((c) => c.status === "paid")
-    .reduce((sum, c) => {
-      const dueDate = new Date(c.dueDate);
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
-        ? c.dailyDelayRate * daysOverdue 
-        : 0;
-      return sum + delayFee;
-    }, 0);
+  // Calculate taxa de atraso pendentes (pending delay fees)
+  const taxasAtraso = getTotalDelayFees();
 
   return (
     <ThemedView style={styles.container}>
