@@ -21,6 +21,7 @@ import ProfileScreen from "@/screens/ProfileScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import InterestDetailsScreen from "@/screens/InterestDetailsScreen";
 import CashReportScreen from "@/screens/CashReportScreen";
+import ArchiveClientScreen from "@/screens/ArchiveClientScreen";
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   About: undefined;
   InterestDetails: undefined;
   CashReport: undefined;
+  ArchiveClient: { clientId: string };
 };
 
 export type MainTabParamList = {
@@ -198,6 +200,14 @@ export default function MainStackNavigator() {
         component={CashReportScreen}
         options={{
           title: "Relatório de Caixa",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="ArchiveClient"
+        component={ArchiveClientScreen}
+        options={{
+          title: "Arquivar Cliente",
           headerBackTitle: "Voltar",
         }}
       />

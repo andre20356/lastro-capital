@@ -102,28 +102,28 @@ export default function ClientDetailScreen() {
     );
   };
 
-  const handleArchive = async () => {
-    const isArchived = client.archived;
-    const message = isArchived 
-      ? "Tem certeza que deseja reativar este cliente?"
-      : "Tem certeza que deseja arquivar este cliente? As cobranças continuarão visíveis.";
-    const buttonLabel = isArchived ? "Reativar" : "Arquivar";
-    
-    Alert.alert(
-      isArchived ? "Reativar cliente" : "Arquivar cliente",
-      message,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: buttonLabel,
-          style: isArchived ? "default" : "destructive",
-          onPress: async () => {
-            await toggleArchiveClient(client.id);
-            setTimeout(() => navigation.goBack(), 150);
+  const handleArchive = () => {
+    // Se já está arquivado, reativa
+    if (client.archived) {
+      Alert.alert(
+        "Reativar cliente",
+        "Tem certeza que deseja reativar este cliente?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Reativar",
+            style: "default",
+            onPress: async () => {
+              await toggleArchiveClient(client.id);
+              setTimeout(() => navigation.goBack(), 150);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } else {
+      // Se está ativo, vai para página de arquivamento
+      navigation.navigate("ArchiveClient", { clientId: client.id });
+    }
   };
 
   const renderCharge = ({ item }: { item: Charge }) => (
@@ -249,18 +249,35 @@ export default function ClientDetailScreen() {
           </ThemedText>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionButton,
-            { borderColor: client.archived ? "#51CF66" : theme.warning, opacity: pressed ? 0.8 : 1 },
-          ]}
-          onPress={handleArchive}
-        >
-          <Feather name={client.archived ? "unlock" : "archive"} size={16} color={client.archived ? "#51CF66" : theme.warning} />
-          <ThemedText style={[styles.actionButtonText, { color: client.archived ? "#51CF66" : theme.warning }]}>
-            {client.archived ? "Reativar" : "Arquivar"}
-          </ThemedText>
-        </Pressable>
+        {!client.archived && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              { borderColor: theme.warning, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleArchive}
+          >
+            <Feather name="archive" size={16} color={theme.warning} />
+            <ThemedText style={[styles.actionButtonText, { color: theme.warning }]}>
+              Arquivar
+            </ThemedText>
+          </Pressable>
+        )}
+
+        {client.archived && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              { borderColor: "#51CF66", opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleArchive}
+          >
+            <Feather name="unlock" size={16} color="#51CF66" />
+            <ThemedText style={[styles.actionButtonText, { color: "#51CF66" }]}>
+              Reativar
+            </ThemedText>
+          </Pressable>
+        )}
       </View>
 
       <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
