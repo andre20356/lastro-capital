@@ -49,11 +49,7 @@ export default function DashboardScreen() {
   const paidCharges = charges.filter((c) => c.status === "paid");
   const totalEarned = paidCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
-
-  // Calculate overdueTotal for chart
-  const overdueTotal = overdueCharges.reduce((sum, charge) => {
-    return sum + charge.amount + (charge.delayFee || 0);
-  }, 0);
+  const totalInterestToReceive = charges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
 
   // Generate chart data
   const today = new Date();
