@@ -3,12 +3,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Client, Charge, Payment, ChargeStatus, AppData } from "@/types";
 
 const STORAGE_KEY = "@lastro_capital_data";
+const UNDO_KEY = "@lastro_capital_undo";
 
 interface DataContextType {
   clients: Client[];
   charges: Charge[];
   payments: Payment[];
   isLoading: boolean;
+  canUndo: boolean;
   addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -19,6 +21,7 @@ interface DataContextType {
   markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
   payMonthlyInterest: (chargeId: string) => Promise<void>;
   payDelayFee: (chargeId: string) => Promise<void>;
+  undo: () => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];
@@ -77,12 +80,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [charges, setCharges] = useState<Charge[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
 
   const saveData = useCallback(async (data: AppData) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error("Error saving data:", error);
+    }
+  }, []);
+
+  const saveUndoSnapshot = useCallback(async (data: AppData) => {
+    try {
+      await AsyncStorage.setItem(UNDO_KEY, JSON.stringify(data));
+      setCanUndo(true);
+    } catch (error) {
+      console.error("Error saving undo snapshot:", error);
     }
   }, []);
 
@@ -96,6 +109,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setCharges(checkOverdue(data.charges || []));
         setPayments(data.payments || []);
       }
+      // Verificar se existe snapshot de undo
+      const undoData = await AsyncStorage.getItem(UNDO_KEY);
+      setCanUndo(!!undoData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
