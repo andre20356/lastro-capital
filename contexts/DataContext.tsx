@@ -52,9 +52,12 @@ function checkOverdue(charges: Charge[]): Charge[] {
       const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
       const dailyInterestAmount = monthlyInterestAmount / 30;
       
+      console.log(`checkOverdue: ${charge.id} - referenceDate: ${referenceDate.toISOString()}, today: ${today.toISOString()}, daysOverdue: ${daysOverdue}, status: ${charge.status}`);
+      
       // Se passou 1+ dias do vencimento, marca como vencida e acumula juros
       if (daysOverdue >= 1) {
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
+        console.log(`checkOverdue: ${charge.id} mudando para "overdue", interesse acumulado: ${totalAccumulatedInterest}`);
         return { 
           ...charge, 
           status: "overdue" as ChargeStatus,

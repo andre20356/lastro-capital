@@ -52,7 +52,7 @@ export default function ChargesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, paddingTop } = useScreenInsets();
-  const { charges, getClientById, payments, refreshData } = useData();
+  const { charges, getClientById, payments, refreshData, updateCharge } = useData();
   const [filter, setFilter] = useState<FilterType>("all");
 
   // Recarregar dados quando a tela ganha foco
@@ -76,6 +76,7 @@ export default function ChargesScreen() {
       const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysOverdue >= 1 && charge.status !== "overdue") {
+        console.log(`Detectado vencimento para ${charge.id}: ${daysOverdue} dias atrasado, mudando para "overdue"`);
         const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
         const dailyInterestAmount = monthlyInterestAmount / 30;
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
@@ -98,6 +99,24 @@ export default function ChargesScreen() {
     
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [charges, filter]);
+
+  // Persistir mudanças de status quando charges vencidas são detectadas
+  useEffect(() => {
+    const chargesWithChangedStatus = filteredCharges.filter((fc) => {
+      const original = charges.find(c => c.id === fc.id);
+      return original && original.status !== fc.status;
+    });
+    
+    if (chargesWithChangedStatus.length > 0) {
+      console.log(`Persistindo ${chargesWithChangedStatus.length} charges com status alterado`);
+      chargesWithChangedStatus.forEach(charge => {
+        updateCharge(charge.id, { 
+          status: charge.status, 
+          accumulatedInterest: charge.accumulatedInterest 
+        });
+      });
+    }
+  }, [filteredCharges, charges, updateCharge]);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Todos" },
