@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { StyleSheet, View, Pressable, FlatList } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -52,8 +52,16 @@ export default function ChargesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, paddingTop } = useScreenInsets();
-  const { charges, getClientById, payments } = useData();
+  const { charges, getClientById, payments, refreshData } = useData();
   const [filter, setFilter] = useState<FilterType>("all");
+
+  // Recarregar dados quando a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      console.log("ChargesScreen focus effect - recarregando dados");
+      refreshData();
+    }, [refreshData])
+  );
 
   const filteredCharges = useMemo(() => {
     let result = [...charges];
