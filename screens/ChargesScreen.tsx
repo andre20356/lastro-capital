@@ -67,11 +67,25 @@ export default function ChargesScreen() {
     }, [refreshData])
   );
 
+  // Função para calcular o status visual dinâmico (não persiste no BD)
+  const getVisualStatus = (charge: Charge): ChargeStatus => {
+    if (charge.status === "paid") return "paid";
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+    referenceDate.setHours(0, 0, 0, 0);
+    const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysOverdue >= 1 ? "overdue" : "pending";
+  };
+
   const filteredCharges = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Atualizar status de charges vencidas em tempo real
+    // Atualizar juros acumulados em tempo real (sem mudar status na BD)
     let result = charges.map((charge) => {
       // Se está pago, não recalcula - retorna como está
       if (charge.status === "paid") {
@@ -87,7 +101,7 @@ export default function ChargesScreen() {
       const dailyInterestAmount = monthlyInterestAmount / 30;
       
       if (daysOverdue > 0) {
-        // Juros acumula diariamente, não somente quando "overdue"
+        // Juros acumula diariamente
         const calculatedAccumulatedInterest = dailyInterestAmount * daysOverdue;
         const newAccumulatedInterest = Math.max(calculatedAccumulatedInterest, charge.accumulatedInterest || 0);
         
@@ -96,17 +110,7 @@ export default function ChargesScreen() {
           updateCharge(charge.id, { accumulatedInterest: newAccumulatedInterest });
         }
         
-        // Se passou 1+ dias do vencimento, marca como vencida
-        if (daysOverdue >= 1 && charge.status !== "overdue") {
-          console.log(`Detectado vencimento para ${charge.id}: ${daysOverdue} dias atrasado, mudando para "overdue"`);
-          return {
-            ...charge,
-            status: "overdue" as const,
-            accumulatedInterest: newAccumulatedInterest
-          };
-        }
-        
-        // Se ainda não venceu mas tem juros acumulados, mostra na lista
+        // Retorna a charge com juros atualizados (mas sem mudar status na BD)
         return {
           ...charge,
           accumulatedInterest: newAccumulatedInterest
@@ -164,7 +168,7 @@ export default function ChargesScreen() {
           <ThemedText style={styles.clientName}>
             {client?.name || "Cliente removido"}
           </ThemedText>
-          <StatusBadge status={item.status} theme={theme} />
+          <StatusBadge status={getVisualStatus(item)} theme={theme} />
         </View>
         
         <View style={styles.cardBody}>

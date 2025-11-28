@@ -59,6 +59,20 @@ export default function ChargeDetailScreen() {
   const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
   const [renderKey, setRenderKey] = useState(0);
 
+  // Função para calcular o status visual dinâmico
+  const getVisualStatus = useCallback((charge: Charge): ChargeStatus => {
+    if (charge.status === "paid") return "paid";
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+    referenceDate.setHours(0, 0, 0, 0);
+    const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysOverdue >= 1 ? "overdue" : "pending";
+  }, []);
+
   // Recarregar dados quando a tela ganha foco
   useFocusEffect(
     useCallback(() => {
@@ -302,7 +316,7 @@ export default function ChargeDetailScreen() {
                 Parcela: {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
               </ThemedText>
             </View>
-            <StatusBadge status={charge.status} theme={theme} hasDelay={hasInterestDelay} />
+            <StatusBadge status={getVisualStatus(charge)} theme={theme} hasDelay={hasInterestDelay} />
           </View>
 
           <View style={styles.divider} />
