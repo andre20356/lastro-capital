@@ -98,8 +98,8 @@ export default function ChargeDetailScreen() {
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Se não venceu ainda, sem atraso
-    const hasRealDelay = daysOverdue > 0;
+    // Se não venceu ainda, sem atraso. Só mostra atraso após 1 dia do vencimento
+    const hasRealDelay = daysOverdue >= 1;
     
     // Verificar se já há pagamento de taxa de atraso
     const delayFeeAlreadyPaid = payments
