@@ -161,7 +161,7 @@ export default function ChargeDetailScreen() {
       delayFee,
       pendingDelayFee,
       totalDebt,
-      interestDaysOverdue,
+      daysInterestOverdue,
       interestDelayFee,
       totalInterestToPay,
       hasInterestDelay,
