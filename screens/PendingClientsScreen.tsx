@@ -32,7 +32,7 @@ function StatusBadge({ status, theme, hasDelay }: { status: ChargeStatus; theme:
   
   if (status === "paid") {
     config = { bg: theme.success + "20", text: theme.success, label: "Pago" };
-  } else if (hasDelay) {
+  } else if (status === "overdue") {
     config = { bg: theme.error + "20", text: theme.error, label: "Vencido" };
   } else {
     config = { bg: theme.success + "20", text: theme.success, label: "Em Dia" };
