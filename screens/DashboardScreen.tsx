@@ -65,6 +65,9 @@ export default function DashboardScreen() {
   // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
   
+  // Soma total dos clientes na lista de vencidos (para a bolha "Pendente")
+  const totalOverdueAmount = overdueCharges.reduce((sum, c) => sum + c.amount, 0);
+  
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   
   // Count active clients (those with at least one charge)
@@ -132,7 +135,7 @@ export default function DashboardScreen() {
               Pendente
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.warning }]}>
-              {formatCurrency(pendingTotal)}
+              {formatCurrency(totalOverdueAmount)}
             </ThemedText>
           </View>
 
