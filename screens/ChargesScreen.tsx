@@ -149,10 +149,10 @@ export default function ChargesScreen() {
         <View style={styles.cardBody}>
           <View>
             <ThemedText style={[styles.label, { color: theme.tertiaryText }]}>
-              Valor
+              Juros
             </ThemedText>
             <ThemedText style={[styles.amount, { color: theme.text }]}>
-              {formatCurrency(item.amount)}
+              {formatCurrency(item.accumulatedInterest || 0)}
             </ThemedText>
           </View>
           <View>
