@@ -71,6 +71,14 @@ export default function DashboardScreen() {
     .filter(c => c.status === "overdue")
     .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   
+  // Count clients with overdue charges
+  const overdueClientsSet = new Set(
+    charges
+      .filter(c => c.status === "overdue")
+      .map(c => c.clientId)
+  );
+  const overdueClientsCount = overdueClientsSet.size;
+  
   // Count active clients (those with at least one charge)
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
@@ -136,7 +144,7 @@ export default function DashboardScreen() {
               Pendente
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.warning }]}>
-              {formatCurrency(totalOverdueInterest)}
+              {overdueClientsCount}
             </ThemedText>
           </View>
 
