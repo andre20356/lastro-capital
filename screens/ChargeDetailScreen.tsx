@@ -114,18 +114,21 @@ export default function ChargeDetailScreen() {
     
     // Para calcular parcelas de juros, usar nextInterestDueDate se existir (após pagamentos)
     const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : dueDate;
+    
+    // Calcular atraso de juros - SÓ APARECE 1 DIA APÓS O VENCIMENTO (>= 1)
     const daysInterestOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const hasInterestDelay = daysInterestOverdue >= 1; // Reforço: só atraso se passou 1 dia completo
     
     // Calcular número de parcelas em atraso (baseado em dias de juros)
-    const numberOfOverdueInstallments = daysInterestOverdue > 0 ? Math.ceil(daysInterestOverdue / 30) : 0;
+    const numberOfOverdueInstallments = hasInterestDelay ? Math.ceil(daysInterestOverdue / 30) : 0;
     
     // Calcular juros mensais por parcela
     const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
     // Juros acumulados = juros mensais * número de parcelas em atraso
-    const calculatedAccumulatedInterest = daysInterestOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+    const calculatedAccumulatedInterest = hasInterestDelay ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
     
-    const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
+    const delayFee = hasRealDelay && charge.dailyDelayRate 
       ? charge.dailyDelayRate * daysOverdue 
       : 0;
     
@@ -133,16 +136,16 @@ export default function ChargeDetailScreen() {
     const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
     const totalDebt = charge.amount + calculatedAccumulatedInterest + pendingDelayFee;
 
-    // Calculate interest delay (atraso nos juros)
-    const interestDaysOverdue = daysInterestOverdue;
-    const interestDelayFee = interestDaysOverdue > 0 && charge.dailyDelayRate && charge.accumulatedInterest
-      ? charge.dailyDelayRate * interestDaysOverdue
+    // Calculate interest delay fee (taxa adicional por atraso de juros)
+    const interestDelayFee = hasInterestDelay && charge.dailyDelayRate && charge.accumulatedInterest
+      ? charge.dailyDelayRate * daysInterestOverdue
       : 0;
     const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
-    const hasInterestDelay = interestDaysOverdue > 0;
     
-    // Mostrar alerta apenas se tiver dias em atraso OU juros em atraso
-    // NÃO mostrar se não houver nenhum tipo de atraso real
+    // CRÍTICO: Mostrar alerta apenas se tiver atraso REAL
+    // - daysRemainingOverdue > 0: Cliente atrasou no pagamento original
+    // - hasInterestDelay: Cliente atrasou no pagamento de juros (1+ dias após vencimento)
+    // IMPORTANTE: Se está em dia no calendário, não mostra!
     const shouldShowTotalDebt = daysRemainingOverdue > 0 || hasInterestDelay;
     
     // Verificar se tem algum atraso (juros ou taxa)
