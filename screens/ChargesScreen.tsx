@@ -79,15 +79,34 @@ export default function ChargesScreen() {
       referenceDate.setHours(0, 0, 0, 0);
       const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (daysOverdue >= 1 && charge.status !== "overdue") {
-        console.log(`Detectado vencimento para ${charge.id}: ${daysOverdue} dias atrasado, mudando para "overdue"`);
-        const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
-        const dailyInterestAmount = monthlyInterestAmount / 30;
-        const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
+      // Calcular juros acumulados diariamente
+      const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
+      const dailyInterestAmount = monthlyInterestAmount / 30;
+      
+      if (daysOverdue > 0) {
+        // Juros acumula diariamente, não somente quando "overdue"
+        const calculatedAccumulatedInterest = dailyInterestAmount * daysOverdue;
+        const newAccumulatedInterest = Math.max(calculatedAccumulatedInterest, charge.accumulatedInterest || 0);
+        
+        // Se mudou o valor de juros acumulados, persiste no armazenamento
+        if (newAccumulatedInterest !== (charge.accumulatedInterest || 0)) {
+          updateCharge(charge.id, { accumulatedInterest: newAccumulatedInterest });
+        }
+        
+        // Se passou 1+ dias do vencimento, marca como vencida
+        if (daysOverdue >= 1 && charge.status !== "overdue") {
+          console.log(`Detectado vencimento para ${charge.id}: ${daysOverdue} dias atrasado, mudando para "overdue"`);
+          return {
+            ...charge,
+            status: "overdue" as const,
+            accumulatedInterest: newAccumulatedInterest
+          };
+        }
+        
+        // Se ainda não venceu mas tem juros acumulados, mostra na lista
         return {
           ...charge,
-          status: "overdue" as const,
-          accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
+          accumulatedInterest: newAccumulatedInterest
         };
       }
       return charge;
