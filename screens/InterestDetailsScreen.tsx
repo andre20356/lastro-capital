@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -19,7 +20,7 @@ function formatCurrency(value: number): string {
 export default function InterestDetailsScreen() {
   const { theme } = useTheme();
   const { insets } = useScreenInsets();
-  const { payments, charges, refreshData } = useData();
+  const { payments, charges, refreshData, getClientById } = useData();
 
   // Atualizar dados quando a tela ganha foco
   useFocusEffect(
@@ -59,6 +60,23 @@ export default function InterestDetailsScreen() {
       );
     })
     .reduce((sum, p) => sum + p.amount, 0);
+
+  // Get all payments from this month with client info
+  const monthPayments = payments
+    .filter((p) => {
+      const paymentDate = new Date(p.paidAt);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear &&
+        (p.notes?.includes("juros") || p.notes === "Pagamento de taxa de atraso")
+      );
+    })
+    .map((p) => ({
+      ...p,
+      clientName: getClientById(p.clientId)?.name || "Cliente",
+      day: new Date(p.paidAt).getDate(),
+    }))
+    .sort((a, b) => a.day - b.day);
 
   return (
     <ThemedView style={styles.container}>
@@ -124,6 +142,33 @@ export default function InterestDetailsScreen() {
               {formatCurrency(jurosRecebidos + taxasAtraso)}
             </ThemedText>
           </View>
+          
+          {monthPayments.length > 0 ? (
+            <>
+              <View style={styles.divider} />
+              <ThemedText style={[styles.paymentsTitle, { color: theme.text }]}>
+                Pagamentos
+              </ThemedText>
+              {monthPayments.map((payment) => {
+                const firstName = payment.clientName.split(" ")[0];
+                return (
+                  <View key={payment.id} style={styles.paymentRow}>
+                    <View style={styles.paymentInfo}>
+                      <ThemedText style={[styles.paymentName, { color: theme.text }]}>
+                        {firstName}
+                      </ThemedText>
+                      <ThemedText style={[styles.paymentDay, { color: theme.tertiaryText }]}>
+                        Dia {payment.day}
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.paymentAmount, { color: "#51CF66" }]}>
+                      {formatCurrency(payment.amount)}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </>
+          ) : null}
         </View>
       </ScreenScrollView>
     </ThemedView>
@@ -194,5 +239,38 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginVertical: Spacing.md,
+  },
+  paymentsTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+  },
+  paymentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#e5e7eb",
+  },
+  paymentInfo: {
+    flex: 1,
+  },
+  paymentName: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  paymentDay: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  paymentAmount: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
