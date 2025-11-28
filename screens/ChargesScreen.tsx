@@ -90,8 +90,9 @@ export default function ChargesScreen() {
     });
     
     if (filter !== "all") {
-      if (filter === "overdue") {
-        result = result.filter((c) => c.status === "overdue");
+      if (filter === "pending") {
+        // "Pendentes" mostra tanto pending quanto overdue
+        result = result.filter((c) => c.status === "pending" || c.status === "overdue");
       } else {
         result = result.filter((c) => c.status === filter);
       }
