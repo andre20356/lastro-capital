@@ -100,24 +100,6 @@ export default function ChargesScreen() {
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [charges, filter]);
 
-  // Persistir mudanças de status quando charges vencidas são detectadas
-  useEffect(() => {
-    const chargesWithChangedStatus = filteredCharges.filter((fc) => {
-      const original = charges.find(c => c.id === fc.id);
-      return original && original.status !== fc.status;
-    });
-    
-    if (chargesWithChangedStatus.length > 0) {
-      console.log(`Persistindo ${chargesWithChangedStatus.length} charges com status alterado`);
-      chargesWithChangedStatus.forEach(charge => {
-        updateCharge(charge.id, { 
-          status: charge.status, 
-          accumulatedInterest: charge.accumulatedInterest 
-        });
-      });
-    }
-  }, [filteredCharges, charges, updateCharge]);
-
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Todos" },
     { key: "pending", label: "Pendentes" },
