@@ -58,7 +58,9 @@ export default function HistoryScreen() {
 
   const sections = useMemo(() => {
     const grouped = payments.reduce((acc, payment) => {
-      const monthYear = getMonthYear(payment.paidAt);
+      // Para juros e taxa de atraso, usar dueDate (data de vencimento). Senão, usar paidAt
+      const referenceDate = payment.dueDate ? payment.dueDate : payment.paidAt;
+      const monthYear = getMonthYear(referenceDate);
       if (!acc[monthYear]) {
         acc[monthYear] = { payments: [], total: 0 };
       }
@@ -71,13 +73,17 @@ export default function HistoryScreen() {
       .map(([title, { payments, total }]) => ({
         title,
         data: payments.sort(
-          (a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime()
+          (a, b) => {
+            const dateA = new Date(a.dueDate ? a.dueDate : a.paidAt);
+            const dateB = new Date(b.dueDate ? b.dueDate : b.paidAt);
+            return dateB.getTime() - dateA.getTime();
+          }
         ),
         total,
       }))
       .sort((a, b) => {
-        const dateA = new Date(a.data[0]?.paidAt || 0);
-        const dateB = new Date(b.data[0]?.paidAt || 0);
+        const dateA = new Date(a.data[0]?.dueDate ? a.data[0].dueDate : a.data[0]?.paidAt || 0);
+        const dateB = new Date(b.data[0]?.dueDate ? b.data[0].dueDate : b.data[0]?.paidAt || 0);
         return dateB.getTime() - dateA.getTime();
       });
   }, [payments]);
@@ -105,7 +111,7 @@ export default function HistoryScreen() {
           </ThemedText>
           <View style={styles.paymentMeta}>
             <ThemedText style={[styles.paymentDate, { color: theme.secondaryText }]}>
-              {formatDate(item.paidAt)}
+              {item.dueDate ? `Venc: ${formatDate(item.dueDate)}` : formatDate(item.paidAt)}
             </ThemedText>
             <View style={styles.typeBadge}>
               <ThemedText style={[styles.typeBadgeText, { color: theme.success }]}>
