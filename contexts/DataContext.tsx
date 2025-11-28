@@ -419,15 +419,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
       
-      // Verificar se tem juros em atraso
+      // Verificar se tem juros em atraso (1+ dias após vencimento)
       const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : null;
       const interestDaysOverdue = interestDueDate
         ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
-      const hasInterestDelay = interestDaysOverdue > 0;
+      const hasInterestDelay = interestDaysOverdue >= 1;
       
-      // Retornar true apenas se houver REAL atraso
-      return pendingDelayFee > 0 || hasInterestDelay;
+      // Retornar true apenas se houver REAL atraso (1+ dias de juros)
+      return hasInterestDelay;
     });
   }, [charges, payments]);
 
