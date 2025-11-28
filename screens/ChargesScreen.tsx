@@ -67,7 +67,18 @@ export default function ChargesScreen() {
     let result = [...charges];
     
     if (filter !== "all") {
-      result = result.filter((c) => c.status === filter);
+      if (filter === "overdue") {
+        // Filtro "Vencidos" - cliente só aparece 1+ dias após o vencimento de juros
+        const today = new Date();
+        result = result.filter((c) => {
+          const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : new Date(c.dueDate);
+          const interestDaysOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+          return interestDaysOverdue >= 1;
+        });
+      } else {
+        // Outros filtros usam o status da cobrança
+        result = result.filter((c) => c.status === filter);
+      }
     }
     
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
