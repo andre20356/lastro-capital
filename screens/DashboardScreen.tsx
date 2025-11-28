@@ -70,6 +70,9 @@ export default function DashboardScreen() {
   
   const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   
+  // Total pendente = valor do empréstimo + juros acumulados
+  const totalPendingWithInterest = totalOverdueAmount + totalOverdueInterest;
+  
   // Count active clients (those with at least one charge)
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
@@ -135,7 +138,7 @@ export default function DashboardScreen() {
               Pendente
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: theme.warning }]}>
-              {formatCurrency(totalOverdueAmount)}
+              {formatCurrency(totalPendingWithInterest)}
             </ThemedText>
           </View>
 
