@@ -267,6 +267,7 @@ export default function ChargeDetailScreen() {
     numberOfOverdueInstallments,
     calculatedAccumulatedInterest,
     daysRemainingOverdue,
+    delayFeeAlreadyPaid,
     pendingDelayFee,
     totalDebt,
     hasInterestDelay,
