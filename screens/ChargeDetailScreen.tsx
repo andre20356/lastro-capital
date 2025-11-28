@@ -296,7 +296,12 @@ export default function ChargeDetailScreen() {
           ]}
         >
           <View style={styles.header}>
-            <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
+            <View>
+              <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
+              <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText, marginTop: Spacing.xs }]}>
+                Parcela: {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
+              </ThemedText>
+            </View>
             <StatusBadge status={charge.status} theme={theme} hasDelay={hasInterestDelay} />
           </View>
 
