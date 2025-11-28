@@ -131,11 +131,12 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <ScreenScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.cardsRow}>
-          <View
+          <Pressable
             style={[
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
+            onPress={() => navigation.navigate("PendingClients")}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.warning + "20" }]}>
               <Feather name="clock" size={20} color={theme.warning} />
@@ -146,7 +147,7 @@ export default function DashboardScreen() {
             <ThemedText style={[styles.cardValue, { color: theme.warning }]}>
               {overdueClientsCount}
             </ThemedText>
-          </View>
+          </Pressable>
 
           <Pressable
             style={[
