@@ -419,6 +419,16 @@ export default function ChargeDetailScreen() {
                 <ThemedText style={[styles.infoValue, { color: theme.success }]}>
                   {formatDate(charge.lastInterestPaymentDate)}
                 </ThemedText>
+                {(() => {
+                  const latestInterestPayment = payments
+                    .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de juros mensais")
+                    .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())[0];
+                  return latestInterestPayment?.dueDate ? (
+                    <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText, marginTop: Spacing.xs }]}>
+                      Período: {formatDate(latestInterestPayment.dueDate)}
+                    </ThemedText>
+                  ) : null;
+                })()}
               </View>
             </View>
           ) : null}
