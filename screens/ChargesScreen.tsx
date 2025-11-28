@@ -121,10 +121,14 @@ export default function ChargesScreen() {
     
     if (filter !== "all") {
       if (filter === "pending") {
-        // "Pendentes" mostra tanto pending quanto overdue
-        result = result.filter((c) => c.status === "pending" || c.status === "overdue");
+        // "Pendentes" mostra tanto pending quanto overdue (baseado no status visual)
+        result = result.filter((c) => {
+          const visualStatus = getVisualStatus(c);
+          return visualStatus === "pending" || visualStatus === "overdue";
+        });
       } else {
-        result = result.filter((c) => c.status === filter);
+        // Para outros filtros, usa o status visual também
+        result = result.filter((c) => getVisualStatus(c) === filter);
       }
     }
     
