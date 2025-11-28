@@ -147,7 +147,7 @@ export default function DashboardScreen() {
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
-            onPress={() => navigation.navigate("PendingClients")}
+            onPress={() => navigation.navigate("Charges")}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.warning + "20" }]}>
               <Feather name="clock" size={20} color={theme.warning} />

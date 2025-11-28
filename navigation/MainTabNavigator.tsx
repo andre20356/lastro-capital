@@ -22,7 +22,6 @@ import AboutScreen from "@/screens/AboutScreen";
 import InterestDetailsScreen from "@/screens/InterestDetailsScreen";
 import CashReportScreen from "@/screens/CashReportScreen";
 import ArchiveClientScreen from "@/screens/ArchiveClientScreen";
-import PendingClientsScreen from "@/screens/PendingClientsScreen";
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -35,7 +34,6 @@ export type RootStackParamList = {
   InterestDetails: undefined;
   CashReport: undefined;
   ArchiveClient: { clientId: string };
-  PendingClients: undefined;
 };
 
 export type MainTabParamList = {
