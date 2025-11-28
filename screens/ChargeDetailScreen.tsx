@@ -137,11 +137,12 @@ export default function ChargeDetailScreen() {
     const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
     const hasInterestDelay = interestDaysOverdue > 0;
     
-    // Mostrar alerta apenas se tiver taxa de atraso pendente OU juros em atraso
-    const shouldShowTotalDebt = pendingDelayFee > 0 || hasInterestDelay;
+    // Mostrar alerta apenas se tiver dias em atraso OU juros em atraso
+    // NÃO mostrar se não houver nenhum tipo de atraso real
+    const shouldShowTotalDebt = daysRemainingOverdue > 0 || hasInterestDelay;
     
     // Verificar se tem algum atraso (juros ou taxa)
-    const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
+    const hasAnyDelay = daysRemainingOverdue > 0 || hasInterestDelay;
 
     return {
       daysOverdue,
