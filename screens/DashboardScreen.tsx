@@ -66,7 +66,10 @@ export default function DashboardScreen() {
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
   
   // Soma total dos juros vencidos (para a bolha "Pendente")
-  const totalOverdueInterest = overdueCharges.reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  // Apenas charges com status "overdue" (1+ dias de atraso)
+  const totalOverdueInterest = overdueCharges
+    .filter(c => c.status === "overdue")
+    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   
   // Count active clients (those with at least one charge)
   const activeClientsSet = new Set(charges.map(c => c.clientId));
