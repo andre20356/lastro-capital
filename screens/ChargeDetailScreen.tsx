@@ -693,4 +693,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  interestCard: {
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
 });
