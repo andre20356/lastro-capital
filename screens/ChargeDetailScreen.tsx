@@ -109,14 +109,18 @@ export default function ChargeDetailScreen() {
     // Calcular dias ainda pendentes de pagamento
     const daysRemainingOverdue = Math.max(0, daysOverdue - daysPaidSoFar);
     
-    // Calcular número de parcelas em atraso (baseado em dias restantes)
-    const numberOfOverdueInstallments = daysRemainingOverdue > 0 ? Math.ceil(daysRemainingOverdue / 30) : 0;
+    // Para calcular parcelas de juros, usar nextInterestDueDate se existir (após pagamentos)
+    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : dueDate;
+    const daysInterestOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calcular número de parcelas em atraso (baseado em dias de juros)
+    const numberOfOverdueInstallments = daysInterestOverdue > 0 ? Math.ceil(daysInterestOverdue / 30) : 0;
     
     // Calcular juros mensais por parcela
     const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
     // Juros acumulados = juros mensais * número de parcelas em atraso
-    const calculatedAccumulatedInterest = daysRemainingOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+    const calculatedAccumulatedInterest = daysInterestOverdue > 0 ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
     
     const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
       ? charge.dailyDelayRate * daysOverdue 
@@ -127,10 +131,7 @@ export default function ChargeDetailScreen() {
     const totalDebt = charge.amount + calculatedAccumulatedInterest + pendingDelayFee;
 
     // Calculate interest delay (atraso nos juros)
-    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : null;
-    const interestDaysOverdue = interestDueDate
-      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
+    const interestDaysOverdue = daysInterestOverdue;
     const interestDelayFee = interestDaysOverdue > 0 && charge.dailyDelayRate && charge.accumulatedInterest
       ? charge.dailyDelayRate * interestDaysOverdue
       : 0;
