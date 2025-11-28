@@ -11,6 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { useScreenInsets } from "@/hooks/useScreenInsets";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
+import { Charge, ChargeStatus } from "@/types";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,64 +22,114 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("pt-BR");
+}
+
+function StatusBadge({ status, theme, hasDelay }: { status: ChargeStatus; theme: any; hasDelay?: boolean }) {
+  let config;
+  
+  if (status === "paid") {
+    config = { bg: theme.success + "20", text: theme.success, label: "Pago" };
+  } else if (hasDelay) {
+    config = { bg: theme.error + "20", text: theme.error, label: "Vencido" };
+  } else {
+    config = { bg: theme.success + "20", text: theme.success, label: "Em Dia" };
+  }
+  
+  return (
+    <View style={[styles.badge, { backgroundColor: config.bg }]}>
+      <ThemedText style={[styles.badgeText, { color: config.text }]}>{config.label}</ThemedText>
+    </View>
+  );
+}
+
 export default function PendingClientsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { tabBarHeight, paddingTop } = useScreenInsets();
-  const { charges, getClientById } = useData();
+  const { charges, getClientById, payments } = useData();
 
-  // Get all unique clients with overdue charges
-  const pendingClients = useMemo(() => {
-    const clientsMap = new Map<string, { clientId: string; name: string; overdueCount: number; totalInterest: number }>();
-
-    charges
+  // Get all overdue charges
+  const overdueCharges = useMemo(() => {
+    return charges
       .filter(c => c.status === "overdue")
-      .forEach(charge => {
-        const client = getClientById(charge.clientId);
-        if (client) {
-          const existing = clientsMap.get(charge.clientId);
-          if (existing) {
-            existing.overdueCount += 1;
-            existing.totalInterest += charge.accumulatedInterest || 0;
-          } else {
-            clientsMap.set(charge.clientId, {
-              clientId: charge.clientId,
-              name: client.name,
-              overdueCount: 1,
-              totalInterest: charge.accumulatedInterest || 0,
-            });
-          }
-        }
-      });
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [charges]);
 
-    return Array.from(clientsMap.values()).sort((a, b) => b.totalInterest - a.totalInterest);
-  }, [charges, getClientById]);
-
-  const renderItem = ({ item }: { item: (typeof pendingClients)[0] }) => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.clientCard,
-        { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
-      ]}
-      onPress={() => navigation.navigate("ClientDetail", { clientId: item.clientId })}
-    >
-      <View style={styles.cardContent}>
-        <View style={styles.clientInfo}>
-          <ThemedText style={[styles.clientName, { color: theme.text }]}>{item.name}</ThemedText>
-          <ThemedText style={[styles.overdueBadge, { color: theme.warning }]}>
-            {item.overdueCount} {item.overdueCount === 1 ? "parcela vencida" : "parcelas vencidas"}
+  const renderItem = ({ item }: { item: Charge }) => {
+    const client = getClientById(item.clientId);
+    
+    const today = new Date();
+    const dueDate = new Date(item.dueDate);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === item.id && p.notes === "Pagamento de taxa de atraso")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const delayFee = daysOverdue > 0 && item.dailyDelayRate 
+      ? item.dailyDelayRate * daysOverdue 
+      : 0;
+    
+    const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
+    
+    const interestDueDate = item.nextInterestDueDate ? new Date(item.nextInterestDueDate) : null;
+    const interestDaysOverdue = interestDueDate
+      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const hasInterestDelay = interestDaysOverdue >= 1;
+    
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.chargeCard,
+          { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
+        ]}
+        onPress={() => navigation.navigate("ChargeDetail", { chargeId: item.id })}
+      >
+        <View style={styles.cardHeader}>
+          <ThemedText style={styles.clientName}>
+            {client?.name || "Cliente removido"}
           </ThemedText>
+          <StatusBadge status={item.status} theme={theme} hasDelay={hasInterestDelay} />
         </View>
-        <ThemedText style={[styles.interestAmount, { color: theme.warning }]}>
-          {formatCurrency(item.totalInterest)}
-        </ThemedText>
-      </View>
-    </Pressable>
-  );
+        
+        <View style={styles.cardBody}>
+          <View>
+            <ThemedText style={[styles.label, { color: theme.tertiaryText }]}>
+              Juros
+            </ThemedText>
+            <ThemedText style={[styles.amount, { color: theme.text }]}>
+              {formatCurrency(item.accumulatedInterest || 0)}
+            </ThemedText>
+          </View>
+          <View>
+            <ThemedText style={[styles.label, { color: theme.tertiaryText }]}>
+              Vencimento
+            </ThemedText>
+            <ThemedText style={{ color: theme.secondaryText }}>
+              {item.nextInterestDueDate ? formatDate(item.nextInterestDueDate) : formatDate(item.dueDate)}
+            </ThemedText>
+          </View>
+        </View>
+        
+        {item.description ? (
+          <ThemedText
+            style={[styles.description, { color: theme.secondaryText }]}
+            numberOfLines={1}
+          >
+            {item.description}
+          </ThemedText>
+        ) : null}
+      </Pressable>
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
-      {pendingClients.length === 0 ? (
+      {overdueCharges.length === 0 ? (
         <ScreenScrollView
           contentContainerStyle={[
             styles.emptyContainer,
@@ -94,9 +145,9 @@ export default function PendingClientsScreen() {
         </ScreenScrollView>
       ) : (
         <FlatList
-          data={pendingClients}
+          data={overdueCharges}
           renderItem={renderItem}
-          keyExtractor={item => item.clientId}
+          keyExtractor={item => item.id}
           contentContainerStyle={{
             paddingTop: paddingTop + Spacing.md,
             paddingHorizontal: Spacing.md,
@@ -125,33 +176,48 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
   },
-  clientCard: {
+  chargeCard: {
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
   },
-  cardContent: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  clientInfo: {
-    flex: 1,
-    marginRight: Spacing.md,
+    marginBottom: Spacing.md,
   },
   clientName: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: Spacing.xs,
+    flex: 1,
   },
-  overdueBadge: {
+  badge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  cardBody: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  label: {
     fontSize: 12,
     fontWeight: "500",
+    marginBottom: Spacing.xs,
   },
-  interestAmount: {
-    fontSize: 16,
-    fontWeight: "bold",
+  amount: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  description: {
+    fontSize: 12,
   },
 });
