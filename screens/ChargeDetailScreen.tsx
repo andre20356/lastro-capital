@@ -418,7 +418,10 @@ export default function ChargeDetailScreen() {
                   Juros Pagos em
                 </ThemedText>
                 <ThemedText style={[styles.infoValue, { color: theme.success }]}>
-                  {formatDate(charge.lastInterestPaymentDate)}
+                  {(() => {
+                    const interestPayments = payments.filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de juros mensais").length;
+                    return interestPayments > 0 ? `${interestPayments} parcela${interestPayments > 1 ? 's' : ''}` : "0 parcelas";
+                  })()}
                 </ThemedText>
                 {charge.nextInterestDueDate ? (() => {
                   const nextDueDate = new Date(charge.nextInterestDueDate);
