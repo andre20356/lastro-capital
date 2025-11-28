@@ -43,32 +43,26 @@ function checkOverdue(charges: Charge[]): Charge[] {
   
   return charges.map((charge) => {
     if (charge.status === "pending" || charge.status === "overdue") {
-      const dueDate = new Date(charge.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
+      // Usar nextInterestDueDate se existir, senão usar dueDate
+      const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+      referenceDate.setHours(0, 0, 0, 0);
       
-      // Para todas as cobranças pendentes/vencidas, calcular juros acumulados
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      // Calcular atraso baseado na data de vencimento de juros
+      const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
       const dailyInterestAmount = monthlyInterestAmount / 30;
       
-      if (daysOverdue > 0) {
-        // Se está vencida, acumula juros
+      // Se passou 1+ dias do vencimento, marca como vencida e acumula juros
+      if (daysOverdue >= 1) {
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
         return { 
           ...charge, 
           status: "overdue" as ChargeStatus,
           accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
         };
-      } else if (daysOverdue === 0 && dueDate.getTime() === today.getTime()) {
-        // Se vence hoje, ainda não há atraso
-        return charge;
       } else {
-        // Se ainda não venceu, mas tem juros mensais configurados, mostrar juros esperados
-        // Isso permite visualizar os juros que serão cobrados quando vencer
-        return {
-          ...charge,
-          accumulatedInterest: charge.accumulatedInterest || 0
-        };
+        // Se ainda não venceu (0 ou negativo), mantém como pending
+        return charge;
       }
     }
     return charge;
