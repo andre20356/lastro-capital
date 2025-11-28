@@ -71,10 +71,21 @@ export default function DashboardScreen() {
     .filter(c => c.status === "overdue")
     .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
   
-  // Count clients with overdue charges
+  // Count clients with overdue charges (status visual = overdue, não apenas BD)
   const overdueClientsSet = new Set(
     charges
-      .filter(c => c.status === "overdue")
+      .filter(c => {
+        if (c.status === "paid") return false;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const referenceDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : new Date(c.dueDate);
+        referenceDate.setHours(0, 0, 0, 0);
+        const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return daysOverdue >= 1; // Apenas charges com 1+ dias de atraso
+      })
       .map(c => c.clientId)
   );
   const overdueClientsCount = overdueClientsSet.size;
