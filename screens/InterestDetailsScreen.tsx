@@ -151,6 +151,8 @@ export default function InterestDetailsScreen() {
               </ThemedText>
               {monthPayments.map((payment) => {
                 const firstName = payment.clientName.split(" ")[0];
+                const paymentDate = new Date(payment.paidAt);
+                const formattedDate = paymentDate.toLocaleDateString("pt-BR");
                 return (
                   <View key={payment.id} style={styles.paymentRow}>
                     <View style={styles.paymentInfo}>
@@ -158,7 +160,7 @@ export default function InterestDetailsScreen() {
                         {firstName}
                       </ThemedText>
                       <ThemedText style={[styles.paymentDay, { color: theme.tertiaryText }]}>
-                        Dia {payment.day}
+                        {formattedDate}
                       </ThemedText>
                     </View>
                     <ThemedText style={[styles.paymentAmount, { color: "#51CF66" }]}>
