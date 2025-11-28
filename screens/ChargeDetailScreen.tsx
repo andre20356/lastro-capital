@@ -96,9 +96,14 @@ export default function ChargeDetailScreen() {
 
     const dueDate = new Date(charge.dueDate);
     const today = new Date();
-    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Se não venceu ainda, sem atraso. Só mostra atraso após 1 dia do vencimento
+    // Para calcular parcelas de juros e taxa de atraso, usar nextInterestDueDate se existir (após pagamentos)
+    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : dueDate;
+    
+    // Calcular atraso baseado na data de vencimento de juros (não no dueDate original)
+    const daysOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Se não venceu ainda, sem atraso. Só mostra atraso após 1 dia do vencimento de juros
     const hasRealDelay = daysOverdue >= 1;
     
     // Verificar se já há pagamento de taxa de atraso
@@ -112,11 +117,9 @@ export default function ChargeDetailScreen() {
     // Calcular dias ainda pendentes de pagamento (só se houver atraso real)
     const daysRemainingOverdue = hasRealDelay ? Math.max(0, daysOverdue - daysPaidSoFar) : 0;
     
-    // Para calcular parcelas de juros, usar nextInterestDueDate se existir (após pagamentos)
-    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : dueDate;
-    
     // Calcular atraso de juros - SÓ APARECE 1 DIA APÓS O VENCIMENTO (>= 1)
-    const daysInterestOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Usa mesma lógica que daysOverdue (baseado em nextInterestDueDate)
+    const daysInterestOverdue = daysOverdue;
     const hasInterestDelay = daysInterestOverdue >= 1; // Reforço: só atraso se passou 1 dia completo
     
     // Calcular número de parcelas em atraso (baseado em dias de juros)
@@ -232,7 +235,9 @@ export default function ChargeDetailScreen() {
   };
 
   const handlePayDelayFee = async () => {
-    const daysOverdue = Math.floor((new Date().getTime() - new Date(charge.dueDate).getTime()) / (1000 * 60 * 60 * 24));
+    // Calcular baseado em nextInterestDueDate (data do próximo vencimento de juros)
+    const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+    const daysOverdue = Math.floor((new Date().getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaidLocal = payments
       .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
