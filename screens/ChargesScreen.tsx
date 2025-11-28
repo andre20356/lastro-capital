@@ -64,19 +64,34 @@ export default function ChargesScreen() {
   );
 
   const filteredCharges = useMemo(() => {
-    let result = [...charges];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Atualizar status de charges vencidas em tempo real
+    let result = charges.map((charge) => {
+      if (charge.status === "paid") return charge;
+      
+      const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
+      referenceDate.setHours(0, 0, 0, 0);
+      const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysOverdue >= 1 && charge.status !== "overdue") {
+        const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
+        const dailyInterestAmount = monthlyInterestAmount / 30;
+        const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
+        return {
+          ...charge,
+          status: "overdue" as const,
+          accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
+        };
+      }
+      return charge;
+    });
     
     if (filter !== "all") {
       if (filter === "overdue") {
-        // Filtro "Vencidos" - cliente só aparece 1+ dias após o vencimento de juros
-        const today = new Date();
-        result = result.filter((c) => {
-          const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : new Date(c.dueDate);
-          const interestDaysOverdue = Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
-          return interestDaysOverdue >= 1;
-        });
+        result = result.filter((c) => c.status === "overdue");
       } else {
-        // Outros filtros usam o status da cobrança
         result = result.filter((c) => c.status === filter);
       }
     }
