@@ -28,12 +28,12 @@ function formatDate(dateString: string): string {
   return date.toLocaleDateString("pt-BR");
 }
 
-function StatusBadge({ status, theme, hasDelay }: { status: ChargeStatus; theme: any; hasDelay?: boolean }) {
+function StatusBadge({ status, theme }: { status: ChargeStatus; theme: any }) {
   let config;
   
   if (status === "paid") {
     config = { bg: theme.success + "20", text: theme.success, label: "Pago" };
-  } else if (hasDelay) {
+  } else if (status === "overdue") {
     config = { bg: theme.error + "20", text: theme.error, label: "Vencido" };
   } else {
     config = { bg: theme.success + "20", text: theme.success, label: "Em Dia" };
@@ -125,13 +125,6 @@ export default function ChargesScreen() {
     
     const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
     
-    const interestDueDate = item.nextInterestDueDate ? new Date(item.nextInterestDueDate) : null;
-    const interestDaysOverdue = interestDueDate
-      ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-    // Badge "Vencido" só aparece se juros atrasarem 1+ dias após o vencimento
-    const hasInterestDelay = interestDaysOverdue >= 1;
-    
     return (
       <Pressable
         style={({ pressed }) => [
@@ -144,7 +137,7 @@ export default function ChargesScreen() {
           <ThemedText style={styles.clientName}>
             {client?.name || "Cliente removido"}
           </ThemedText>
-          <StatusBadge status={item.status} theme={theme} hasDelay={hasInterestDelay} />
+          <StatusBadge status={item.status} theme={theme} />
         </View>
         
         <View style={styles.cardBody}>
