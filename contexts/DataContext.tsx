@@ -277,6 +277,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         clientId: charge.clientId,
         amount: monthlyInterestPerInstallment,
         paidAt: new Date().toISOString(),
+        dueDate: baseDate.toISOString().split('T')[0],
         notes: "Pagamento de juros mensais",
       };
 

@@ -39,6 +39,7 @@ export interface Payment {
   clientId: string;
   amount: number;
   paidAt: string;
+  dueDate?: string;
   notes: string;
 }
 
