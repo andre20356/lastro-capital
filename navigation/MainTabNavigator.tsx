@@ -211,14 +211,6 @@ export default function MainStackNavigator() {
           headerBackTitle: "Voltar",
         }}
       />
-      <Stack.Screen
-        name="PendingClients"
-        component={PendingClientsScreen}
-        options={{
-          title: "Clientes Pendentes",
-          headerBackTitle: "Voltar",
-        }}
-      />
     </Stack.Navigator>
   );
 }
