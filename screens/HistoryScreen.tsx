@@ -31,6 +31,19 @@ function getMonthYear(dateString: string): string {
   return date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
+function getPaymentType(payment: Payment): { label: string; icon: string; description: string } {
+  if (payment.notes === "Pagamento de juros mensais") {
+    return { label: "Juros", icon: "percent", description: "Pagamento de juros" };
+  }
+  if (payment.notes === "Pagamento de taxa de atraso") {
+    return { label: "Taxa de Atraso", icon: "alert-circle", description: "Pagamento de taxa de atraso" };
+  }
+  if (payment.notes === "Quitação" || payment.notes?.includes("Quitação")) {
+    return { label: "Quitação", icon: "check-circle", description: "Pagamento completo" };
+  }
+  return { label: "Pagamento", icon: "check", description: "Pagamento registrado" };
+}
+
 interface PaymentSection {
   title: string;
   data: Payment[];
@@ -72,6 +85,7 @@ export default function HistoryScreen() {
   const renderItem = ({ item }: { item: Payment }) => {
     const client = getClientById(item.clientId);
     const charge = getChargeById(item.chargeId);
+    const paymentType = getPaymentType(item);
     
     return (
       <Pressable
@@ -82,16 +96,23 @@ export default function HistoryScreen() {
         onPress={() => navigation.navigate("ChargeDetail", { chargeId: item.chargeId })}
       >
         <View style={[styles.iconCircle, { backgroundColor: theme.success + "20" }]}>
-          <Feather name="check" size={18} color={theme.success} />
+          <Feather name={paymentType.icon as any} size={18} color={theme.success} />
         </View>
         
         <View style={styles.paymentInfo}>
           <ThemedText style={styles.clientName}>
             {client?.name || "Cliente removido"}
           </ThemedText>
-          <ThemedText style={[styles.paymentDate, { color: theme.secondaryText }]}>
-            {formatDate(item.paidAt)}
-          </ThemedText>
+          <View style={styles.paymentMeta}>
+            <ThemedText style={[styles.paymentDate, { color: theme.secondaryText }]}>
+              {formatDate(item.paidAt)}
+            </ThemedText>
+            <View style={styles.typeBadge}>
+              <ThemedText style={[styles.typeBadgeText, { color: theme.success }]}>
+                {paymentType.label}
+              </ThemedText>
+            </View>
+          </View>
         </View>
         
         <ThemedText style={[styles.amount, { color: theme.success }]}>
@@ -186,9 +207,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
+  paymentMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: Spacing.sm,
+  },
   paymentDate: {
     fontSize: 13,
-    marginTop: 2,
+  },
+  typeBadge: {
+    backgroundColor: "transparent",
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+  },
+  typeBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   amount: {
     fontSize: 16,
