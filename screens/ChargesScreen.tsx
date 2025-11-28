@@ -102,8 +102,8 @@ export default function ChargesScreen() {
     const interestDaysOverdue = interestDueDate
       ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
       : 0;
-    const hasInterestDelay = interestDaysOverdue > 0;
-    const hasAnyDelay = pendingDelayFee > 0 || hasInterestDelay;
+    // Badge "Vencido" só aparece se juros atrasarem 1+ dias após o vencimento
+    const hasInterestDelay = interestDaysOverdue >= 1;
     
     return (
       <Pressable
@@ -117,7 +117,7 @@ export default function ChargesScreen() {
           <ThemedText style={styles.clientName}>
             {client?.name || "Cliente removido"}
           </ThemedText>
-          <StatusBadge status={item.status} theme={theme} hasDelay={hasAnyDelay} />
+          <StatusBadge status={item.status} theme={theme} hasDelay={hasInterestDelay} />
         </View>
         
         <View style={styles.cardBody}>
