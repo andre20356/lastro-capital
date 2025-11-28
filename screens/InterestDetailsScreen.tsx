@@ -48,17 +48,17 @@ export default function InterestDetailsScreen() {
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
-  // Calculate taxa de atraso total (delay fees from paid charges this month)
-  const taxasAtraso = charges
-    .filter((c) => c.status === "paid")
-    .reduce((sum, c) => {
-      const dueDate = new Date(c.dueDate);
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
-        ? c.dailyDelayRate * daysOverdue 
-        : 0;
-      return sum + delayFee;
-    }, 0);
+  // Calculate taxa de atraso total (delay fee payments from this month)
+  const taxasAtraso = payments
+    .filter((p) => {
+      const paymentDate = new Date(p.paidAt);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear &&
+        p.notes === "Pagamento de taxa de atraso"
+      );
+    })
+    .reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <ThemedView style={styles.container}>
