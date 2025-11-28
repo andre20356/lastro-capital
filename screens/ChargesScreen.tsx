@@ -54,12 +54,16 @@ export default function ChargesScreen() {
   const { tabBarHeight, paddingTop } = useScreenInsets();
   const { charges, getClientById, payments, refreshData, updateCharge } = useData();
   const [filter, setFilter] = useState<FilterType>("all");
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   // Recarregar dados quando a tela ganha foco
   useFocusEffect(
     useCallback(() => {
       console.log("ChargesScreen focus effect - recarregando dados");
-      refreshData();
+      refreshData().then(() => {
+        // Forçar re-renderização após recarregar
+        setUpdateTrigger(prev => prev + 1);
+      });
     }, [refreshData])
   );
 
@@ -99,7 +103,7 @@ export default function ChargesScreen() {
     }
     
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [charges, filter]);
+  }, [charges, filter, updateTrigger]);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Todos" },
