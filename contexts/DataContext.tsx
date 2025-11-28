@@ -106,13 +106,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
-      saveData({ clients, charges, payments });
+      // Sempre recalcular overdue antes de salvar para manter status atualizado
+      const updatedCharges = checkOverdue(charges);
+      saveData({ clients, charges: updatedCharges, payments });
     }
   }, [clients, charges, payments, isLoading, saveData]);
 
   const refreshData = useCallback(async () => {
-    await loadData();
-  }, [loadData]);
+    try {
+      setIsLoading(true);
+      const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (storedData) {
+        const data: AppData = JSON.parse(storedData);
+        const updatedCharges = checkOverdue(data.charges || []);
+        setClients(data.clients || []);
+        setCharges(updatedCharges);
+        setPayments(data.payments || []);
+        // Salvar novamente com status atualizado
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+          clients: data.clients || [], 
+          charges: updatedCharges, 
+          payments: data.payments || [] 
+        }));
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
     const newClient: Client = {
