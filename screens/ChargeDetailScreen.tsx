@@ -296,9 +296,9 @@ export default function ChargeDetailScreen() {
           ]}
         >
           <View style={styles.header}>
-            <View>
+            <View style={{ flex: 1 }}>
               <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
-              <ThemedText style={[styles.infoLabel, { color: theme.tertiaryText, marginTop: Spacing.xs }]}>
+              <ThemedText style={[styles.installmentText, { color: theme.secondaryText }]}>
                 Parcela: {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
               </ThemedText>
             </View>
@@ -588,6 +588,11 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 28,
     fontWeight: "700",
+  },
+  installmentText: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: Spacing.xs,
   },
   badge: {
     paddingHorizontal: Spacing.md,
