@@ -288,7 +288,7 @@ export default function ChargeDetailScreen() {
         >
           <View style={styles.header}>
             <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
-            <StatusBadge status={charge.status} theme={theme} hasDelay={hasAnyDelay} />
+            <StatusBadge status={charge.status} theme={theme} hasDelay={hasInterestDelay} />
           </View>
 
           <View style={styles.divider} />
