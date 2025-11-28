@@ -73,7 +73,10 @@ export default function ChargesScreen() {
     
     // Atualizar status de charges vencidas em tempo real
     let result = charges.map((charge) => {
-      if (charge.status === "paid") return charge;
+      // Se está pago, não recalcula - retorna como está
+      if (charge.status === "paid") {
+        return charge;
+      }
       
       const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
       referenceDate.setHours(0, 0, 0, 0);
