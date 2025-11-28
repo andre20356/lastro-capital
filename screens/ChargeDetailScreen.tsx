@@ -142,11 +142,9 @@ export default function ChargeDetailScreen() {
       : 0;
     const totalInterestToPay = (charge.accumulatedInterest || 0) + interestDelayFee;
     
-    // CRÍTICO: Mostrar alerta apenas se tiver atraso REAL
-    // - daysRemainingOverdue > 0: Cliente atrasou no pagamento original
-    // - hasInterestDelay: Cliente atrasou no pagamento de juros (1+ dias após vencimento)
-    // IMPORTANTE: Se está em dia no calendário, não mostra!
-    const shouldShowTotalDebt = daysRemainingOverdue > 0 || hasInterestDelay;
+    // CRÍTICO: Mostrar alerta APENAS se tiver juros em atraso (1+ dias após vencimento)
+    // NÃO mostrar para atraso de taxa de atraso - apenas para juros
+    const shouldShowTotalDebt = hasInterestDelay;
     
     // Verificar se tem algum atraso (juros ou taxa)
     const hasAnyDelay = daysRemainingOverdue > 0 || hasInterestDelay;
