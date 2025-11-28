@@ -98,16 +98,19 @@ export default function ChargeDetailScreen() {
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
+    // Se não venceu ainda, sem atraso
+    const hasRealDelay = daysOverdue > 0;
+    
     // Verificar se já há pagamento de taxa de atraso
     const delayFeeAlreadyPaid = payments
       .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
       .reduce((sum, p) => sum + p.amount, 0);
     
     // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
-    const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+    const daysPaidSoFar = charge.dailyDelayRate > 0 && hasRealDelay ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
     
-    // Calcular dias ainda pendentes de pagamento
-    const daysRemainingOverdue = Math.max(0, daysOverdue - daysPaidSoFar);
+    // Calcular dias ainda pendentes de pagamento (só se houver atraso real)
+    const daysRemainingOverdue = hasRealDelay ? Math.max(0, daysOverdue - daysPaidSoFar) : 0;
     
     // Para calcular parcelas de juros, usar nextInterestDueDate se existir (após pagamentos)
     const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : dueDate;
