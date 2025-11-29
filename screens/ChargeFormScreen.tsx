@@ -192,18 +192,9 @@ export default function ChargeFormScreen() {
               ]}
             >
               {clients.length === 0 ? (
-                <Pressable
-                  style={styles.pickerOption}
-                  onPress={() => {
-                    setShowClientPicker(false);
-                    navigation.navigate("ClientForm", {});
-                  }}
-                >
-                  <Feather name="plus" size={16} color={theme.primaryAccent} />
-                  <ThemedText style={{ color: theme.primaryAccent, marginLeft: Spacing.sm }}>
-                    Adicionar novo cliente
-                  </ThemedText>
-                </Pressable>
+                <ThemedText style={[{ color: theme.tertiaryText, padding: Spacing.md, textAlign: "center" }]}>
+                  Nenhum cliente disponível
+                </ThemedText>
               ) : (
                 <>
                   {clients.map((client) => (
@@ -224,18 +215,6 @@ export default function ChargeFormScreen() {
                       ) : null}
                     </Pressable>
                   ))}
-                  <Pressable
-                    style={[styles.pickerOption, { borderTopWidth: 1, borderTopColor: theme.inputBorder }]}
-                    onPress={() => {
-                      setShowClientPicker(false);
-                      navigation.navigate("ClientForm", {});
-                    }}
-                  >
-                    <Feather name="plus" size={16} color={theme.primaryAccent} />
-                    <ThemedText style={{ color: theme.primaryAccent, marginLeft: Spacing.sm }}>
-                      Adicionar novo cliente
-                    </ThemedText>
-                  </Pressable>
                 </>
               )}
             </View>
