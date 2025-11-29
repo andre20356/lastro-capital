@@ -72,6 +72,21 @@ export default function DashboardScreen() {
   const totalOverdueInterest = overdueCharges
     .filter(c => c.status === "overdue")
     .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+
+  // Soma total de todas as taxas de atraso (delay fees) em reais para "Negativados"
+  const totalDelayFeesOverdue = charges
+    .filter(c => c.status !== "paid")
+    .reduce((sum, c) => {
+      const dueDate = new Date(c.dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+        ? c.dailyDelayRate * daysOverdue 
+        : 0;
+      return sum + delayFee;
+    }, 0);
   
   // Count clients with overdue charges (status visual = overdue, não apenas BD)
   const overdueClientsSet = new Set(
@@ -253,7 +268,7 @@ export default function DashboardScreen() {
                 Negativados
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#FF922B" }]}>
-                {formatCurrency(totalOverdueInterest)}
+                {formatCurrency(totalDelayFeesOverdue)}
               </ThemedText>
             </View>
           </View>
