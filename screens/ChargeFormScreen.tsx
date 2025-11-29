@@ -147,6 +147,17 @@ export default function ChargeFormScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Pressable
+          style={({ pressed }) => [
+            styles.addClientButton,
+            { backgroundColor: theme.primaryAccent, opacity: pressed ? 0.9 : 1 },
+          ]}
+          onPress={() => navigation.navigate("ClientForm", {})}
+        >
+          <Feather name="plus" size={18} color="#fff" />
+          <ThemedText style={styles.addClientButtonText}>Adicionar novo cliente</ThemedText>
+        </Pressable>
+
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             Cliente *
@@ -503,5 +514,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  addClientButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.lg,
+  },
+  addClientButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: Spacing.sm,
   },
 });
