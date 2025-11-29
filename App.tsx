@@ -10,25 +10,28 @@ import MainStackNavigator from "@/navigation/MainTabNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DataProvider } from "@/contexts/DataContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export default function App() {
   return (
-  <ThemeProvider>
-    <ErrorBoundary>
-      <SafeAreaProvider>
-          <GestureHandlerRootView style={styles.root}>
-            <KeyboardProvider>
-              <DataProvider>
-                <NavigationContainer>
-                  <MainStackNavigator />
-                </NavigationContainer>
-                <StatusBar style="dark" />
-              </DataProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </SafeAreaProvider>
-    </ErrorBoundary>
-  </ThemeProvider>
+  <LanguageProvider>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+            <GestureHandlerRootView style={styles.root}>
+              <KeyboardProvider>
+                <DataProvider>
+                  <NavigationContainer>
+                    <MainStackNavigator />
+                  </NavigationContainer>
+                  <StatusBar style="dark" />
+                </DataProvider>
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </SafeAreaProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
+  </LanguageProvider>
   );
 }
 
