@@ -196,7 +196,7 @@ export default function ChargeFormScreen() {
                   Nenhum cliente disponível
                 </ThemedText>
               ) : (
-                <>
+                <ScrollView scrollEnabled nestedScrollEnabled>
                   {clients.map((client) => (
                     <Pressable
                       key={client.id}
@@ -215,7 +215,7 @@ export default function ChargeFormScreen() {
                       ) : null}
                     </Pressable>
                   ))}
-                </>
+                </ScrollView>
               )}
             </View>
           ) : null}
