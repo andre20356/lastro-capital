@@ -152,7 +152,7 @@ export default function ClientsScreen() {
           styles.fab,
           {
             backgroundColor: theme.primaryAccent,
-            bottom: tabBarHeight + Spacing.lg,
+            bottom: tabBarHeight + Spacing.xl + 70,
             opacity: pressed ? 0.9 : 1,
             transform: [{ scale: pressed ? 0.95 : 1 }],
           },
