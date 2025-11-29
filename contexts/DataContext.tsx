@@ -335,7 +335,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    const dueDate = new Date(charge.dueDate);
+    // Usar nextInterestDueDate se existir (após pagamentos de juros), senão usar dueDate
+    const dueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
