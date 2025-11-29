@@ -83,11 +83,15 @@ export default function InterestDetailsScreen() {
         (p.notes?.includes("juros") || p.notes === "Pagamento de taxa de atraso")
       );
     })
-    .map((p) => ({
-      ...p,
-      clientName: getClientById(p.clientId)?.name || "Cliente",
-      day: new Date(p.paidAt).getDate(),
-    }))
+    .map((p) => {
+      const isDelayFee = p.notes === "Pagamento de taxa de atraso";
+      return {
+        ...p,
+        clientName: getClientById(p.clientId)?.name || "Cliente",
+        day: new Date(p.paidAt).getDate(),
+        paymentType: isDelayFee ? "Taxa de Atraso" : "Juros",
+      };
+    })
     .sort((a, b) => a.day - b.day);
 
   return (
@@ -185,21 +189,28 @@ export default function InterestDetailsScreen() {
               <ThemedText style={[styles.paymentsTitle, { color: theme.text }]}>
                 Pagamentos
               </ThemedText>
-              {monthPayments.map((payment) => {
+              {monthPayments.map((payment: any) => {
                 const firstName = payment.clientName.split(" ")[0];
                 const paymentDate = new Date(payment.paidAt);
                 const formattedDate = paymentDate.toLocaleDateString("pt-BR");
+                const isDelayFee = payment.paymentType === "Taxa de Atraso";
+                const typeColor = isDelayFee ? "#FF922B" : "#51CF66";
                 return (
                   <View key={payment.id} style={styles.paymentRow}>
                     <View style={styles.paymentInfo}>
                       <ThemedText style={[styles.paymentName, { color: theme.text }]}>
                         {firstName}
                       </ThemedText>
-                      <ThemedText style={[styles.paymentDay, { color: theme.tertiaryText }]}>
-                        {formattedDate}
-                      </ThemedText>
+                      <View style={styles.paymentMeta}>
+                        <ThemedText style={[styles.paymentDay, { color: theme.tertiaryText }]}>
+                          {formattedDate}
+                        </ThemedText>
+                        <ThemedText style={[styles.paymentType, { color: typeColor }]}>
+                          {payment.paymentType}
+                        </ThemedText>
+                      </View>
                     </View>
-                    <ThemedText style={[styles.paymentAmount, { color: "#51CF66" }]}>
+                    <ThemedText style={[styles.paymentAmount, { color: typeColor }]}>
                       {formatCurrency(payment.amount)}
                     </ThemedText>
                   </View>
@@ -303,9 +314,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+  paymentMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: Spacing.sm,
+  },
   paymentDay: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 0,
+  },
+  paymentType: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   paymentAmount: {
     fontSize: 13,
