@@ -61,6 +61,18 @@ export default function InterestDetailsScreen() {
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
+  // Calculate quitações total (full charge settlements from this month)
+  const quitacoes = payments
+    .filter((p) => {
+      const paymentDate = new Date(p.paidAt);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear &&
+        (p.notes === "Quitação" || p.notes?.includes("Quitação"))
+      );
+    })
+    .reduce((sum, p) => sum + p.amount, 0);
+
   // Get all payments from this month with client info
   const monthPayments = payments
     .filter((p) => {
@@ -136,10 +148,34 @@ export default function InterestDetailsScreen() {
           </View>
           <View style={styles.infoRow}>
             <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
+              Juros:
+            </ThemedText>
+            <ThemedText style={[styles.infoValue, { color: "#51CF66" }]}>
+              {formatCurrency(jurosRecebidos)}
+            </ThemedText>
+          </View>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
+              Taxa de Atraso:
+            </ThemedText>
+            <ThemedText style={[styles.infoValue, { color: "#FF922B" }]}>
+              {formatCurrency(taxasAtraso)}
+            </ThemedText>
+          </View>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
+              Quitação:
+            </ThemedText>
+            <ThemedText style={[styles.infoValue, { color: "#4C6EF5" }]}>
+              {formatCurrency(quitacoes)}
+            </ThemedText>
+          </View>
+          <View style={styles.infoRow}>
+            <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
               Total Recebido:
             </ThemedText>
             <ThemedText style={[styles.infoValue, { color: "#51CF66", fontWeight: "700" }]}>
-              {formatCurrency(jurosRecebidos + taxasAtraso)}
+              {formatCurrency(jurosRecebidos + taxasAtraso + quitacoes)}
             </ThemedText>
           </View>
           
