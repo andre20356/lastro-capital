@@ -124,16 +124,16 @@ export default function ProfileScreen() {
           >
             <Feather name="user" size={40} color={theme.primaryAccent} />
           </View>
-          <ThemedText style={styles.profileName}>Minha Conta</ThemedText>
+          <ThemedText style={styles.profileName}>{t("minha-conta")}</ThemedText>
           <ThemedText style={[styles.profileEmail, { color: theme.secondaryText }]}>
-            Gerencie sua conta e dados
+            {t("gerencie-sua-conta")}
           </ThemedText>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
-              Informações Pessoais
+              {t("informacoes-pessoais")}
             </ThemedText>
             <Pressable
               onPress={() => {
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
-              Nome
+              {t("nome")}
             </ThemedText>
             {isEditing ? (
               <TextInput
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
                 placeholderTextColor={theme.tertiaryText}
               />
             ) : (
-              <ThemedText style={styles.infoValue}>{userName || "Não informado"}</ThemedText>
+              <ThemedText style={styles.infoValue}>{userName || t("não-informado")}</ThemedText>
             )}
           </View>
 
@@ -181,7 +181,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
-              Email
+              {t("email")}
             </ThemedText>
             {isEditing ? (
               <TextInput
@@ -197,7 +197,7 @@ export default function ProfileScreen() {
                 autoCapitalize="none"
               />
             ) : (
-              <ThemedText style={styles.infoValue}>{userEmail || "Não informado"}</ThemedText>
+              <ThemedText style={styles.infoValue}>{userEmail || t("não-informado")}</ThemedText>
             )}
           </View>
 
@@ -208,7 +208,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText style={[styles.infoLabel, { color: theme.secondaryText }]}>
-              Telefone
+              {t("telefone")}
             </ThemedText>
             {isEditing ? (
               <TextInput
@@ -223,14 +223,14 @@ export default function ProfileScreen() {
                 keyboardType="phone-pad"
               />
             ) : (
-              <ThemedText style={styles.infoValue}>{userPhone || "Não informado"}</ThemedText>
+              <ThemedText style={styles.infoValue}>{userPhone || t("não-informado")}</ThemedText>
             )}
           </View>
         </View>
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
-            Aparência
+            {t("aparencia")}
           </ThemedText>
 
           <Pressable
@@ -242,7 +242,7 @@ export default function ProfileScreen() {
           >
             <Feather name={themeMode === "light" ? "sun" : "moon"} size={20} color={theme.primaryAccent} />
             <View style={styles.menuContent}>
-              <ThemedText style={styles.menuLabel}>Tema</ThemedText>
+              <ThemedText style={styles.menuLabel}>{t("tema")}</ThemedText>
               <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
                 Atual: {getCurrentThemeLabel()}
               </ThemedText>
@@ -319,7 +319,7 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
-            Ajuda e Suporte
+            {t("ajuda-suporte")}
           </ThemedText>
 
           <View
@@ -329,7 +329,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText style={[styles.supportLabel, { color: theme.secondaryText }]}>
-              Email de Contato
+              {t("email-contato")}
             </ThemedText>
             <Pressable
               style={({ pressed }) => [
@@ -350,7 +350,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText style={[styles.supportLabel, { color: theme.secondaryText }]}>
-              WhatsApp
+              {t("whatsapp")}
             </ThemedText>
             <Pressable
               style={({ pressed }) => [
@@ -360,7 +360,7 @@ export default function ProfileScreen() {
               onPress={openWhatsApp}
             >
               <Feather name="message-circle" size={18} color="#fff" />
-              <ThemedText style={styles.contactButtonText}>Fale conosco</ThemedText>
+              <ThemedText style={styles.contactButtonText}>{t("fale-conosco")}</ThemedText>
             </Pressable>
           </View>
 
@@ -373,9 +373,9 @@ export default function ProfileScreen() {
           >
             <Feather name="info" size={20} color={theme.primaryAccent} />
             <View style={styles.menuContent}>
-              <ThemedText style={styles.menuLabel}>Sobre</ThemedText>
+              <ThemedText style={styles.menuLabel}>{t("sobre")}</ThemedText>
               <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
-                Versão e informações
+                {t("versao-informacoes")}
               </ThemedText>
             </View>
             <Feather name="chevron-right" size={20} color={theme.tertiaryText} />

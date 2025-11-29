@@ -9,6 +9,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { useScreenInsets } from "@/hooks/useScreenInsets";
 import { FinanceChart } from "@/components/FinanceChart";
@@ -30,6 +31,7 @@ function formatDate(dateString: string): string {
 export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { tabBarHeight, insets } = useScreenInsets();
   
   const {
