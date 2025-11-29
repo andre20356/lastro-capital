@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Pressable, Alert, TextInput } from "react-native";
+import { StyleSheet, View, Pressable, Alert, TextInput, ScrollView, Modal } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,6 +10,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useLanguage, type Language } from "@/hooks/useLanguage";
 import { Feather } from "@expo/vector-icons";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 
@@ -19,10 +20,22 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { themeMode, setThemeMode } = useThemeContext();
+  const { language, setLanguage, t } = useLanguage();
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+
+  const languages: { code: Language; name: string }[] = [
+    { code: "pt", name: "Português" },
+    { code: "en", name: "English" },
+    { code: "es", name: "Español" },
+    { code: "fr", name: "Français" },
+    { code: "zh", name: "中文" },
+    { code: "ko", name: "한국어" },
+    { code: "ja", name: "日本語" },
+  ];
 
   useEffect(() => {
     loadUserData();
@@ -236,7 +249,73 @@ export default function ProfileScreen() {
             </View>
             <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
           </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={() => setShowLanguagePicker(true)}
+          >
+            <Feather name="globe" size={20} color={theme.primaryAccent} />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>{t("idioma")}</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                Atual: {languages.find((l) => l.code === language)?.name || language}
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
+          </Pressable>
         </View>
+
+        <Modal
+          visible={showLanguagePicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLanguagePicker(false)}
+        >
+          <View
+            style={[
+              styles.modalOverlay,
+              { backgroundColor: "rgba(0, 0, 0, 0.5)" },
+            ]}
+          >
+            <View
+              style={[
+                styles.modalContent,
+                { backgroundColor: theme.backgroundDefault },
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>{t("selecione-idioma")}</ThemedText>
+                <Pressable onPress={() => setShowLanguagePicker(false)}>
+                  <Feather name="x" size={24} color={theme.text} />
+                </Pressable>
+              </View>
+
+              <ScrollView style={styles.languageList}>
+                {languages.map((lang) => (
+                  <Pressable
+                    key={lang.code}
+                    style={[
+                      styles.languageOption,
+                      language === lang.code && { backgroundColor: theme.primaryAccent + "20" },
+                    ]}
+                    onPress={async () => {
+                      await setLanguage(lang.code);
+                      setShowLanguagePicker(false);
+                    }}
+                  >
+                    <ThemedText style={styles.languageOptionText}>{lang.name}</ThemedText>
+                    {language === lang.code && (
+                      <Feather name="check" size={20} color={theme.primaryAccent} />
+                    )}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
@@ -420,5 +499,43 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    borderRadius: BorderRadius.sm,
+    width: "80%",
+    maxHeight: "60%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  languageList: {
+    maxHeight: "100%",
+  },
+  languageOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  languageOptionText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
