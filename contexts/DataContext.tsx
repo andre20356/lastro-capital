@@ -108,6 +108,69 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setClients(data.clients || []);
         setCharges(checkOverdue(data.charges || []));
         setPayments(data.payments || []);
+      } else {
+        // Se não houver dados salvos, carregar dados de teste
+        console.log("Nenhum dado encontrado. Carregando dados de teste...");
+        const testClients: Client[] = [
+          { id: "client1", name: "Bruno Neves", email: "bruno@email.com", phone: "11999999999", createdAt: new Date().toISOString(), archived: false },
+          { id: "client2", name: "Nicolás", email: "nicolas@email.com", phone: "11988888888", createdAt: new Date().toISOString(), archived: false },
+          { id: "client3", name: "Danila Teba", email: "danila@email.com", phone: "11977777777", createdAt: new Date().toISOString(), archived: false },
+          { id: "client4", name: "Jessica", email: "jessica@email.com", phone: "11966666666", createdAt: new Date().toISOString(), archived: false },
+        ];
+        
+        const testCharges: Charge[] = [
+          {
+            id: "charge1",
+            clientId: "client1",
+            amount: 5000,
+            loanPercentage: 5,
+            dueDate: "2025-12-05",
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: "charge2",
+            clientId: "client2",
+            amount: 3000,
+            loanPercentage: 8,
+            dueDate: "2025-11-20",
+            status: "overdue",
+            createdAt: new Date().toISOString(),
+            accumulatedInterest: 50,
+          },
+          {
+            id: "charge3",
+            clientId: "client3",
+            amount: 2000,
+            loanPercentage: 6,
+            dueDate: "2025-12-15",
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: "charge4",
+            clientId: "client4",
+            amount: 4500,
+            loanPercentage: 7,
+            dueDate: "2025-11-25",
+            status: "overdue",
+            createdAt: new Date().toISOString(),
+            accumulatedInterest: 100,
+          },
+        ];
+        
+        const testData: AppData = {
+          clients: testClients,
+          charges: checkOverdue(testCharges),
+          payments: [],
+        };
+        
+        setClients(testClients);
+        setCharges(checkOverdue(testCharges));
+        setPayments([]);
+        
+        // Salvar dados de teste para próximas aberturas
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(testData));
       }
       // Verificar se existe snapshot de undo
       const undoData = await AsyncStorage.getItem(UNDO_KEY);
