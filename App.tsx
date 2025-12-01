@@ -7,10 +7,26 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 import MainStackNavigator from "@/navigation/MainTabNavigator";
+import { AuthNavigator } from "@/navigation/AuthNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DataProvider } from "@/contexts/DataContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+
+function RootNavigator() {
+  const { isLoading, isSignedIn } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  return (
+    <NavigationContainer>
+      {isSignedIn ? <MainStackNavigator /> : <AuthNavigator />}
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   return (
@@ -20,12 +36,12 @@ export default function App() {
         <SafeAreaProvider>
             <GestureHandlerRootView style={styles.root}>
               <KeyboardProvider>
-                <DataProvider>
-                  <NavigationContainer>
-                    <MainStackNavigator />
-                  </NavigationContainer>
-                  <StatusBar style="dark" />
-                </DataProvider>
+                <AuthProvider>
+                  <DataProvider>
+                    <RootNavigator />
+                    <StatusBar style="dark" />
+                  </DataProvider>
+                </AuthProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>

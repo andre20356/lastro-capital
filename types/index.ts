@@ -1,5 +1,11 @@
 export type ChargeStatus = "pending" | "paid" | "overdue";
 
+export interface User {
+  id: string;
+  email: string;
+  password: string;
+}
+
 export interface Client {
   id: string;
   name: string;
