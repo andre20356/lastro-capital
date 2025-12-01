@@ -21,6 +21,7 @@ export default function LoginScreen({ navigation }: any) {
     
     if (!email || !password) {
       setErrorMessage("Preencha email e senha");
+      Alert.alert("Erro", "Preencha email e senha");
       return;
     }
 
@@ -29,7 +30,9 @@ export default function LoginScreen({ navigation }: any) {
       await signIn(email, password);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao fazer login";
+      console.log("Login error:", message);
       setErrorMessage(message);
+      Alert.alert("Erro", message);
     } finally {
       setLoading(false);
     }
@@ -106,12 +109,11 @@ export default function LoginScreen({ navigation }: any) {
             </ThemedText>
           </Pressable>
 
-          {errorMessage ? (
-            <View style={styles.errorContainer}>
-              <Feather name="alert-circle" size={16} color="#EF4444" style={styles.errorIcon} />
-              <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>
+          {errorMessage !== "" && (
+            <View style={styles.errorBox}>
+              <ThemedText style={styles.errorMsg}>{errorMessage}</ThemedText>
             </View>
-          ) : null}
+          )}
         </View>
 
         <View style={styles.divider}>
@@ -288,23 +290,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEE2E2",
-    borderRadius: 12,
-    padding: 14,
+  errorBox: {
     marginTop: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#EF4444",
+    backgroundColor: "#FF6B6B",
+    padding: 12,
+    borderRadius: 8,
   },
-  errorIcon: {
-    marginRight: 10,
-  },
-  errorText: {
-    flex: 1,
-    color: "#DC2626",
+  errorMsg: {
+    color: "white",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "bold",
   },
 });
