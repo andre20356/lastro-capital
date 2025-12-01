@@ -105,6 +105,13 @@ export default function LoginScreen({ navigation }: any) {
               {loading ? "Entrando..." : "Entrar"}
             </ThemedText>
           </Pressable>
+
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Feather name="alert-circle" size={16} color="#EF4444" style={styles.errorIcon} />
+              <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.divider}>
@@ -280,5 +287,24 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     fontWeight: "500",
     textAlign: "center",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#EF4444",
+  },
+  errorIcon: {
+    marginRight: 10,
+  },
+  errorText: {
+    flex: 1,
+    color: "#DC2626",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
