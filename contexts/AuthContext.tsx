@@ -88,14 +88,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const usersData = await AsyncStorage.getItem(USERS_KEY);
       const users: User[] = usersData ? JSON.parse(usersData) : [];
 
-      const foundUser = users.find(u => u.email === email && u.password === password);
-      if (!foundUser) {
-        throw new Error("Email ou senha incorretos");
+      // Verificar se o email existe
+      const userExists = users.find(u => u.email === email);
+      if (!userExists) {
+        throw new Error("Usuário não localizado");
+      }
+
+      // Verificar se a senha está correta
+      if (userExists.password !== password) {
+        throw new Error("Usuário ou Senha incorretos");
       }
 
       // Salvar session
-      await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(foundUser));
-      setUser(foundUser);
+      await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userExists));
+      setUser(userExists);
       setIsSignedIn(true);
     } catch (error) {
       throw error;

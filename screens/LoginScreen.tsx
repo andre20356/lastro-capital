@@ -13,11 +13,14 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
+    setErrorMessage("");
+    
     if (!email || !password) {
-      Alert.alert("Erro", "Preencha email e senha");
+      setErrorMessage("Preencha email e senha");
       return;
     }
 
@@ -25,7 +28,8 @@ export default function LoginScreen({ navigation }: any) {
       setLoading(true);
       await signIn(email, password);
     } catch (error) {
-      Alert.alert("Erro", error instanceof Error ? error.message : "Erro ao fazer login");
+      const message = error instanceof Error ? error.message : "Erro ao fazer login";
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
