@@ -60,6 +60,11 @@ export default function DashboardScreen() {
   const interestPaidThisMonth = getInterestPaidThisMonth();
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(31);
+  
+  // Combinar vencidas + próximas 31 dias e ordenar por data
+  const allChargesForDisplay = [...overdueCharges, ...upcomingCharges].sort((a, b) => {
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  });
 
   // Chart statistics calculations
   const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
@@ -285,7 +290,7 @@ export default function DashboardScreen() {
             Proximos Vencimentos
           </ThemedText>
           
-          {upcomingCharges.length === 0 ? (
+          {allChargesForDisplay.length === 0 ? (
             <View
               style={[
                 styles.emptyState,
@@ -294,11 +299,11 @@ export default function DashboardScreen() {
             >
               <Feather name="calendar" size={32} color={theme.tertiaryText} />
               <ThemedText style={[styles.emptyText, { color: theme.tertiaryText }]}>
-                Nenhuma cobrança nos proximos 7 dias
+                Nenhuma cobrança pendente
               </ThemedText>
             </View>
           ) : (
-            upcomingCharges.map((charge) => {
+            allChargesForDisplay.map((charge) => {
               const client = getClientById(charge.clientId);
               const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
               
