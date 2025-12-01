@@ -110,20 +110,15 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Sair da Conta",
-      "Tem certeza que deseja sair?",
-      [
-        { text: "Cancelar", onPress: () => {} },
-        { 
-          text: "Sair", 
-          onPress: async () => {
-            await signOut();
-          },
-          style: "destructive"
-        },
-      ]
-    );
+    console.log("handleLogout chamado - iniciando logout");
+    try {
+      console.log("Chamando signOut()...");
+      await signOut();
+      console.log("signOut() concluído com sucesso");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível sair");
+    }
   };
 
   return (
