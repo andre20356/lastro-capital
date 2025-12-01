@@ -4,15 +4,11 @@
   },
   "build": {
     "production": {
-      "android": {
-        "name": "Lastro Capital Production",
-        "workflow": "managed"
-      }
+      "android": {}
     },
     "preview": {
       "android": {
-        "name": "Lastro Capital Preview",
-        "workflow": "managed"
+        "buildType": "apk"
       }
     }
   },
