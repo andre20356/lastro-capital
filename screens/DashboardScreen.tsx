@@ -61,10 +61,12 @@ export default function DashboardScreen() {
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(31);
   
-  // Combinar vencidas + próximas 31 dias e ordenar por data
-  const allChargesForDisplay = [...overdueCharges, ...upcomingCharges].sort((a, b) => {
-    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-  });
+  // TODAS as cobranças não-pagas (vencidas + próximas 31 dias) ordenadas por data
+  const allChargesForDisplay = charges
+    .filter(c => c.status !== "paid")
+    .sort((a, b) => {
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
 
   // Chart statistics calculations
   const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
