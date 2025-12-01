@@ -126,7 +126,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       const key = getStorageKeyForUser(userId);
-      const storedData = await AsyncStorage.getItem(key);
+      let storedData = await AsyncStorage.getItem(key);
+      
+      // Se não encontrou dados no novo formato, tentar migrar do formato antigo
+      if (!storedData) {
+        const oldData = await AsyncStorage.getItem(STORAGE_KEY);
+        if (oldData) {
+          console.log("Migrando dados do formato antigo para novo...");
+          storedData = oldData;
+          // Salvar no novo formato
+          await AsyncStorage.setItem(key, oldData);
+          // Manter os dados antigos também por enquanto (para retrocompatibilidade)
+        }
+      }
+      
       if (storedData) {
         const data: AppData = JSON.parse(storedData);
         setClients(data.clients || []);
