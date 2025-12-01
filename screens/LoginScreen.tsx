@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Animated } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/theme";
 import { TextInput } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
@@ -30,48 +32,96 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenKeyboardAwareScrollView>
+    <ScreenKeyboardAwareScrollView style={styles.scrollView}>
       <ThemedView style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.topSection}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoIcon}>
+              <Feather name="shield" size={40} color="#fff" />
+            </View>
+          </View>
+          
           <ThemedText style={styles.title}>Lastro Capital</ThemedText>
-          <ThemedText style={styles.subtitle}>Faça seu login</ThemedText>
+          <ThemedText style={styles.subtitle}>Gestão de Empréstimos</ThemedText>
         </View>
 
-        <View style={styles.form}>
-          <ThemedText style={styles.label}>Email</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="seu@email.com"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            editable={!loading}
-          />
+        <View style={styles.formContainer}>
+          <View style={styles.inputGroup}>
+            <View style={styles.inputLabel}>
+              <Feather name="mail" size={16} color={Colors.light.tint} />
+              <ThemedText style={styles.label}>Email</ThemedText>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="seu@email.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              editable={!loading}
+              placeholderTextColor="rgba(0,0,0,0.3)"
+            />
+          </View>
 
-          <ThemedText style={styles.label}>Senha</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="Sua senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            editable={!loading}
-          />
+          <View style={styles.inputGroup}>
+            <View style={styles.inputLabel}>
+              <Feather name="lock" size={16} color={Colors.light.tint} />
+              <ThemedText style={styles.label}>Senha</ThemedText>
+            </View>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Sua senha"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!loading}
+                placeholderTextColor="rgba(0,0,0,0.3)"
+              />
+              <Pressable 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeButton}
+              >
+                <Feather 
+                  name={showPassword ? "eye" : "eye-off"} 
+                  size={18} 
+                  color={Colors.light.tint} 
+                />
+              </Pressable>
+            </View>
+          </View>
 
           <Pressable
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}
           >
+            <Feather name="log-in" size={18} color="#fff" style={styles.buttonIcon} />
             <ThemedText style={styles.buttonText}>
               {loading ? "Entrando..." : "Entrar"}
             </ThemedText>
           </Pressable>
         </View>
 
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <ThemedText style={styles.dividerText}>OU</ThemedText>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable 
+          style={styles.registerButton}
+          onPress={() => navigation?.navigate("Register")}
+        >
+          <Feather name="user-plus" size={18} color={Colors.light.tint} style={styles.buttonIcon} />
+          <ThemedText style={styles.registerButtonText}>
+            Criar Nova Conta
+          </ThemedText>
+        </Pressable>
+
         <View style={styles.footer}>
-          <ThemedText style={styles.footerText}>Não tem conta? Crie uma!</ThemedText>
-          <ThemedText style={styles.hint}>Use a opção de registrar-se</ThemedText>
+          <ThemedText style={styles.footerText}>
+            Primeira vez? Crie sua conta para começar
+          </ThemedText>
         </View>
       </ThemedView>
     </ScreenKeyboardAwareScrollView>
@@ -79,65 +129,154 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
-  header: {
+  topSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 50,
+  },
+  logoContainer: {
+    marginBottom: 24,
+  },
+  logoIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: Colors.light.tint,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontSize: 36,
+    fontWeight: "800",
     marginBottom: 8,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    opacity: 0.6,
+    fontSize: 14,
+    opacity: 0.5,
+    fontWeight: "500",
+    textAlign: "center",
   },
-  form: {
+  formContainer: {
     marginBottom: 40,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
-    marginTop: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: "#FAFAFA",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    backgroundColor: "#FAFAFA",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 14,
+    fontSize: 16,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   button: {
     backgroundColor: Colors.light.tint,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: 24,
+    justifyContent: "center",
+    flexDirection: "row",
+    marginTop: 32,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 12,
+    opacity: 0.4,
     fontWeight: "600",
+  },
+  registerButton: {
+    borderWidth: 1.5,
+    borderColor: Colors.light.tint,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    backgroundColor: "transparent",
+    marginBottom: 32,
+  },
+  registerButtonText: {
+    color: Colors.light.tint,
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
   },
   footer: {
     alignItems: "center",
+    marginTop: 16,
   },
   footerText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  hint: {
-    fontSize: 12,
+    fontSize: 13,
     opacity: 0.5,
+    fontWeight: "500",
+    textAlign: "center",
   },
 });
