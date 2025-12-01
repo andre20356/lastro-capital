@@ -11,6 +11,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/hooks/useLanguage";
+import { useAuth } from "@/contexts/AuthContext";
 import { Feather } from "@expo/vector-icons";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const { themeMode, setThemeMode } = useThemeContext();
   const { language, setLanguage, t } = useLanguage();
+  const { signOut, user } = useAuth();
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -105,6 +107,23 @@ export default function ProfileScreen() {
     } catch (error) {
       Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Sair da Conta",
+      "Tem certeza que deseja sair?",
+      [
+        { text: "Cancelar", onPress: () => {} },
+        { 
+          text: "Sair", 
+          onPress: async () => {
+            await signOut();
+          },
+          style: "destructive"
+        },
+      ]
+    );
   };
 
   return (
@@ -381,6 +400,19 @@ export default function ProfileScreen() {
             <Feather name="chevron-right" size={20} color={theme.tertiaryText} />
           </Pressable>
         </View>
+
+        <View style={styles.section}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.logoutButton,
+              { opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleLogout}
+          >
+            <Feather name="log-out" size={18} color="#fff" />
+            <ThemedText style={styles.logoutButtonText}>Sair da Conta</ThemedText>
+          </Pressable>
+        </View>
       </ScreenScrollView>
     </ThemedView>
   );
@@ -537,5 +569,21 @@ const styles = StyleSheet.create({
   languageOptionText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.xs,
+    backgroundColor: "#FF4757",
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
