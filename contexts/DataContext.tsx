@@ -1,9 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Client, Charge, Payment, ChargeStatus, AppData } from "@/types";
+import { useAuth } from "./AuthContext";
 
 const STORAGE_KEY = "@lastro_capital_data";
 const UNDO_KEY = "@lastro_capital_undo";
+
+function getStorageKeyForUser(userId: string): string {
+  return `${STORAGE_KEY}_${userId}`;
+}
+
+function getUndoKeyForUser(userId: string): string {
+  return `${UNDO_KEY}_${userId}`;
+}
 
 interface DataContextType {
   clients: Client[];
@@ -76,33 +85,48 @@ function checkOverdue(charges: Charge[]): Charge[] {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
 
+  const userId = user?.id || "";
+
   const saveData = useCallback(async (data: AppData) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (!userId) return;
+      const key = getStorageKeyForUser(userId);
+      await AsyncStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
       console.error("Error saving data:", error);
     }
-  }, []);
+  }, [userId]);
 
   const saveUndoSnapshot = useCallback(async (data: AppData) => {
     try {
-      await AsyncStorage.setItem(UNDO_KEY, JSON.stringify(data));
+      if (!userId) return;
+      const key = getUndoKeyForUser(userId);
+      await AsyncStorage.setItem(key, JSON.stringify(data));
       setCanUndo(true);
     } catch (error) {
       console.error("Error saving undo snapshot:", error);
     }
-  }, []);
+  }, [userId]);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (!userId) {
+        setClients([]);
+        setCharges([]);
+        setPayments([]);
+        return;
+      }
+
+      const key = getStorageKeyForUser(userId);
+      const storedData = await AsyncStorage.getItem(key);
       if (storedData) {
         const data: AppData = JSON.parse(storedData);
         setClients(data.clients || []);
@@ -110,7 +134,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setPayments(data.payments || []);
       } else {
         // Se não houver dados salvos, carregar dados de teste
-        console.log("Nenhum dado encontrado. Carregando dados de teste...");
+        console.log("Nenhum dado encontrado para usuário:", userId);
         const testClients: Client[] = [
           { id: "client1", name: "Bruno Neves", email: "bruno@email.com", phone: "11999999999", createdAt: new Date().toISOString(), archived: false },
           { id: "client2", name: "Nicolás", email: "nicolas@email.com", phone: "11988888888", createdAt: new Date().toISOString(), archived: false },
@@ -170,17 +194,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setPayments([]);
         
         // Salvar dados de teste para próximas aberturas
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(testData));
+        await AsyncStorage.setItem(key, JSON.stringify(testData));
       }
       // Verificar se existe snapshot de undo
-      const undoData = await AsyncStorage.getItem(UNDO_KEY);
+      const undoKey = getUndoKeyForUser(userId);
+      const undoData = await AsyncStorage.getItem(undoKey);
       setCanUndo(!!undoData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     loadData();
@@ -197,7 +222,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const refreshData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (!userId) return;
+      
+      const key = getStorageKeyForUser(userId);
+      const storedData = await AsyncStorage.getItem(key);
       if (storedData) {
         const data: AppData = JSON.parse(storedData);
         const updatedCharges = checkOverdue(data.charges || []);
@@ -205,7 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setCharges(updatedCharges);
         setPayments(data.payments || []);
         // Salvar novamente com status atualizado
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+        await AsyncStorage.setItem(key, JSON.stringify({ 
           clients: data.clients || [], 
           charges: updatedCharges, 
           payments: data.payments || [] 
@@ -216,7 +244,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
     const newClient: Client = {
