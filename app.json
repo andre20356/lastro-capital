@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "lastrocapital",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lastro.capital"
@@ -18,16 +17,11 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
-      "versionCode": 1,
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "versionCode": 1
     },
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-web-browser"
-    ]
+    }
   }
 }
