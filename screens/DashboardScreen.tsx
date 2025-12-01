@@ -59,7 +59,7 @@ export default function DashboardScreen() {
   const paidTotal = getPaidTotal();
   const interestPaidThisMonth = getInterestPaidThisMonth();
   const overdueCharges = getOverdueCharges();
-  const upcomingCharges = getUpcomingCharges(7);
+  const upcomingCharges = getUpcomingCharges(31);
 
   // Chart statistics calculations
   const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
