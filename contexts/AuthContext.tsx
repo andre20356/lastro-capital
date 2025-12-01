@@ -106,10 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
+      console.log("Iniciando logout...");
       setIsLoading(true);
       await AsyncStorage.removeItem(AUTH_KEY);
+      console.log("AUTH_KEY removida");
       setUser(null);
+      console.log("Usuário setado para null");
       setIsSignedIn(false);
+      console.log("isSignedIn setado para false - logout concluído");
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {

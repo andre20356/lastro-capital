@@ -21,11 +21,7 @@ function RootNavigator() {
     return null;
   }
 
-  return (
-    <NavigationContainer>
-      {isSignedIn ? <MainStackNavigator /> : <AuthNavigator />}
-    </NavigationContainer>
-  );
+  return isSignedIn ? <MainStackNavigator /> : <AuthNavigator />;
 }
 
 export default function App() {
@@ -38,7 +34,9 @@ export default function App() {
               <KeyboardProvider>
                 <AuthProvider>
                   <DataProvider>
-                    <RootNavigator />
+                    <NavigationContainer>
+                      <RootNavigator />
+                    </NavigationContainer>
                     <StatusBar style="dark" />
                   </DataProvider>
                 </AuthProvider>
