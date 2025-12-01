@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, Alert, Animated } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Image } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -36,9 +36,10 @@ export default function LoginScreen({ navigation }: any) {
       <ThemedView style={styles.container}>
         <View style={styles.topSection}>
           <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Feather name="shield" size={40} color="#fff" />
-            </View>
+            <Image 
+              source={require("@/assets/app-icon.png")}
+              style={styles.logoImage}
+            />
           </View>
           
           <ThemedText style={styles.title}>Lastro Capital</ThemedText>
@@ -145,16 +146,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: 24,
   },
-  logoIcon: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: Colors.light.tint,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: Colors.light.tint,
+  logoImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
   },
