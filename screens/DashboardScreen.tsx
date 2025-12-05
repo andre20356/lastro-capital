@@ -111,7 +111,7 @@ export default function DashboardScreen() {
 
   const handleShareLoanRequestLink = useCallback(async () => {
     try {
-      const loanRequestUrl = Linking.createURL("loan-request");
+      const loanRequestUrl = Linking.createURL("LoanRequest");
       const webUrl = "https://lastro-capital.replit.app/solicitacao";
       
       const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}\n\nOu abra no app:\n${loanRequestUrl}`;
