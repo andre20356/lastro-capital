@@ -11,6 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { ChargeStatus } from "@/types";
+import { useWhatsApp } from "@/hooks/useWhatsApp";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeDetail">;
@@ -57,6 +58,7 @@ export default function ChargeDetailScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { getChargeById, getClientById, markAsPaid, deleteCharge, payMonthlyInterest, payDelayFee, refreshData, payments } = useData();
+  const { sendPaymentReminder } = useWhatsApp();
   const [renderKey, setRenderKey] = useState(0);
 
   // Função para calcular o status visual dinâmico
@@ -198,58 +200,102 @@ export default function ChargeDetailScreen() {
     );
   }
 
-  const handleQuitacaoDivida = async () => {
-    const confirmado = window.confirm("Deseja confirmar a quitação completa desta dívida? A data será registrada automaticamente.");
-    if (confirmado) {
-      try {
-        console.log("Executando markAsPaid para:", charge.id);
-        await markAsPaid(charge.id);
-        console.log("Quitação realizada com sucesso!");
-        navigation.goBack();
-      } catch (error) {
-        console.error("Erro ao marcar como pago:", error);
-        alert("Erro ao processar quitação");
-      }
-    }
+  const handleQuitacaoDivida = () => {
+    Alert.alert(
+      "Quitação de Dívida",
+      "Deseja confirmar a quitação completa desta dívida? A data será registrada automaticamente.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            try {
+              console.log("Executando markAsPaid para:", charge.id);
+              await markAsPaid(charge.id);
+              console.log("Quitação realizada com sucesso!");
+              navigation.goBack();
+            } catch (error) {
+              console.error("Erro ao marcar como pago:", error);
+              Alert.alert("Erro", "Erro ao processar quitação");
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handleDelete = async () => {
-    const confirmado = window.confirm("Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.");
-    if (confirmado) {
-      try {
-        console.log("Excluindo cobrança:", charge.id);
-        await deleteCharge(charge.id);
-        console.log("Cobrança excluída com sucesso!");
-        navigation.goBack();
-      } catch (error) {
-        console.error("Erro ao excluir cobrança:", error);
-        alert("Erro ao excluir cobrança");
-      }
-    }
+  const handleDelete = () => {
+    Alert.alert(
+      "Excluir Cobrança",
+      "Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("Excluindo cobrança:", charge.id);
+              await deleteCharge(charge.id);
+              console.log("Cobrança excluída com sucesso!");
+              navigation.goBack();
+            } catch (error) {
+              console.error("Erro ao excluir cobrança:", error);
+              Alert.alert("Erro", "Erro ao excluir cobrança");
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handlePayMonthlyInterest = async () => {
+  const handlePayMonthlyInterest = () => {
     const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
-    const confirmado = window.confirm(`Deseja registrar o pagamento de 1 parcela de juros no valor de R$ ${monthlyInterestPerInstallment.toFixed(2)}?`);
-    if (confirmado) {
-      try {
-        console.log("Executando pagamento de juros para:", charge.id);
-        await payMonthlyInterest(charge.id);
-        console.log("Pagamento de juros realizado com sucesso!");
-        
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await refreshData();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        console.log("Dados recarregados na tela de detalhe...");
-      } catch (error) {
-        console.error("Erro ao pagar juros:", error);
-        alert("Erro ao processar pagamento de juros");
-      }
-    }
+    Alert.alert(
+      "Pagar Juros",
+      `Deseja registrar o pagamento de 1 parcela de juros no valor de R$ ${monthlyInterestPerInstallment.toFixed(2)}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            try {
+              console.log("Executando pagamento de juros para:", charge.id);
+              await payMonthlyInterest(charge.id);
+              console.log("Pagamento de juros realizado com sucesso!");
+              
+              await new Promise(resolve => setTimeout(resolve, 800));
+              await refreshData();
+              await new Promise(resolve => setTimeout(resolve, 500));
+              console.log("Dados recarregados na tela de detalhe...");
+            } catch (error) {
+              console.error("Erro ao pagar juros:", error);
+              Alert.alert("Erro", "Erro ao processar pagamento de juros");
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handlePayDelayFee = async () => {
-    // Calcular baseado em nextInterestDueDate (data do próximo vencimento de juros)
+  const handleSendWhatsAppReminder = () => {
+    if (!client) {
+      Alert.alert("Erro", "Cliente não encontrado");
+      return;
+    }
+    
+    const isOverdue = calculations.hasInterestDelay;
+    sendPaymentReminder({
+      clientName: client.name,
+      clientPhone: client.phone || "",
+      amount: charge.amount,
+      dueDate: charge.nextInterestDueDate || charge.dueDate,
+      accumulatedInterest: calculations.calculatedAccumulatedInterest,
+      isOverdue,
+    });
+  };
+
+  const handlePayDelayFee = () => {
     const interestDueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const daysOverdue = Math.floor((new Date().getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -261,30 +307,38 @@ export default function ChargeDetailScreen() {
     const daysRemainingToPay = Math.max(0, daysOverdue - daysPaidSoFar);
     
     if (daysRemainingToPay <= 0) {
-      alert("Não há taxa de atraso em aberto");
+      Alert.alert("Aviso", "Não há taxa de atraso em aberto");
       return;
     }
     
-    // Calcular valor de 1 parcela (30 dias)
     const daysPerInstallment = 30;
     const delayFeeInstallmentAmount = Math.min(daysPerInstallment, daysRemainingToPay) * charge.dailyDelayRate;
     
-    const confirmado = window.confirm(`Deseja pagar 1 parcela de taxa de atraso no valor de R$ ${delayFeeInstallmentAmount.toFixed(2)}?`);
-    if (confirmado) {
-      try {
-        console.log("Pagando 1 parcela de taxa de atraso para:", charge.id);
-        await payDelayFee(charge.id);
-        console.log("Taxa de atraso paga com sucesso!");
-        
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await refreshData();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        console.log("Dados recarregados na tela de detalhe...");
-      } catch (error) {
-        console.error("Erro ao pagar taxa de atraso:", error);
-        alert("Erro ao processar pagamento");
-      }
-    }
+    Alert.alert(
+      "Pagar Taxa de Atraso",
+      `Deseja pagar 1 parcela de taxa de atraso no valor de R$ ${delayFeeInstallmentAmount.toFixed(2)}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            try {
+              console.log("Pagando 1 parcela de taxa de atraso para:", charge.id);
+              await payDelayFee(charge.id);
+              console.log("Taxa de atraso paga com sucesso!");
+              
+              await new Promise(resolve => setTimeout(resolve, 800));
+              await refreshData();
+              await new Promise(resolve => setTimeout(resolve, 500));
+              console.log("Dados recarregados na tela de detalhe...");
+            } catch (error) {
+              console.error("Erro ao pagar taxa de atraso:", error);
+              Alert.alert("Erro", "Erro ao processar pagamento");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const {
@@ -551,6 +605,21 @@ export default function ChargeDetailScreen() {
           </ThemedText>
         </Pressable>
 
+        {charge.status !== "paid" ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.whatsappButton,
+              { opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleSendWhatsAppReminder}
+          >
+            <Feather name="message-circle" size={18} color="#fff" />
+            <ThemedText style={styles.whatsappButtonText}>
+              Enviar Lembrete via WhatsApp
+            </ThemedText>
+          </Pressable>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [
             styles.secondaryButton,
@@ -675,6 +744,21 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 15,
+  },
+  whatsappButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "#25D366",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  whatsappButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   emptyState: {
     flex: 1,
