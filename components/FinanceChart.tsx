@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, { Line, Rect, Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Polyline, Circle, Text as SvgText, Line, Defs, LinearGradient, Stop, Polygon } from "react-native-svg";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
@@ -33,33 +33,24 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
     maxValue = 1;
   }
 
-  // Calculate candlestick values
-  const getCandleData = (index: number) => {
-    const point = data[index];
-    const open = point.borrowed;
-    const close = point.earned;
-    const low = point.overdue;
-    const high = Math.max(open, close);
-    
-    return {
-      open: isNaN(open) ? 0 : open,
-      close: isNaN(close) ? 0 : close,
-      low: isNaN(low) ? 0 : low,
-      high: isNaN(high) ? 0 : high,
-    };
+  // Generate points for polylines
+  const generatePoints = (values: number[]) => {
+    return values
+      .map((value, index) => {
+        const x = padding + (index / (values.length - 1 || 1)) * innerWidth;
+        const y = chartHeight - padding - ((isNaN(value) ? 0 : value) / maxValue) * innerHeight;
+        return `${Math.round(x)},${Math.round(y)}`;
+      })
+      .join(" ");
   };
 
-  const candleWidth = innerWidth / (data.length * 1.5);
+  const borrowedPoints = generatePoints(data.map((d) => d.borrowed));
+  const earnedPoints = generatePoints(data.map((d) => d.earned));
+  const overduePoints = generatePoints(data.map((d) => d.overdue));
 
   return (
     <View style={styles.container}>
       <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "#51CF66" }]} />
-          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
-            Receita
-          </ThemedText>
-        </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: "#FF6B6B" }]} />
           <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
@@ -67,18 +58,32 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           </ThemedText>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "#FFB400" }]} />
+          <View style={[styles.legendColor, { backgroundColor: "#51CF66" }]} />
           <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
-            Atraso
+            Rendimentos
+          </ThemedText>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#FF922B" }]} />
+          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
+            Negativados
           </ThemedText>
         </View>
       </View>
 
       <Svg width={chartWidth} height={chartHeight} style={styles.chart}>
         <Defs>
-          <LinearGradient id="gridGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={theme.tertiaryText} stopOpacity="0.2" />
-            <Stop offset="100%" stopColor={theme.tertiaryText} stopOpacity="0" />
+          <LinearGradient id="borrowedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#FF6B6B" stopOpacity="0.3" />
+            <Stop offset="100%" stopColor="#FF6B6B" stopOpacity="0" />
+          </LinearGradient>
+          <LinearGradient id="earnedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#51CF66" stopOpacity="0.3" />
+            <Stop offset="100%" stopColor="#51CF66" stopOpacity="0" />
+          </LinearGradient>
+          <LinearGradient id="overdueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#FF922B" stopOpacity="0.3" />
+            <Stop offset="100%" stopColor="#FF922B" stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
@@ -116,52 +121,87 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
           strokeWidth="1"
         />
 
-        {/* Candlesticks */}
+        {/* Earned area */}
+        <Polyline
+          points={earnedPoints}
+          fill="none"
+          stroke="#51CF66"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Overdue area */}
+        <Polyline
+          points={overduePoints}
+          fill="none"
+          stroke="#FF922B"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Borrowed area */}
+        <Polyline
+          points={borrowedPoints}
+          fill="none"
+          stroke="#FF6B6B"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Data points for borrowed */}
         {data.map((_, index) => {
-          const cande = getCandleData(index);
           const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          
-          // Calculate Y positions
-          const highY = chartHeight - padding - (cande.high / maxValue) * innerHeight;
-          const lowY = chartHeight - padding - (cande.low / maxValue) * innerHeight;
-          const openY = chartHeight - padding - (cande.open / maxValue) * innerHeight;
-          const closeY = chartHeight - padding - (cande.close / maxValue) * innerHeight;
-
-          // Determine color based on close vs open
-          const isGreen = cande.close >= cande.open;
-          const bodyColor = isGreen ? "#51CF66" : "#FF6B6B";
-          const wickColor = isGreen ? "#51CF66" : "#FF6B6B";
-
-          // Body positions
-          const bodyTop = Math.min(openY, closeY);
-          const bodyBottom = Math.max(openY, closeY);
-          const bodyHeight = Math.max(bodyBottom - bodyTop, 2);
-
+          const borrowed = isNaN(data[index].borrowed) ? 0 : data[index].borrowed;
+          const y = chartHeight - padding - (borrowed / maxValue) * innerHeight;
           return (
-            <g key={`candle-${index}`}>
-              {/* Wick (high-low line) */}
-              <Line
-                x1={x}
-                y1={highY}
-                x2={x}
-                y2={lowY}
-                stroke={wickColor}
-                strokeWidth="1"
-                opacity="0.6"
-              />
+            <Circle
+              key={`borrowed-point-${index}`}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
+              r="3"
+              fill="#FF6B6B"
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
 
-              {/* Body */}
-              <Rect
-                x={x - candleWidth / 2}
-                y={bodyTop}
-                width={candleWidth}
-                height={bodyHeight}
-                fill={bodyColor}
-                stroke={bodyColor}
-                strokeWidth="0.5"
-                opacity="0.8"
-              />
-            </g>
+        {/* Data points for earned */}
+        {data.map((_, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
+          const earned = isNaN(data[index].earned) ? 0 : data[index].earned;
+          const y = chartHeight - padding - (earned / maxValue) * innerHeight;
+          return (
+            <Circle
+              key={`earned-point-${index}`}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
+              r="3"
+              fill="#51CF66"
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* Data points for overdue */}
+        {data.map((_, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
+          const overdue = isNaN(data[index].overdue) ? 0 : data[index].overdue;
+          const y = chartHeight - padding - (overdue / maxValue) * innerHeight;
+          return (
+            <Circle
+              key={`overdue-point-${index}`}
+              cx={Math.round(x)}
+              cy={Math.round(y)}
+              r="3"
+              fill="#FF922B"
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
           );
         })}
 
