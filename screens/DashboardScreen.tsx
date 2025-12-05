@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { StyleSheet, View, Pressable, Share, Alert } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -107,6 +108,22 @@ export default function DashboardScreen() {
   // Count active clients (those with at least one charge)
   const activeClientsSet = new Set(charges.map(c => c.clientId));
   const activeClientsCount = activeClientsSet.size;
+
+  const handleShareLoanRequestLink = useCallback(async () => {
+    try {
+      const loanRequestUrl = Linking.createURL("loan-request");
+      const webUrl = "https://lastro-capital.replit.app/solicitacao";
+      
+      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}\n\nOu abra no app:\n${loanRequestUrl}`;
+      
+      await Share.share({
+        message,
+        title: "Solicitar Emprestimo - Lastro Capital",
+      });
+    } catch (error) {
+      Alert.alert("Erro", "Nao foi possivel compartilhar o link");
+    }
+  }, []);
 
   // Calculate total interest to receive this month (accumulated interest + expected monthly interest)
   const today = new Date();
@@ -227,6 +244,44 @@ export default function DashboardScreen() {
             </ThemedText>
             <ThemedText style={[styles.cardValue, { color: "#FFB400" }]}>
               {formatCurrency(totalInterestToReceiveMonth)}
+            </ThemedText>
+          </Pressable>
+        </View>
+
+        <View style={styles.cardsRow}>
+          <Pressable
+            style={[
+              styles.summaryCard,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+            ]}
+            onPress={() => navigation.navigate("PendingRequests")}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: "#9775FA" + "20" }]}>
+              <Feather name="inbox" size={20} color="#9775FA" />
+            </View>
+            <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
+              Solicitacoes
+            </ThemedText>
+            <ThemedText style={[styles.cardValue, { color: "#9775FA" }]}>
+              Ver
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.summaryCard,
+              { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
+            ]}
+            onPress={handleShareLoanRequestLink}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: "#20C997" + "20" }]}>
+              <Feather name="share-2" size={20} color="#20C997" />
+            </View>
+            <ThemedText style={[styles.cardLabel, { color: theme.secondaryText }]}>
+              Compartilhar Link
+            </ThemedText>
+            <ThemedText style={[styles.cardValue, { color: "#20C997" }]}>
+              Enviar
             </ThemedText>
           </Pressable>
         </View>

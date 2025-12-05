@@ -22,6 +22,8 @@ import AboutScreen from "@/screens/AboutScreen";
 import InterestDetailsScreen from "@/screens/InterestDetailsScreen";
 import CashReportScreen from "@/screens/CashReportScreen";
 import ArchiveClientScreen from "@/screens/ArchiveClientScreen";
+import PendingRequestsScreen from "@/screens/PendingRequestsScreen";
+import LoanRequestScreen from "@/screens/LoanRequestScreen";
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -34,6 +36,8 @@ export type RootStackParamList = {
   InterestDetails: undefined;
   CashReport: undefined;
   ArchiveClient: { clientId: string };
+  PendingRequests: undefined;
+  LoanRequest: undefined;
 };
 
 export type MainTabParamList = {
@@ -208,6 +212,22 @@ export default function MainStackNavigator() {
         component={ArchiveClientScreen}
         options={{
           title: "Arquivar Cliente",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="PendingRequests"
+        component={PendingRequestsScreen}
+        options={{
+          title: "Solicitacoes Pendentes",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="LoanRequest"
+        component={LoanRequestScreen}
+        options={{
+          title: "Solicitar Emprestimo",
           headerBackTitle: "Voltar",
         }}
       />
