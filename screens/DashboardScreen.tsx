@@ -13,6 +13,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { useScreenInsets } from "@/hooks/useScreenInsets";
 import { FinanceChart } from "@/components/FinanceChart";
+import { useWhatsApp } from "@/hooks/useWhatsApp";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -33,6 +34,7 @@ export default function DashboardScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { tabBarHeight, insets } = useScreenInsets();
+  const { sendPaymentReminder } = useWhatsApp();
   
   const {
     getPendingTotal,
@@ -312,45 +314,73 @@ export default function DashboardScreen() {
               const client = getClientById(charge.clientId);
               const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
               
-              // Calculate delay fee if overdue
               const dueDate = new Date(charge.dueDate);
               const today = new Date();
               const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
               const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
                 ? charge.dailyDelayRate * daysOverdue 
                 : 0;
+              const isOverdue = daysOverdue >= 1;
+              
+              const handleWhatsAppReminder = () => {
+                if (client) {
+                  sendPaymentReminder({
+                    clientName: client.name,
+                    clientPhone: client.phone || "",
+                    amount: charge.amount,
+                    dueDate: charge.nextInterestDueDate || charge.dueDate,
+                    accumulatedInterest: charge.accumulatedInterest || 0,
+                    isOverdue,
+                  });
+                }
+              };
               
               return (
-                <Pressable
-                  key={charge.id}
-                  style={({ pressed }) => [
-                    styles.chargeItem,
-                    { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
-                  ]}
-                  onPress={() => navigation.navigate("ChargeDetail", { chargeId: charge.id })}
-                >
-                  <View style={styles.chargeInfo}>
-                    <ThemedText style={styles.clientName}>
-                      {client?.name || "Cliente removido"}
-                    </ThemedText>
-                    <ThemedText style={[styles.dueDate, { color: theme.secondaryText }]}>
-                      Vence em {formatDate(charge.dueDate)}
-                    </ThemedText>
-                    {monthlyInterest > 0 ? (
-                      <ThemedText style={[styles.interestValue, { color: "#FFB400" }]}>
-                        Juros: {formatCurrency(monthlyInterest)}
+                <View key={charge.id} style={styles.chargeItemContainer}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.chargeItem,
+                      { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder, opacity: pressed ? 0.8 : 1 },
+                    ]}
+                    onPress={() => navigation.navigate("ChargeDetail", { chargeId: charge.id })}
+                  >
+                    <View style={styles.chargeInfo}>
+                      <ThemedText style={styles.clientName}>
+                        {client?.name || "Cliente removido"}
                       </ThemedText>
-                    ) : null}
-                    {delayFee > 0 ? (
-                      <ThemedText style={[styles.delayFeeValue, { color: theme.error }]}>
-                        Taxa Atraso: {formatCurrency(delayFee)}
+                      <ThemedText style={[styles.dueDate, { color: theme.secondaryText }]}>
+                        Vence em {formatDate(charge.dueDate)}
                       </ThemedText>
-                    ) : null}
-                  </View>
-                  <ThemedText style={[styles.amount, { color: theme.primaryAccent }]}>
-                    {formatCurrency(charge.amount)}
-                  </ThemedText>
-                </Pressable>
+                      {monthlyInterest > 0 ? (
+                        <ThemedText style={[styles.interestValue, { color: "#FFB400" }]}>
+                          Juros: {formatCurrency(monthlyInterest)}
+                        </ThemedText>
+                      ) : null}
+                      {delayFee > 0 ? (
+                        <ThemedText style={[styles.delayFeeValue, { color: theme.error }]}>
+                          Taxa Atraso: {formatCurrency(delayFee)}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                    <View style={styles.chargeRight}>
+                      <ThemedText style={[styles.amount, { color: theme.primaryAccent }]}>
+                        {formatCurrency(charge.amount)}
+                      </ThemedText>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.whatsappMiniButton,
+                          { opacity: pressed ? 0.7 : 1 },
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleWhatsAppReminder();
+                        }}
+                      >
+                        <Feather name="message-circle" size={16} color="#fff" />
+                      </Pressable>
+                    </View>
+                  </Pressable>
+                </View>
               );
             })
           )}
@@ -445,6 +475,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
+  chargeItemContainer: {
+    marginBottom: Spacing.sm,
+  },
   chargeItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -452,10 +485,13 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    marginBottom: Spacing.sm,
   },
   chargeInfo: {
     flex: 1,
+  },
+  chargeRight: {
+    alignItems: "flex-end",
+    gap: Spacing.sm,
   },
   clientName: {
     fontSize: 15,
@@ -465,9 +501,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
+  interestValue: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  delayFeeValue: {
+    fontSize: 12,
+    marginTop: 2,
+  },
   amount: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  whatsappMiniButton: {
+    backgroundColor: "#25D366",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   fab: {
     position: "absolute",
