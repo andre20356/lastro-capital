@@ -69,7 +69,10 @@ export default function DashboardScreen() {
     });
 
   // Chart statistics calculations
-  const totalBorrowed = charges.reduce((sum, c) => sum + c.amount, 0);
+  // Total Borrowed = apenas charges NÃO-PAGAS (pending + overdue)
+  const totalBorrowed = charges
+    .filter(c => c.status !== "paid")
+    .reduce((sum, c) => sum + c.amount, 0);
   
   // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Pressable, FlatList, Linking } from "react-native";
+import { StyleSheet, View, Pressable, FlatList, Linking, Alert } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -105,20 +105,28 @@ export default function ClientDetailScreen() {
   };
 
   const handleDelete = async () => {
-    const confirmado = window.confirm(
-      "Tem certeza que deseja excluir este cliente? Todas as cobranças relacionadas tambem serão excluidas. Esta ação não pode ser desfeita."
+    Alert.alert(
+      "Excluir Cliente",
+      "Tem certeza que deseja excluir este cliente? Todas as cobranças relacionadas também serão excluídas. Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", onPress: () => {}, style: "cancel" },
+        {
+          text: "Excluir",
+          onPress: async () => {
+            try {
+              console.log("Excluindo cliente:", client.id);
+              await deleteClient(client.id);
+              console.log("Cliente excluído com sucesso!");
+              setTimeout(() => navigation.goBack(), 500);
+            } catch (error) {
+              console.error("Erro ao excluir cliente:", error);
+              Alert.alert("Erro", "Erro ao excluir cliente");
+            }
+          },
+          style: "destructive",
+        },
+      ]
     );
-    if (confirmado) {
-      try {
-        console.log("Excluindo cliente:", client.id);
-        await deleteClient(client.id);
-        console.log("Cliente excluído com sucesso!");
-        setTimeout(() => navigation.goBack(), 500);
-      } catch (error) {
-        console.error("Erro ao excluir cliente:", error);
-        alert("Erro ao excluir cliente");
-      }
-    }
   };
 
   const handleArchive = () => {
