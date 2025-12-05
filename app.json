@@ -29,11 +29,6 @@
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "lastro-capital"
-      }
     }
   }
 }
