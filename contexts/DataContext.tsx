@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Client, Charge, Payment, ChargeStatus, AppData, PaymentMethod } from "@/types";
 import { useAuth } from "./AuthContext";
+import { firebaseDataService } from "@/services/firebaseDataService";
 
 export interface PaymentOptions {
   paymentMethod?: PaymentMethod;
@@ -10,6 +11,7 @@ export interface PaymentOptions {
 }
 
 const STORAGE_KEY = "@lastro_capital_data";
+const MIGRATION_KEY = "@lastro_capital_migrated";
 const UNDO_KEY = "@lastro_capital_undo";
 
 function getStorageKeyForUser(userId: string): string {
@@ -20,12 +22,15 @@ function getUndoKeyForUser(userId: string): string {
   return `${UNDO_KEY}_${userId}`;
 }
 
+function getMigrationKeyForUser(userId: string): string {
+  return `${MIGRATION_KEY}_${userId}`;
+}
+
 interface DataContextType {
   clients: Client[];
   charges: Charge[];
   payments: Payment[];
   isLoading: boolean;
-  canUndo: boolean;
   addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -36,7 +41,6 @@ interface DataContextType {
   markAsPaid: (chargeId: string, options?: PaymentOptions) => Promise<void>;
   payMonthlyInterest: (chargeId: string, options?: PaymentOptions) => Promise<void>;
   payDelayFee: (chargeId: string, options?: PaymentOptions) => Promise<void>;
-  undo: () => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];
@@ -51,38 +55,27 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
 function checkOverdue(charges: Charge[]): Charge[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
   return charges.map((charge) => {
     if (charge.status === "pending" || charge.status === "overdue") {
-      // Usar nextInterestDueDate se existir, senão usar dueDate
       const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
       referenceDate.setHours(0, 0, 0, 0);
       
-      // Calcular atraso baseado na data de vencimento de juros
       const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
       const dailyInterestAmount = monthlyInterestAmount / 30;
       
-      console.log(`checkOverdue: ${charge.id} - referenceDate: ${referenceDate.toISOString()}, today: ${today.toISOString()}, daysOverdue: ${daysOverdue}, status: ${charge.status}`);
-      
-      // Se passou 1+ dias do vencimento, marca como vencida e acumula juros
       if (daysOverdue >= 1) {
         const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
-        console.log(`checkOverdue: ${charge.id} mudando para "overdue", interesse acumulado: ${totalAccumulatedInterest}`);
         return { 
           ...charge, 
           status: "overdue" as ChargeStatus,
           accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
         };
       } else {
-        // Se ainda não venceu (0 ou negativo), mantém como pending
         return charge;
       }
     }
@@ -96,28 +89,57 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [charges, setCharges] = useState<Charge[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [canUndo, setCanUndo] = useState(false);
 
   const userId = user?.id || "";
 
-  const saveData = useCallback(async (data: AppData) => {
+  const migrateLocalToCloud = useCallback(async () => {
+    if (!userId) return false;
+    
     try {
-      if (!userId) return;
-      const key = getStorageKeyForUser(userId);
-      await AsyncStorage.setItem(key, JSON.stringify(data));
+      const migrationKey = getMigrationKeyForUser(userId);
+      const alreadyMigrated = await AsyncStorage.getItem(migrationKey);
+      
+      if (alreadyMigrated) {
+        console.log("Data already migrated to cloud");
+        return false;
+      }
+      
+      const localKey = getStorageKeyForUser(userId);
+      const localData = await AsyncStorage.getItem(localKey);
+      
+      if (!localData) {
+        const oldData = await AsyncStorage.getItem(STORAGE_KEY);
+        if (oldData) {
+          const data: AppData = JSON.parse(oldData);
+          if (data.clients.length > 0 || data.charges.length > 0 || data.payments.length > 0) {
+            console.log("Migrating old format data to cloud...");
+            await firebaseDataService.migrateFromLocal(userId, data);
+            await AsyncStorage.setItem(migrationKey, new Date().toISOString());
+            return true;
+          }
+        }
+        await AsyncStorage.setItem(migrationKey, new Date().toISOString());
+        return false;
+      }
+      
+      const data: AppData = JSON.parse(localData);
+      if (data.clients.length > 0 || data.charges.length > 0 || data.payments.length > 0) {
+        console.log("Migrating local data to cloud...", {
+          clients: data.clients.length,
+          charges: data.charges.length,
+          payments: data.payments.length
+        });
+        await firebaseDataService.migrateFromLocal(userId, data);
+        await AsyncStorage.setItem(migrationKey, new Date().toISOString());
+        console.log("Migration completed!");
+        return true;
+      }
+      
+      await AsyncStorage.setItem(migrationKey, new Date().toISOString());
+      return false;
     } catch (error) {
-      console.error("Error saving data:", error);
-    }
-  }, [userId]);
-
-  const saveUndoSnapshot = useCallback(async (data: AppData) => {
-    try {
-      if (!userId) return;
-      const key = getUndoKeyForUser(userId);
-      await AsyncStorage.setItem(key, JSON.stringify(data));
-      setCanUndo(true);
-    } catch (error) {
-      console.error("Error saving undo snapshot:", error);
+      console.error("Error during migration:", error);
+      return false;
     }
   }, [userId]);
 
@@ -131,213 +153,92 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const key = getStorageKeyForUser(userId);
-      let storedData = await AsyncStorage.getItem(key);
+      await migrateLocalToCloud();
+
+      console.log("Loading data from Firebase...");
+      const data = await firebaseDataService.getAllData(userId);
       
-      // Se não encontrou dados no novo formato, tentar migrar do formato antigo
-      if (!storedData) {
-        const oldData = await AsyncStorage.getItem(STORAGE_KEY);
-        if (oldData) {
-          console.log("Migrando dados do formato antigo para novo...");
-          storedData = oldData;
-          // Salvar no novo formato
-          await AsyncStorage.setItem(key, oldData);
-          // Manter os dados antigos também por enquanto (para retrocompatibilidade)
-        }
-      }
+      setClients(data.clients || []);
+      setCharges(checkOverdue(data.charges || []));
+      setPayments(data.payments || []);
       
-      if (storedData) {
-        const data: AppData = JSON.parse(storedData);
-        setClients(data.clients || []);
-        setCharges(checkOverdue(data.charges || []));
-        setPayments(data.payments || []);
-      } else {
-        // Se não houver dados salvos, carregar dados de teste
-        console.log("Nenhum dado encontrado para usuário:", userId);
-        const testClients: Client[] = [
-          { id: "client1", name: "Bruno Neves", email: "bruno@email.com", phone: "11999999999", createdAt: new Date().toISOString(), archived: false },
-          { id: "client2", name: "Nicolás", email: "nicolas@email.com", phone: "11988888888", createdAt: new Date().toISOString(), archived: false },
-          { id: "client3", name: "Danila Teba", email: "danila@email.com", phone: "11977777777", createdAt: new Date().toISOString(), archived: false },
-          { id: "client4", name: "Jessica", email: "jessica@email.com", phone: "11966666666", createdAt: new Date().toISOString(), archived: false },
-        ];
-        
-        const testCharges: Charge[] = [
-          {
-            id: "charge1",
-            clientId: "client1",
-            amount: 5000,
-            loanPercentage: 5,
-            dueDate: "2025-12-05",
-            status: "pending",
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: "charge2",
-            clientId: "client2",
-            amount: 3000,
-            loanPercentage: 8,
-            dueDate: "2025-11-20",
-            status: "overdue",
-            createdAt: new Date().toISOString(),
-            accumulatedInterest: 50,
-          },
-          {
-            id: "charge3",
-            clientId: "client3",
-            amount: 2000,
-            loanPercentage: 6,
-            dueDate: "2025-12-15",
-            status: "pending",
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: "charge4",
-            clientId: "client4",
-            amount: 4500,
-            loanPercentage: 7,
-            dueDate: "2025-11-25",
-            status: "overdue",
-            createdAt: new Date().toISOString(),
-            accumulatedInterest: 100,
-          },
-        ];
-        
-        const testData: AppData = {
-          clients: testClients,
-          charges: checkOverdue(testCharges),
-          payments: [],
-        };
-        
-        setClients(testClients);
-        setCharges(checkOverdue(testCharges));
-        setPayments([]);
-        
-        // Salvar dados de teste para próximas aberturas
-        await AsyncStorage.setItem(key, JSON.stringify(testData));
-      }
-      // Verificar se existe snapshot de undo
-      const undoKey = getUndoKeyForUser(userId);
-      const undoData = await AsyncStorage.getItem(undoKey);
-      setCanUndo(!!undoData);
+      console.log("Data loaded from Firebase:", {
+        clients: data.clients.length,
+        charges: data.charges.length,
+        payments: data.payments.length
+      });
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Error loading data from Firebase:", error);
+      setClients([]);
+      setCharges([]);
+      setPayments([]);
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, migrateLocalToCloud]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  useEffect(() => {
-    if (!isLoading) {
-      // Sempre recalcular overdue antes de salvar para manter status atualizado
-      const updatedCharges = checkOverdue(charges);
-      saveData({ clients, charges: updatedCharges, payments });
-    }
-  }, [clients, charges, payments, isLoading, saveData]);
-
   const refreshData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      if (!userId) return;
-      
-      const key = getStorageKeyForUser(userId);
-      const storedData = await AsyncStorage.getItem(key);
-      if (storedData) {
-        const data: AppData = JSON.parse(storedData);
-        const updatedCharges = checkOverdue(data.charges || []);
-        setClients(data.clients || []);
-        setCharges(updatedCharges);
-        setPayments(data.payments || []);
-        // Salvar novamente com status atualizado
-        await AsyncStorage.setItem(key, JSON.stringify({ 
-          clients: data.clients || [], 
-          charges: updatedCharges, 
-          payments: data.payments || [] 
-        }));
-      }
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
+    await loadData();
+  }, [loadData]);
 
   const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
-    const newClient: Client = {
-      ...clientData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    };
+    const newClient = await firebaseDataService.addClient(userId, clientData);
     setClients((prev) => [...prev, newClient]);
     return newClient;
-  }, []);
+  }, [userId]);
 
   const updateClient = useCallback(async (id: string, clientData: Partial<Client>) => {
+    await firebaseDataService.updateClient(id, clientData);
     setClients((prev) =>
       prev.map((client) => (client.id === id ? { ...client, ...clientData } : client))
     );
   }, []);
 
   const deleteClient = useCallback(async (id: string) => {
-    // Filtrar clientes e cobranças relacionadas
-    const updatedClients = clients.filter((client) => client.id !== id);
-    const updatedCharges = charges.filter((charge) => charge.clientId !== id);
-    const updatedPayments = payments.filter((payment) => {
-      // Remover pagamentos relacionados às cobranças do cliente
-      const chargesForClient = charges.filter((c) => c.clientId === id);
-      return !chargesForClient.some((c) => c.id === payment.chargeId);
+    await firebaseDataService.deleteClientCascade(id, userId);
+    
+    setClients((prev) => prev.filter((client) => client.id !== id));
+    setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
+    setPayments((prev) => {
+      const clientChargeIds = charges.filter(c => c.clientId === id).map(c => c.id);
+      return prev.filter((payment) => !clientChargeIds.includes(payment.chargeId));
     });
-
-    // Salvar em AsyncStorage PRIMEIRO
-    const appData: AppData = { clients: updatedClients, charges: updatedCharges, payments: updatedPayments };
-    await saveData(appData);
-
-    // Depois atualizar state
-    setClients(updatedClients);
-    setCharges(updatedCharges);
-    setPayments(updatedPayments);
-  }, [clients, charges, payments, saveData]);
+  }, [userId, charges]);
 
   const toggleArchiveClient = useCallback(async (id: string) => {
-    setClients((prev) =>
-      prev.map((client) => 
-        client.id === id ? { ...client, archived: !client.archived } : client
-      )
-    );
-  }, []);
+    const client = clients.find(c => c.id === id);
+    if (client) {
+      const newArchived = !client.archived;
+      await firebaseDataService.updateClient(id, { archived: newArchived });
+      setClients((prev) =>
+        prev.map((c) => c.id === id ? { ...c, archived: newArchived } : c)
+      );
+    }
+  }, [clients]);
 
   const addCharge = useCallback(async (chargeData: Omit<Charge, "id" | "createdAt">): Promise<Charge> => {
-    const newCharge: Charge = {
-      ...chargeData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    };
+    const newCharge = await firebaseDataService.addCharge(userId, chargeData);
     setCharges((prev) => checkOverdue([...prev, newCharge]));
     return newCharge;
-  }, []);
+  }, [userId]);
 
   const updateCharge = useCallback(async (id: string, chargeData: Partial<Charge>) => {
+    await firebaseDataService.updateCharge(id, chargeData);
     setCharges((prev) =>
       checkOverdue(prev.map((charge) => (charge.id === id ? { ...charge, ...chargeData } : charge)))
     );
   }, []);
 
   const deleteCharge = useCallback(async (id: string) => {
-    // Filtrar dados
-    const updatedCharges = charges.filter((charge) => charge.id !== id);
-    const updatedPayments = payments.filter((payment) => payment.chargeId !== id);
-
-    // Salvar em AsyncStorage PRIMEIRO
-    const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
-    await saveData(appData);
-
-    // Depois atualizar state
-    setCharges(updatedCharges);
-    setPayments(updatedPayments);
-  }, [charges, payments, clients, saveData]);
+    await firebaseDataService.deleteChargeCascade(id);
+    
+    setCharges((prev) => prev.filter((charge) => charge.id !== id));
+    setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
+  }, []);
 
   const markAsPaid = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
@@ -345,13 +246,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const paidDate = new Date().toISOString();
 
-    const updatedCharges = charges.map((c) =>
-      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
-    );
-    setCharges(updatedCharges);
+    await firebaseDataService.updateCharge(chargeId, { 
+      status: "paid" as ChargeStatus, 
+      paidDate 
+    });
 
-    const payment: Payment = {
-      id: generateId(),
+    const payment: Omit<Payment, "id"> = {
       chargeId,
       clientId: charge.clientId,
       amount: charge.amount,
@@ -361,12 +261,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       paymentProof: options.paymentProof,
     };
 
-    const updatedPayments = [...payments, payment];
-    setPayments(updatedPayments);
+    const newPayment = await firebaseDataService.addPayment(userId, payment);
 
-    const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
-    await saveData(appData);
-  }, [charges, payments, clients, saveData]);
+    setCharges((prev) => prev.map((c) =>
+      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
+    ));
+    setPayments((prev) => [...prev, newPayment]);
+  }, [charges, userId]);
 
   const payMonthlyInterest = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const today = new Date().toISOString().split('T')[0];
@@ -383,32 +284,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const accumulatedInterest = charge.accumulatedInterest || 0;
     const remainingAccumulatedInterest = Math.max(0, accumulatedInterest - monthlyInterestPerInstallment);
+
+    const chargeUpdates = {
+      lastInterestPaymentDate: today,
+      nextInterestDueDate: nextDueDateStr,
+      accumulatedInterest: remainingAccumulatedInterest
+    };
+
+    await firebaseDataService.updateCharge(chargeId, chargeUpdates);
     
-    console.log("Pagamento de juros - detalhes:", {
-      chargeId,
-      accumulatedInterest,
-      monthlyInterestPerInstallment,
-      remainingAccumulatedInterest,
-      loanPercentage: charge.loanPercentage,
-      amount: charge.amount
-    });
-    
-    const updated = charges.map((c) => 
-      c.id === chargeId 
-        ? { 
-            ...c, 
-            lastInterestPaymentDate: today,
-            nextInterestDueDate: nextDueDateStr,
-            accumulatedInterest: remainingAccumulatedInterest
-          }
-        : c
-    );
-    
-    setCharges(updated);
+    setCharges((prev) => prev.map((c) => 
+      c.id === chargeId ? { ...c, ...chargeUpdates } : c
+    ));
 
     if (monthlyInterestPerInstallment > 0) {
-      const interestPayment: Payment = {
-        id: generateId(),
+      const interestPayment: Omit<Payment, "id"> = {
         chargeId,
         clientId: charge.clientId,
         amount: monthlyInterestPerInstallment,
@@ -419,18 +309,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paymentProof: options.paymentProof,
       };
 
-      const updatedPayments = [...payments, interestPayment];
-
-      const appData: AppData = { clients, charges: updated, payments: updatedPayments };
-      await saveData(appData);
-
-      setPayments(updatedPayments);
-      console.log("Pagamento de juros criado:", interestPayment);
-    } else {
-      const appData: AppData = { clients, charges: updated, payments };
-      await saveData(appData);
+      const newPayment = await firebaseDataService.addPayment(userId, interestPayment);
+      setPayments((prev) => [...prev, newPayment]);
     }
-  }, [charges, payments, clients, saveData]);
+  }, [charges, userId]);
 
   const payDelayFee = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
@@ -444,15 +326,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .filter((p) => p.chargeId === chargeId && p.notes?.includes("taxa de atraso"))
       .reduce((sum, p) => sum + p.amount, 0);
     
-    const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+    const dailyRate = charge.dailyDelayRate || 0;
+    const daysPaidSoFar = dailyRate > 0 ? Math.floor(delayFeeAlreadyPaid / dailyRate) : 0;
     const daysRemainingToPay = Math.max(0, daysOverdue - daysPaidSoFar);
     
     const daysPerInstallment = 30;
-    const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * charge.dailyDelayRate;
+    const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * dailyRate;
 
     if (delayFeeInstallment > 0) {
-      const delayFeePayment: Payment = {
-        id: generateId(),
+      const delayFeePayment: Omit<Payment, "id"> = {
         chargeId,
         clientId: charge.clientId,
         amount: delayFeeInstallment,
@@ -462,13 +344,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paymentProof: options.paymentProof,
       };
 
-      const updatedPayments = [...payments, delayFeePayment];
-      const appData: AppData = { clients, charges, payments: updatedPayments };
-      await saveData(appData);
-      setPayments(updatedPayments);
-      console.log("Taxa de atraso paga (1 parcela):", delayFeePayment, "dias:", Math.min(daysPerInstallment, daysRemainingToPay));
+      const newPayment = await firebaseDataService.addPayment(userId, delayFeePayment);
+      setPayments((prev) => [...prev, newPayment]);
     }
-  }, [charges, payments, clients, saveData]);
+  }, [charges, payments, userId]);
 
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
@@ -541,7 +420,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return charges.filter((c) => {
       if (c.status !== "pending" && c.status !== "overdue") return false;
       
-      // Verificar se tem taxa de atraso pendente
       const dueDate = new Date(c.dueDate);
       const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -555,14 +433,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       const pendingDelayFee = Math.max(0, delayFee - delayFeeAlreadyPaid);
       
-      // Verificar se tem juros em atraso (1+ dias após vencimento)
       const interestDueDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : null;
       const interestDaysOverdue = interestDueDate
         ? Math.floor((today.getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
       const hasInterestDelay = interestDaysOverdue >= 1;
       
-      // Retornar true apenas se houver REAL atraso (1+ dias de juros)
       return hasInterestDelay;
     });
   }, [charges, payments]);

@@ -26,7 +26,9 @@ export const firebaseDataService = {
       const db = getDb();
       const clientsRef = collection(db, CLIENTS_COLLECTION);
       const q = query(clientsRef, where("userId", "==", normalizeUserId(userId)));
+      console.log("Firebase: Getting clients for userId:", normalizeUserId(userId));
       const snapshot = await getDocs(q);
+      console.log("Firebase: Got", snapshot.docs.length, "clients");
       return snapshot.docs.map(docSnap => {
         const data = docSnap.data();
         return {
@@ -45,8 +47,9 @@ export const firebaseDataService = {
           archived: data.archived || false,
         } as Client;
       });
-    } catch (error) {
-      console.error("Error getting clients:", error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error getting clients:", errorMessage, error);
       return [];
     }
   },
