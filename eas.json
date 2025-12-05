@@ -6,7 +6,8 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "20.18.0"
     },
     "preview": {
       "android": {
@@ -14,6 +15,7 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "distribution": "internal",
+      "node": "20.18.0",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
@@ -22,6 +24,7 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "node": "20.18.0",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
