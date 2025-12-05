@@ -112,9 +112,10 @@ export default function DashboardScreen() {
   const handleShareLoanRequestLink = useCallback(async () => {
     try {
       const loanRequestUrl = Linking.createURL("LoanRequest");
-      const webUrl = "https://lastro-capital.replit.app/solicitacao";
+      const devDomain = "8206c3c3-87f0-484f-9f5e-6838c7dd891e-00-csgrx2bzhkh0.picard.replit.dev";
+      const webUrl = `https://${devDomain}/solicitar`;
       
-      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}\n\nOu abra no app:\n${loanRequestUrl}`;
+      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}`;
       
       await Share.share({
         message,
