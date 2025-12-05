@@ -2,7 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Client, Charge, Payment, ChargeStatus, AppData, PaymentMethod } from "@/types";
 import { useAuth } from "./AuthContext";
-import { firebaseDataService } from "@/services/firebaseDataService";
+import { getDb, isFirestoreAvailable, getFirestoreError } from "@/config/firebase";
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  setDoc, 
+  deleteDoc, 
+  writeBatch,
+  query,
+  orderBy,
+  Timestamp
+} from "firebase/firestore";
 
 export interface PaymentOptions {
   paymentMethod?: PaymentMethod;
@@ -11,7 +22,6 @@ export interface PaymentOptions {
 }
 
 const STORAGE_KEY = "@lastro_capital_data";
-const MIGRATION_KEY = "@lastro_capital_migrated";
 const UNDO_KEY = "@lastro_capital_undo";
 
 function getStorageKeyForUser(userId: string): string {
@@ -22,15 +32,13 @@ function getUndoKeyForUser(userId: string): string {
   return `${UNDO_KEY}_${userId}`;
 }
 
-function getMigrationKeyForUser(userId: string): string {
-  return `${MIGRATION_KEY}_${userId}`;
-}
-
 interface DataContextType {
   clients: Client[];
   charges: Charge[];
   payments: Payment[];
   isLoading: boolean;
+  canUndo: boolean;
+  isCloudSynced: boolean;
   addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -41,6 +49,7 @@ interface DataContextType {
   markAsPaid: (chargeId: string, options?: PaymentOptions) => Promise<void>;
   payMonthlyInterest: (chargeId: string, options?: PaymentOptions) => Promise<void>;
   payDelayFee: (chargeId: string, options?: PaymentOptions) => Promise<void>;
+  undo: () => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
   getChargesByClient: (clientId: string) => Charge[];
@@ -54,6 +63,10 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
 function checkOverdue(charges: Charge[]): Charge[] {
   const today = new Date();
@@ -89,57 +102,162 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [charges, setCharges] = useState<Charge[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [useFirestore, setUseFirestore] = useState(false);
 
   const userId = user?.id || "";
 
-  const migrateLocalToCloud = useCallback(async () => {
-    if (!userId) return false;
+  useEffect(() => {
+    const checkFirestore = async () => {
+      try {
+        const available = isFirestoreAvailable();
+        console.log("Firestore available:", available);
+        if (!available) {
+          const error = getFirestoreError();
+          console.log("Firestore error:", error?.message);
+        }
+        setUseFirestore(available);
+      } catch (error) {
+        console.log("Error checking Firestore:", error);
+        setUseFirestore(false);
+      }
+    };
+    checkFirestore();
+  }, []);
+
+  const saveToFirestore = useCallback(async (data: AppData) => {
+    if (!userId || !useFirestore) return false;
     
     try {
-      const migrationKey = getMigrationKeyForUser(userId);
-      const alreadyMigrated = await AsyncStorage.getItem(migrationKey);
-      
-      if (alreadyMigrated) {
-        console.log("Data already migrated to cloud");
-        return false;
+      const db = getDb();
+      if (!db) return false;
+
+      const batch = writeBatch(db);
+
+      for (const client of data.clients) {
+        const clientRef = doc(db, `users/${userId}/clients`, client.id);
+        batch.set(clientRef, client);
       }
+
+      for (const charge of data.charges) {
+        const chargeRef = doc(db, `users/${userId}/charges`, charge.id);
+        batch.set(chargeRef, charge);
+      }
+
+      for (const payment of data.payments) {
+        const paymentRef = doc(db, `users/${userId}/payments`, payment.id);
+        batch.set(paymentRef, payment);
+      }
+
+      await batch.commit();
+      console.log("Data saved to Firestore");
+      setIsCloudSynced(true);
+      return true;
+    } catch (error) {
+      console.error("Error saving to Firestore:", error);
+      return false;
+    }
+  }, [userId, useFirestore]);
+
+  const loadFromFirestore = useCallback(async (): Promise<AppData | null> => {
+    if (!userId || !useFirestore) return null;
+    
+    try {
+      const db = getDb();
+      if (!db) return null;
+
+      const clientsSnapshot = await getDocs(collection(db, `users/${userId}/clients`));
+      const chargesSnapshot = await getDocs(collection(db, `users/${userId}/charges`));
+      const paymentsSnapshot = await getDocs(collection(db, `users/${userId}/payments`));
+
+      const loadedClients: Client[] = [];
+      const loadedCharges: Charge[] = [];
+      const loadedPayments: Payment[] = [];
+
+      clientsSnapshot.forEach((doc) => {
+        loadedClients.push(doc.data() as Client);
+      });
+
+      chargesSnapshot.forEach((doc) => {
+        loadedCharges.push(doc.data() as Charge);
+      });
+
+      paymentsSnapshot.forEach((doc) => {
+        loadedPayments.push(doc.data() as Payment);
+      });
+
+      console.log("Data loaded from Firestore:", {
+        clients: loadedClients.length,
+        charges: loadedCharges.length,
+        payments: loadedPayments.length
+      });
+
+      setIsCloudSynced(true);
+      return {
+        clients: loadedClients,
+        charges: loadedCharges,
+        payments: loadedPayments
+      };
+    } catch (error) {
+      console.error("Error loading from Firestore:", error);
+      return null;
+    }
+  }, [userId, useFirestore]);
+
+  const saveToLocal = useCallback(async (data: AppData) => {
+    try {
+      if (!userId) return;
+      const key = getStorageKeyForUser(userId);
+      await AsyncStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error("Error saving to local:", error);
+    }
+  }, [userId]);
+
+  const loadFromLocal = useCallback(async (): Promise<AppData | null> => {
+    try {
+      if (!userId) return null;
+
+      const key = getStorageKeyForUser(userId);
+      let storedData = await AsyncStorage.getItem(key);
       
-      const localKey = getStorageKeyForUser(userId);
-      const localData = await AsyncStorage.getItem(localKey);
-      
-      if (!localData) {
+      if (!storedData) {
         const oldData = await AsyncStorage.getItem(STORAGE_KEY);
         if (oldData) {
-          const data: AppData = JSON.parse(oldData);
-          if (data.clients.length > 0 || data.charges.length > 0 || data.payments.length > 0) {
-            console.log("Migrating old format data to cloud...");
-            await firebaseDataService.migrateFromLocal(userId, data);
-            await AsyncStorage.setItem(migrationKey, new Date().toISOString());
-            return true;
-          }
+          console.log("Migrating data from old format...");
+          storedData = oldData;
+          await AsyncStorage.setItem(key, oldData);
         }
-        await AsyncStorage.setItem(migrationKey, new Date().toISOString());
-        return false;
       }
       
-      const data: AppData = JSON.parse(localData);
-      if (data.clients.length > 0 || data.charges.length > 0 || data.payments.length > 0) {
-        console.log("Migrating local data to cloud...", {
-          clients: data.clients.length,
-          charges: data.charges.length,
-          payments: data.payments.length
-        });
-        await firebaseDataService.migrateFromLocal(userId, data);
-        await AsyncStorage.setItem(migrationKey, new Date().toISOString());
-        console.log("Migration completed!");
-        return true;
+      if (storedData) {
+        return JSON.parse(storedData);
       }
       
-      await AsyncStorage.setItem(migrationKey, new Date().toISOString());
-      return false;
+      return null;
     } catch (error) {
-      console.error("Error during migration:", error);
-      return false;
+      console.error("Error loading from local:", error);
+      return null;
+    }
+  }, [userId]);
+
+  const saveData = useCallback(async (data: AppData) => {
+    await saveToLocal(data);
+    
+    if (useFirestore) {
+      await saveToFirestore(data);
+    }
+  }, [saveToLocal, saveToFirestore, useFirestore]);
+
+  const saveUndoSnapshot = useCallback(async (data: AppData) => {
+    try {
+      if (!userId) return;
+      const key = getUndoKeyForUser(userId);
+      await AsyncStorage.setItem(key, JSON.stringify(data));
+      setCanUndo(true);
+    } catch (error) {
+      console.error("Error saving undo snapshot:", error);
     }
   }, [userId]);
 
@@ -153,92 +271,153 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await migrateLocalToCloud();
+      let data: AppData | null = null;
 
-      console.log("Loading data from Firebase...");
-      const data = await firebaseDataService.getAllData(userId);
+      if (useFirestore) {
+        data = await loadFromFirestore();
+      }
+
+      if (!data || (data.clients.length === 0 && data.charges.length === 0)) {
+        const localData = await loadFromLocal();
+        if (localData) {
+          data = localData;
+          
+          if (useFirestore && (localData.clients.length > 0 || localData.charges.length > 0)) {
+            console.log("Migrating local data to cloud...");
+            await saveToFirestore(localData);
+          }
+        }
+      }
+
+      if (data) {
+        setClients(data.clients || []);
+        setCharges(checkOverdue(data.charges || []));
+        setPayments(data.payments || []);
+      } else {
+        console.log("No data found for user:", userId);
+        setClients([]);
+        setCharges([]);
+        setPayments([]);
+      }
       
-      setClients(data.clients || []);
-      setCharges(checkOverdue(data.charges || []));
-      setPayments(data.payments || []);
-      
-      console.log("Data loaded from Firebase:", {
-        clients: data.clients.length,
-        charges: data.charges.length,
-        payments: data.payments.length
-      });
+      const undoKey = getUndoKeyForUser(userId);
+      const undoData = await AsyncStorage.getItem(undoKey);
+      setCanUndo(!!undoData);
     } catch (error) {
-      console.error("Error loading data from Firebase:", error);
-      setClients([]);
-      setCharges([]);
-      setPayments([]);
+      console.error("Error loading data:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [userId, migrateLocalToCloud]);
+  }, [userId, useFirestore, loadFromFirestore, loadFromLocal, saveToFirestore]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!isLoading && userId) {
+      const updatedCharges = checkOverdue(charges);
+      saveData({ clients, charges: updatedCharges, payments });
+    }
+  }, [clients, charges, payments, isLoading, saveData, userId]);
 
   const refreshData = useCallback(async () => {
     await loadData();
   }, [loadData]);
 
   const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
-    const newClient = await firebaseDataService.addClient(userId, clientData);
+    const newClient: Client = {
+      ...clientData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
     setClients((prev) => [...prev, newClient]);
     return newClient;
-  }, [userId]);
+  }, []);
 
   const updateClient = useCallback(async (id: string, clientData: Partial<Client>) => {
-    await firebaseDataService.updateClient(id, clientData);
     setClients((prev) =>
       prev.map((client) => (client.id === id ? { ...client, ...clientData } : client))
     );
   }, []);
 
   const deleteClient = useCallback(async (id: string) => {
-    await firebaseDataService.deleteClientCascade(id, userId);
-    
-    setClients((prev) => prev.filter((client) => client.id !== id));
-    setCharges((prev) => prev.filter((charge) => charge.clientId !== id));
-    setPayments((prev) => {
-      const clientChargeIds = charges.filter(c => c.clientId === id).map(c => c.id);
-      return prev.filter((payment) => !clientChargeIds.includes(payment.chargeId));
+    const updatedClients = clients.filter((client) => client.id !== id);
+    const updatedCharges = charges.filter((charge) => charge.clientId !== id);
+    const updatedPayments = payments.filter((payment) => {
+      const chargesForClient = charges.filter((c) => c.clientId === id);
+      return !chargesForClient.some((c) => c.id === payment.chargeId);
     });
-  }, [userId, charges]);
+
+    if (useFirestore && userId) {
+      try {
+        const db = getDb();
+        if (db) {
+          await deleteDoc(doc(db, `users/${userId}/clients`, id));
+          
+          const chargesToDelete = charges.filter((c) => c.clientId === id);
+          for (const charge of chargesToDelete) {
+            await deleteDoc(doc(db, `users/${userId}/charges`, charge.id));
+          }
+        }
+      } catch (error) {
+        console.error("Error deleting from Firestore:", error);
+      }
+    }
+
+    const appData: AppData = { clients: updatedClients, charges: updatedCharges, payments: updatedPayments };
+    await saveToLocal(appData);
+
+    setClients(updatedClients);
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+  }, [clients, charges, payments, saveToLocal, useFirestore, userId]);
 
   const toggleArchiveClient = useCallback(async (id: string) => {
-    const client = clients.find(c => c.id === id);
-    if (client) {
-      const newArchived = !client.archived;
-      await firebaseDataService.updateClient(id, { archived: newArchived });
-      setClients((prev) =>
-        prev.map((c) => c.id === id ? { ...c, archived: newArchived } : c)
-      );
-    }
-  }, [clients]);
+    setClients((prev) =>
+      prev.map((client) => 
+        client.id === id ? { ...client, archived: !client.archived } : client
+      )
+    );
+  }, []);
 
   const addCharge = useCallback(async (chargeData: Omit<Charge, "id" | "createdAt">): Promise<Charge> => {
-    const newCharge = await firebaseDataService.addCharge(userId, chargeData);
+    const newCharge: Charge = {
+      ...chargeData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
     setCharges((prev) => checkOverdue([...prev, newCharge]));
     return newCharge;
-  }, [userId]);
+  }, []);
 
   const updateCharge = useCallback(async (id: string, chargeData: Partial<Charge>) => {
-    await firebaseDataService.updateCharge(id, chargeData);
     setCharges((prev) =>
       checkOverdue(prev.map((charge) => (charge.id === id ? { ...charge, ...chargeData } : charge)))
     );
   }, []);
 
   const deleteCharge = useCallback(async (id: string) => {
-    await firebaseDataService.deleteChargeCascade(id);
-    
-    setCharges((prev) => prev.filter((charge) => charge.id !== id));
-    setPayments((prev) => prev.filter((payment) => payment.chargeId !== id));
-  }, []);
+    const updatedCharges = charges.filter((charge) => charge.id !== id);
+    const updatedPayments = payments.filter((payment) => payment.chargeId !== id);
+
+    if (useFirestore && userId) {
+      try {
+        const db = getDb();
+        if (db) {
+          await deleteDoc(doc(db, `users/${userId}/charges`, id));
+        }
+      } catch (error) {
+        console.error("Error deleting charge from Firestore:", error);
+      }
+    }
+
+    const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+    await saveToLocal(appData);
+
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+  }, [charges, payments, clients, saveToLocal, useFirestore, userId]);
 
   const markAsPaid = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
@@ -246,12 +425,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const paidDate = new Date().toISOString();
 
-    await firebaseDataService.updateCharge(chargeId, { 
-      status: "paid" as ChargeStatus, 
-      paidDate 
-    });
+    const updatedCharges = charges.map((c) =>
+      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
+    );
+    setCharges(updatedCharges);
 
-    const payment: Omit<Payment, "id"> = {
+    const payment: Payment = {
+      id: generateId(),
       chargeId,
       clientId: charge.clientId,
       amount: charge.amount,
@@ -261,13 +441,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       paymentProof: options.paymentProof,
     };
 
-    const newPayment = await firebaseDataService.addPayment(userId, payment);
+    const updatedPayments = [...payments, payment];
+    setPayments(updatedPayments);
 
-    setCharges((prev) => prev.map((c) =>
-      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
-    ));
-    setPayments((prev) => [...prev, newPayment]);
-  }, [charges, userId]);
+    const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+    await saveData(appData);
+  }, [charges, payments, clients, saveData]);
 
   const payMonthlyInterest = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const today = new Date().toISOString().split('T')[0];
@@ -284,21 +463,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const accumulatedInterest = charge.accumulatedInterest || 0;
     const remainingAccumulatedInterest = Math.max(0, accumulatedInterest - monthlyInterestPerInstallment);
-
-    const chargeUpdates = {
-      lastInterestPaymentDate: today,
-      nextInterestDueDate: nextDueDateStr,
-      accumulatedInterest: remainingAccumulatedInterest
-    };
-
-    await firebaseDataService.updateCharge(chargeId, chargeUpdates);
     
-    setCharges((prev) => prev.map((c) => 
-      c.id === chargeId ? { ...c, ...chargeUpdates } : c
-    ));
+    const updated = charges.map((c) => 
+      c.id === chargeId 
+        ? { 
+            ...c, 
+            lastInterestPaymentDate: today,
+            nextInterestDueDate: nextDueDateStr,
+            accumulatedInterest: remainingAccumulatedInterest
+          }
+        : c
+    );
+    
+    setCharges(updated);
 
     if (monthlyInterestPerInstallment > 0) {
-      const interestPayment: Omit<Payment, "id"> = {
+      const interestPayment: Payment = {
+        id: generateId(),
         chargeId,
         clientId: charge.clientId,
         amount: monthlyInterestPerInstallment,
@@ -309,10 +490,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paymentProof: options.paymentProof,
       };
 
-      const newPayment = await firebaseDataService.addPayment(userId, interestPayment);
-      setPayments((prev) => [...prev, newPayment]);
+      const updatedPayments = [...payments, interestPayment];
+
+      const appData: AppData = { clients, charges: updated, payments: updatedPayments };
+      await saveData(appData);
+
+      setPayments(updatedPayments);
+    } else {
+      const appData: AppData = { clients, charges: updated, payments };
+      await saveData(appData);
     }
-  }, [charges, userId]);
+  }, [charges, payments, clients, saveData]);
 
   const payDelayFee = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
@@ -334,7 +522,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * dailyRate;
 
     if (delayFeeInstallment > 0) {
-      const delayFeePayment: Omit<Payment, "id"> = {
+      const delayFeePayment: Payment = {
+        id: generateId(),
         chargeId,
         clientId: charge.clientId,
         amount: delayFeeInstallment,
@@ -344,10 +533,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paymentProof: options.paymentProof,
       };
 
-      const newPayment = await firebaseDataService.addPayment(userId, delayFeePayment);
-      setPayments((prev) => [...prev, newPayment]);
+      const updatedPayments = [...payments, delayFeePayment];
+      const appData: AppData = { clients, charges, payments: updatedPayments };
+      await saveData(appData);
+      setPayments(updatedPayments);
     }
-  }, [charges, payments, userId]);
+  }, [charges, payments, clients, saveData]);
+
+  const undo = useCallback(async () => {
+    try {
+      if (!userId) return;
+      const undoKey = getUndoKeyForUser(userId);
+      const undoData = await AsyncStorage.getItem(undoKey);
+      if (undoData) {
+        const data: AppData = JSON.parse(undoData);
+        setClients(data.clients || []);
+        setCharges(checkOverdue(data.charges || []));
+        setPayments(data.payments || []);
+        await AsyncStorage.removeItem(undoKey);
+        setCanUndo(false);
+      }
+    } catch (error) {
+      console.error("Error undoing:", error);
+    }
+  }, [userId]);
 
   const getClientById = useCallback(
     (id: string) => clients.find((client) => client.id === id),
@@ -469,6 +678,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         charges,
         payments,
         isLoading,
+        canUndo,
+        isCloudSynced,
         addClient,
         updateClient,
         deleteClient,
@@ -479,6 +690,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         markAsPaid,
         payMonthlyInterest,
         payDelayFee,
+        undo,
         getClientById,
         getChargeById,
         getChargesByClient,

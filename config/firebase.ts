@@ -1,6 +1,11 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore, enableNetwork } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { Platform } from "react-native";
+
+if (typeof navigator !== 'undefined' && !navigator.userAgent) {
+  (navigator as Navigator & { userAgent: string }).userAgent = 'ReactNative';
+}
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyDXoVLNhWt3Woz-lK8EIIJ63vr0T6X127A",
@@ -12,32 +17,84 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp | null = null;
-let firestoreInstance: Firestore | null = null;
-let storageInstance: FirebaseStorage | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let firestoreError: Error | null = null;
 
-export function getFirebaseApp(): FirebaseApp {
+function getInitializedApp(): FirebaseApp {
   if (!app) {
-    if (getApps().length === 0) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApp();
+    try {
+      if (getApps().length === 0) {
+        console.log("Firebase: Initializing app...");
+        app = initializeApp(firebaseConfig);
+      } else {
+        console.log("Firebase: App already initialized");
+        app = getApp();
+      }
+    } catch (error) {
+      console.error("Firebase: Error initializing app:", error);
+      throw error;
     }
   }
   return app;
 }
 
-export function getDb(): Firestore {
-  if (!firestoreInstance) {
-    const firebaseApp = getFirebaseApp();
-    firestoreInstance = getFirestore(firebaseApp);
+function initFirestore(): Firestore | null {
+  if (firestoreError) {
+    return null;
   }
-  return firestoreInstance;
+  
+  if (db) {
+    return db;
+  }
+
+  try {
+    const firebaseApp = getInitializedApp();
+    
+    if (Platform.OS === 'web') {
+      db = initializeFirestore(firebaseApp, {
+        experimentalAutoDetectLongPolling: true,
+      });
+    } else {
+      db = getFirestore(firebaseApp);
+    }
+    
+    console.log("Firebase: Firestore initialized successfully");
+    return db;
+  } catch (error) {
+    console.error("Firebase: Error initializing Firestore:", error);
+    firestoreError = error as Error;
+    return null;
+  }
+}
+
+function initStorage(): FirebaseStorage {
+  if (!storage) {
+    const firebaseApp = getInitializedApp();
+    storage = getStorage(firebaseApp);
+    console.log("Firebase: Storage initialized");
+  }
+  return storage;
+}
+
+export function getFirebaseApp(): FirebaseApp {
+  return getInitializedApp();
+}
+
+export function getDb(): Firestore | null {
+  return initFirestore();
 }
 
 export function getFirebaseStorage(): FirebaseStorage {
-  if (!storageInstance) {
-    const firebaseApp = getFirebaseApp();
-    storageInstance = getStorage(firebaseApp);
-  }
-  return storageInstance;
+  return initStorage();
+}
+
+export function isFirestoreAvailable(): boolean {
+  if (firestoreError) return false;
+  const firestore = initFirestore();
+  return firestore !== null;
+}
+
+export function getFirestoreError(): Error | null {
+  return firestoreError;
 }
