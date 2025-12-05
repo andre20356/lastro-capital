@@ -68,15 +68,15 @@ export const loanRequestService = {
       const db = getDb();
       const q = query(
         collection(db, COLLECTION_NAME),
-        where("status", "==", "pending"),
-        orderBy("createdAt", "desc")
+        where("status", "==", "pending")
       );
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => ({
+      const requests = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       })) as LoanRequest[];
+      return requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       console.error("Error getting pending requests:", error);
       throw error;
@@ -109,8 +109,7 @@ export const loanRequestService = {
     const db = getDb();
     const q = query(
       collection(db, COLLECTION_NAME),
-      where("status", "==", "pending"),
-      orderBy("createdAt", "desc")
+      where("status", "==", "pending")
     );
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -119,7 +118,10 @@ export const loanRequestService = {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       })) as LoanRequest[];
-      callback(requests);
+      const sortedRequests = requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      callback(sortedRequests);
+    }, (error) => {
+      console.error("Error in subscription:", error);
     });
 
     return unsubscribe;

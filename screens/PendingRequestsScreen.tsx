@@ -49,33 +49,45 @@ export default function PendingRequestsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     try {
+      setError(null);
       const data = await loanRequestService.getPending();
       setRequests(data);
-    } catch (error) {
-      console.error("Error loading requests:", error);
-      Alert.alert("Erro", "Nao foi possivel carregar as solicitacoes");
+    } catch (err) {
+      console.error("Error loading requests:", err);
+      setError("Nao foi possivel carregar as solicitacoes. Verifique sua conexao.");
+      setRequests([]);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadRequests();
-    }, [])
-  );
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = loanRequestService.subscribeToRequests((newRequests) => {
-      setRequests(newRequests);
-      setIsLoading(false);
-    });
+    loadRequests();
+  }, [loadRequests]);
 
-    return () => unsubscribe();
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    
+    try {
+      unsubscribe = loanRequestService.subscribeToRequests((newRequests) => {
+        setRequests(newRequests);
+        setIsLoading(false);
+        setError(null);
+      });
+    } catch (err) {
+      console.error("Error subscribing to requests:", err);
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const handleRefresh = () => {
