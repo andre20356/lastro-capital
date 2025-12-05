@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Pressable, Alert, TextInput, ScrollView, Modal } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { StyleSheet, View, Pressable, Alert, TextInput, ScrollView, Modal, Share } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -120,6 +120,22 @@ export default function ProfileScreen() {
       Alert.alert("Erro", "Não foi possível sair");
     }
   };
+
+  const handleShareLoanRequestLink = useCallback(async () => {
+    try {
+      const devDomain = "8206c3c3-87f0-484f-9f5e-6838c7dd891e-00-csgrx2bzhkh0.picard.replit.dev";
+      const webUrl = `https://${devDomain}/solicitar`;
+      
+      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}`;
+      
+      await Share.share({
+        message,
+        title: "Solicitar Emprestimo - Lastro Capital",
+      });
+    } catch (error) {
+      Alert.alert("Erro", "Nao foi possivel compartilhar o link");
+    }
+  }, []);
 
   return (
     <ThemedView style={styles.container}>
@@ -330,6 +346,36 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Modal>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
+            CAPTACAO DE CLIENTES
+          </ThemedText>
+
+          <View
+            style={[
+              styles.supportCard,
+              { backgroundColor: theme.backgroundSecondary, borderColor: theme.cardBorder },
+            ]}
+          >
+            <ThemedText style={[styles.supportLabel, { color: theme.secondaryText }]}>
+              Link para Novos Clientes
+            </ThemedText>
+            <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText, marginBottom: Spacing.sm }]}>
+              Compartilhe este link para que novos clientes possam solicitar emprestimos
+            </ThemedText>
+            <Pressable
+              style={({ pressed }) => [
+                styles.contactButton,
+                { backgroundColor: theme.primaryAccent, opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={handleShareLoanRequestLink}
+            >
+              <Feather name="share-2" size={18} color="#fff" />
+              <ThemedText style={styles.contactButtonText}>Compartilhar Link</ThemedText>
+            </Pressable>
+          </View>
+        </View>
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
