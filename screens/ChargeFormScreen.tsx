@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
+import { useWhatsApp } from "@/hooks/useWhatsApp";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { ChargeStatus } from "@/types";
 
@@ -19,6 +20,7 @@ export default function ChargeFormScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { clients, addCharge, updateCharge } = useData();
+  const { sendLoanApprovalNotification } = useWhatsApp();
 
   const existingCharge = route.params?.charge;
   const preselectedClientId = route.params?.clientId;
@@ -106,26 +108,40 @@ export default function ChargeFormScreen() {
     }
 
     try {
+      const loanPercentageNum = loanPercentage ? parseFloat(loanPercentage.replace(",", ".")) : undefined;
+      
       const chargeData = {
         clientId,
         amount: amountNum,
         dueDate: parsedDate.toISOString(),
         description,
-        loanPercentage: loanPercentage ? parseFloat(loanPercentage.replace(",", ".")) : undefined,
+        loanPercentage: loanPercentageNum,
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
       };
 
       if (isEditing && existingCharge) {
         await updateCharge(existingCharge.id, chargeData);
+        navigation.goBack();
       } else {
         await addCharge({
           ...chargeData,
           status: "pending" as ChargeStatus,
         });
+        
+        if (selectedClient && selectedClient.phone) {
+          sendLoanApprovalNotification({
+            clientName: selectedClient.name,
+            clientPhone: selectedClient.phone,
+            amount: amountNum,
+            dueDate: parsedDate.toISOString(),
+            loanPercentage: loanPercentageNum,
+          });
+        }
+        
+        navigation.goBack();
       }
-      navigation.goBack();
     } catch (error) {
-      Alert.alert("Erro", "Nao foi possivel salvar a cobrança");
+      Alert.alert("Erro", "Nao foi possivel salvar a cobranca");
     }
   };
 
