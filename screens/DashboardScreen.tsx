@@ -314,13 +314,20 @@ export default function DashboardScreen() {
               const client = getClientById(charge.clientId);
               const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
               
-              const dueDate = new Date(charge.dueDate);
+              const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
               const today = new Date();
-              const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-              const delayFee = daysOverdue > 0 && charge.dailyDelayRate 
+              today.setHours(0, 0, 0, 0);
+              referenceDate.setHours(0, 0, 0, 0);
+              const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+              const isOverdue = daysOverdue >= 1;
+              
+              const numberOfOverdueInstallments = isOverdue ? Math.ceil(daysOverdue / 30) : 0;
+              const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+              const calculatedAccumulatedInterest = isOverdue ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+              
+              const delayFee = isOverdue && charge.dailyDelayRate 
                 ? charge.dailyDelayRate * daysOverdue 
                 : 0;
-              const isOverdue = daysOverdue >= 1;
               
               const handleWhatsAppReminder = () => {
                 if (client) {
@@ -329,7 +336,7 @@ export default function DashboardScreen() {
                     clientPhone: client.phone || "",
                     amount: charge.amount,
                     dueDate: charge.nextInterestDueDate || charge.dueDate,
-                    accumulatedInterest: charge.accumulatedInterest || 0,
+                    accumulatedInterest: calculatedAccumulatedInterest,
                     isOverdue,
                   });
                 }
