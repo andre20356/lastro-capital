@@ -80,11 +80,24 @@ export default function DashboardScreen() {
   // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
   
-  // Soma total dos juros vencidos (para "Negativados")
-  // Apenas charges com status "overdue" - soma de juros acumulados
-  const totalOverdueInterest = charges
-    .filter(c => c.status === "overdue")
-    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+  // Soma total das TAXAS DE ATRASO de todos os clientes (para "Negativados")
+  // Calcula: dailyDelayRate * dias de atraso para cada charge atrasada
+  const totalDelayFees = charges
+    .filter(c => c.status !== "paid")
+    .reduce((sum, c) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const referenceDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : new Date(c.dueDate);
+      referenceDate.setHours(0, 0, 0, 0);
+      
+      const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysOverdue > 0 && c.dailyDelayRate) {
+        return sum + (c.dailyDelayRate * daysOverdue);
+      }
+      return sum;
+    }, 0);
   
   // Count clients with overdue charges (status visual = overdue, não apenas BD)
   const overdueClientsSet = new Set(
@@ -166,7 +179,7 @@ export default function DashboardScreen() {
       label: dateForChart.toLocaleDateString("pt-BR", { month: "short" }),
       borrowed: totalBorrowed,
       earned: totalEarned,
-      overdue: totalOverdueInterest,
+      overdue: totalDelayFees,
     };
   });
 
@@ -318,10 +331,10 @@ export default function DashboardScreen() {
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <ThemedText style={[styles.statLabel, { color: theme.tertiaryText }]}>
-                Negativados
+                Taxas de Atraso
               </ThemedText>
               <ThemedText style={[styles.statValue, { color: "#FF922B" }]}>
-                {formatCurrency(totalOverdueInterest)}
+                {formatCurrency(totalDelayFees)}
               </ThemedText>
             </View>
           </View>
