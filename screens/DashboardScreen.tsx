@@ -80,24 +80,29 @@ export default function DashboardScreen() {
   // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
   const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
   
-  // Soma total das TAXAS DE ATRASO de todos os clientes (para "Negativados")
+  // Soma total das TAXAS DE ATRASO de todos os clientes (para "Taxas de Atraso")
   // Calcula: dailyDelayRate * dias de atraso para cada charge atrasada
   const totalDelayFees = charges
     .filter(c => c.status !== "paid")
     .reduce((sum, c) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayCalc = new Date();
+      todayCalc.setHours(0, 0, 0, 0);
       
       const referenceDate = c.nextInterestDueDate ? new Date(c.nextInterestDueDate) : new Date(c.dueDate);
       referenceDate.setHours(0, 0, 0, 0);
       
-      const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = Math.floor((todayCalc.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (daysOverdue > 0 && c.dailyDelayRate) {
-        return sum + (c.dailyDelayRate * daysOverdue);
+      if (daysOverdue > 0) {
+        // Se tem dailyDelayRate definido, usa ele
+        if (c.dailyDelayRate && c.dailyDelayRate > 0) {
+          return sum + (c.dailyDelayRate * daysOverdue);
+        }
       }
       return sum;
     }, 0);
+  
+  console.log("Dashboard - Total Delay Fees:", { totalDelayFees, chargesWithRate: charges.filter(c => c.dailyDelayRate && c.dailyDelayRate > 0).length });
   
   // Count clients with overdue charges (status visual = overdue, não apenas BD)
   const overdueClientsSet = new Set(
