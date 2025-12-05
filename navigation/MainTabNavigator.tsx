@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { Pressable } from "react-native";
+import { Pressable, View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { getCommonScreenOptions } from "@/navigation/screenOptions";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { Charge, Client } from "@/types";
-import { Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import { getPendingLoanRequests } from "@/services/loanRequestService";
 
 import DashboardScreen from "@/screens/DashboardScreen";
 import ChargesScreen from "@/screens/ChargesScreen";
@@ -52,6 +53,22 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainTabs({ navigation }: any) {
   const { theme } = useTheme();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const requests = await getPendingLoanRequests();
+        setPendingCount(requests.length);
+      } catch (error) {
+        console.log("Error loading pending requests count:", error);
+      }
+    };
+    
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Tab.Navigator
@@ -79,12 +96,27 @@ function MainTabs({ navigation }: any) {
           ),
           headerTitle: () => <HeaderTitle title="Lastro Capital" />,
           headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate("Profile")}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-            >
-              <Feather name="more-vertical" size={24} color={theme.text} style={{ marginRight: Spacing.lg }} />
-            </Pressable>
+            <View style={headerStyles.headerRightContainer}>
+              <Pressable
+                onPress={() => navigation.navigate("PendingRequests")}
+                style={({ pressed }) => [headerStyles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Feather name="bell" size={22} color={theme.text} />
+                {pendingCount > 0 ? (
+                  <View style={[headerStyles.badge, { backgroundColor: theme.error }]}>
+                    <Text style={headerStyles.badgeText}>
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate("Profile")}
+                style={({ pressed }) => [headerStyles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Feather name="more-vertical" size={24} color={theme.text} />
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -234,3 +266,32 @@ export default function MainStackNavigator() {
     </Stack.Navigator>
   );
 }
+
+const headerStyles = StyleSheet.create({
+  headerRightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: Spacing.md,
+  },
+  iconButton: {
+    padding: Spacing.xs,
+    marginLeft: Spacing.sm,
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+});
