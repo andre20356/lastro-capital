@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyDXoVLNhWt3Woz-lK8EIIJ63vr0T6X127A",
@@ -12,6 +13,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let firestoreInstance: Firestore | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!app) {
@@ -30,4 +32,12 @@ export function getDb(): Firestore {
     firestoreInstance = getFirestore(firebaseApp);
   }
   return firestoreInstance;
+}
+
+export function getFirebaseStorage(): FirebaseStorage {
+  if (!storageInstance) {
+    const firebaseApp = getFirebaseApp();
+    storageInstance = getStorage(firebaseApp);
+  }
+  return storageInstance;
 }

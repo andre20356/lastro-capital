@@ -14,6 +14,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "./ThemedText";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { PaymentMethod } from "@/types";
+import { uploadPaymentProof } from "@/services/storageService";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -45,6 +46,7 @@ export function PaymentModal({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [paymentProof, setPaymentProof] = useState<string | undefined>();
   const [notes, setNotes] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const handlePickImage = async () => {
     try {
@@ -63,16 +65,15 @@ export function PaymentModal({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (paymentMethod === "pix" && !paymentProof) {
       Alert.alert(
         "Comprovante Necessario",
         "Para pagamento via PIX, e necessario anexar o comprovante.",
         [
           { text: "Cancelar", style: "cancel" },
-          { text: "Continuar sem comprovante", onPress: () => {
-            onConfirm({ paymentMethod, paymentProof, notes });
-            resetForm();
+          { text: "Continuar sem comprovante", onPress: async () => {
+            await processPayment(undefined);
           }},
         ]
       );
@@ -88,7 +89,42 @@ export function PaymentModal({
       return;
     }
 
-    onConfirm({ paymentMethod, paymentProof, notes });
+    await processPayment(paymentProof);
+  };
+
+  const processPayment = async (proofUri: string | undefined) => {
+    let uploadedProofUrl: string | undefined = undefined;
+
+    if (proofUri) {
+      try {
+        setUploading(true);
+        const paymentId = `payment_${Date.now()}`;
+        uploadedProofUrl = await uploadPaymentProof(proofUri, paymentId);
+        console.log("Comprovante enviado para nuvem:", uploadedProofUrl);
+      } catch (error) {
+        console.error("Erro ao enviar comprovante:", error);
+        Alert.alert(
+          "Erro no Upload",
+          "Nao foi possivel enviar o comprovante para a nuvem. Deseja continuar salvando localmente?",
+          [
+            { text: "Cancelar", style: "cancel", onPress: () => setUploading(false) },
+            { 
+              text: "Salvar localmente", 
+              onPress: () => {
+                setUploading(false);
+                onConfirm({ paymentMethod, paymentProof: proofUri, notes });
+                resetForm();
+              }
+            },
+          ]
+        );
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    onConfirm({ paymentMethod, paymentProof: uploadedProofUrl || proofUri, notes });
     resetForm();
   };
 
@@ -273,12 +309,20 @@ export function PaymentModal({
             </Pressable>
 
             <Pressable
-              style={[styles.confirmButton, { backgroundColor: theme.primaryAccent }]}
+              style={[
+                styles.confirmButton, 
+                { backgroundColor: (isLoading || uploading) ? theme.primaryAccent + "80" : theme.primaryAccent }
+              ]}
               onPress={handleConfirm}
-              disabled={isLoading}
+              disabled={isLoading || uploading}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" size="small" />
+              {(isLoading || uploading) ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#fff" size="small" />
+                  <ThemedText style={styles.confirmText}>
+                    {uploading ? "Enviando..." : "Salvando..."}
+                  </ThemedText>
+                </View>
               ) : (
                 <>
                   <Feather name="check" size={18} color="#fff" />
@@ -410,5 +454,10 @@ const styles = StyleSheet.create({
   confirmText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
 });
