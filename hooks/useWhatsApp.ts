@@ -12,6 +12,14 @@ interface ReminderData {
   isOverdue?: boolean;
 }
 
+interface LoanApprovalData {
+  clientName: string;
+  clientPhone: string;
+  amount: number;
+  dueDate: string;
+  loanPercentage?: number;
+}
+
 function formatCurrency(value: number): string {
   if (isNaN(value) || value === undefined || value === null) {
     return "R$ 0,00";
@@ -124,6 +132,56 @@ export function useWhatsApp() {
     }
   };
 
+  const sendLoanApprovalNotification = async (data: LoanApprovalData) => {
+    const { clientName, clientPhone, amount, dueDate, loanPercentage = 0 } = data;
+
+    if (!clientPhone) {
+      Alert.alert("Erro", "Cliente nao possui numero de telefone cadastrado.");
+      return false;
+    }
+
+    const formattedPhone = formatPhoneForWhatsApp(clientPhone);
+    const formattedDate = formatDate(dueDate);
+    const monthlyInterest = loanPercentage > 0 ? (amount * loanPercentage) / 100 : 0;
+
+    let message = `Ola ${clientName}!\n\n`;
+    message += `Sua solicitacao de emprestimo foi *APROVADA*!\n\n`;
+    message += `*DETALHES DO EMPRESTIMO:*\n`;
+    message += `------------------------\n`;
+    message += `Valor Aprovado: ${formatCurrency(amount)}\n`;
+    
+    if (loanPercentage > 0) {
+      message += `Taxa de Juros: ${loanPercentage}% ao mes\n`;
+      message += `Juros Mensal: ${formatCurrency(monthlyInterest)}\n`;
+    }
+    
+    message += `Data de Vencimento: ${formattedDate}\n`;
+    message += `------------------------\n\n`;
+    message += `Qualquer duvida, estamos a disposicao.\n\n`;
+    message += `Atenciosamente,\n*Lastro Capital*`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(whatsappUrl);
+      if (canOpen) {
+        await Linking.openURL(whatsappUrl);
+        return true;
+      } else {
+        Alert.alert(
+          "WhatsApp nao disponivel",
+          "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Erro ao abrir WhatsApp:", error);
+      Alert.alert("Erro", "Nao foi possivel abrir o WhatsApp.");
+      return false;
+    }
+  };
+
   const sendCustomMessage = async (phone: string, message: string) => {
     if (!phone) {
       Alert.alert("Erro", "Numero de telefone nao fornecido.");
@@ -155,6 +213,7 @@ export function useWhatsApp() {
 
   return {
     sendPaymentReminder,
+    sendLoanApprovalNotification,
     sendCustomMessage,
   };
 }
