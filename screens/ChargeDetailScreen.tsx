@@ -291,7 +291,7 @@ export default function ChargeDetailScreen() {
     openPaymentModal("juros", monthlyInterestPerInstallment);
   };
 
-  const handleSendWhatsAppReminder = () => {
+  const handleSendWhatsAppReminder = async () => {
     if (!client) {
       Alert.alert("Erro", "Cliente nao encontrado");
       return;
@@ -300,7 +300,7 @@ export default function ChargeDetailScreen() {
     const isOverdue = calculations.hasInterestDelay;
     const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
-    sendPaymentReminder({
+    const success = await sendPaymentReminder({
       clientName: client.name,
       clientPhone: client.phone || "",
       amount: charge.amount,
@@ -311,6 +311,14 @@ export default function ChargeDetailScreen() {
       daysOverdue: calculations.daysRemainingOverdue,
       isOverdue,
     });
+    
+    if (success) {
+      Alert.alert(
+        "Lembrete Enviado",
+        `O WhatsApp foi aberto com a mensagem de cobranca para ${client.name}. Envie a mensagem para concluir.`,
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const handlePayDelayFee = () => {
