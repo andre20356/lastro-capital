@@ -32,16 +32,26 @@ function getMonthYear(dateString: string): string {
 }
 
 function getPaymentType(payment: Payment): { label: string; icon: string; description: string } {
-  if (payment.notes === "Pagamento de juros mensais") {
+  if (payment.notes?.includes("juros")) {
     return { label: "Juros", icon: "percent", description: "Pagamento de juros" };
   }
-  if (payment.notes === "Pagamento de taxa de atraso") {
+  if (payment.notes?.includes("taxa de atraso")) {
     return { label: "Taxa de Atraso", icon: "alert-circle", description: "Pagamento de taxa de atraso" };
   }
-  if (payment.notes === "Quitação" || payment.notes?.includes("Quitação")) {
-    return { label: "Quitação", icon: "check-circle", description: "Pagamento completo" };
+  if (payment.notes?.includes("Quitacao") || payment.notes?.includes("Quitação")) {
+    return { label: "Quitacao", icon: "check-circle", description: "Pagamento completo" };
   }
   return { label: "Pagamento", icon: "check", description: "Pagamento registrado" };
+}
+
+function getPaymentMethodLabel(method?: string): { label: string; icon: string; color: string } {
+  if (method === "pix") {
+    return { label: "PIX", icon: "smartphone", color: "#00B2FF" };
+  }
+  if (method === "dinheiro") {
+    return { label: "Dinheiro", icon: "dollar-sign", color: "#4CAF50" };
+  }
+  return { label: "Outro", icon: "credit-card", color: "#FFB400" };
 }
 
 interface PaymentSection {
@@ -92,6 +102,7 @@ export default function HistoryScreen() {
     const client = getClientById(item.clientId);
     const charge = getChargeById(item.chargeId);
     const paymentType = getPaymentType(item);
+    const paymentMethod = getPaymentMethodLabel(item.paymentMethod);
     
     return (
       <Pressable
@@ -119,6 +130,24 @@ export default function HistoryScreen() {
               </ThemedText>
             </View>
           </View>
+          {item.paymentMethod ? (
+            <View style={styles.methodRow}>
+              <View style={[styles.methodBadge, { backgroundColor: paymentMethod.color + "20" }]}>
+                <Feather name={paymentMethod.icon as any} size={12} color={paymentMethod.color} />
+                <ThemedText style={[styles.methodText, { color: paymentMethod.color }]}>
+                  {paymentMethod.label}
+                </ThemedText>
+              </View>
+              {item.paymentProof ? (
+                <View style={[styles.proofBadge, { backgroundColor: theme.primaryAccent + "20" }]}>
+                  <Feather name="image" size={12} color={theme.primaryAccent} />
+                  <ThemedText style={[styles.proofText, { color: theme.primaryAccent }]}>
+                    Comprovante
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
         
         <ThemedText style={[styles.amount, { color: theme.success }]}>
@@ -229,6 +258,36 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     fontSize: 12,
+    fontWeight: "600",
+  },
+  methodRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    gap: Spacing.sm,
+  },
+  methodBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+  },
+  methodText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  proofBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+  },
+  proofText: {
+    fontSize: 11,
     fontWeight: "600",
   },
   amount: {

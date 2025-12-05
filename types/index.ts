@@ -39,6 +39,8 @@ export interface Charge {
   createdAt: string;
 }
 
+export type PaymentMethod = "pix" | "dinheiro" | "outro";
+
 export interface Payment {
   id: string;
   chargeId: string;
@@ -47,6 +49,8 @@ export interface Payment {
   paidAt: string;
   dueDate?: string;
   notes: string;
+  paymentMethod?: PaymentMethod;
+  paymentProof?: string;
 }
 
 export interface AppData {

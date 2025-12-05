@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Client, Charge, Payment, ChargeStatus, AppData } from "@/types";
+import { Client, Charge, Payment, ChargeStatus, AppData, PaymentMethod } from "@/types";
 import { useAuth } from "./AuthContext";
+
+export interface PaymentOptions {
+  paymentMethod?: PaymentMethod;
+  paymentProof?: string;
+  notes?: string;
+}
 
 const STORAGE_KEY = "@lastro_capital_data";
 const UNDO_KEY = "@lastro_capital_undo";
@@ -27,9 +33,9 @@ interface DataContextType {
   addCharge: (charge: Omit<Charge, "id" | "createdAt">) => Promise<Charge>;
   updateCharge: (id: string, charge: Partial<Charge>) => Promise<void>;
   deleteCharge: (id: string) => Promise<void>;
-  markAsPaid: (chargeId: string, notes?: string) => Promise<void>;
-  payMonthlyInterest: (chargeId: string) => Promise<void>;
-  payDelayFee: (chargeId: string) => Promise<void>;
+  markAsPaid: (chargeId: string, options?: PaymentOptions) => Promise<void>;
+  payMonthlyInterest: (chargeId: string, options?: PaymentOptions) => Promise<void>;
+  payDelayFee: (chargeId: string, options?: PaymentOptions) => Promise<void>;
   undo: () => Promise<void>;
   getClientById: (id: string) => Client | undefined;
   getChargeById: (id: string) => Charge | undefined;
@@ -333,56 +339,48 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPayments(updatedPayments);
   }, [charges, payments, clients, saveData]);
 
-  const markAsPaid = useCallback(async (chargeId: string, notes: string = "") => {
-    // Encontrar a cobrança atual
+  const markAsPaid = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    // Data de quitação
     const paidDate = new Date().toISOString();
 
-    // Atualizar charges com data de quitação
     const updatedCharges = charges.map((c) =>
       c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
     );
     setCharges(updatedCharges);
 
-    // Criar pagamento
     const payment: Payment = {
       id: generateId(),
       chargeId,
       clientId: charge.clientId,
       amount: charge.amount,
       paidAt: paidDate,
-      notes,
+      notes: options.notes || "Quitacao de divida",
+      paymentMethod: options.paymentMethod,
+      paymentProof: options.paymentProof,
     };
 
-    // Atualizar payments
     const updatedPayments = [...payments, payment];
     setPayments(updatedPayments);
 
-    // Salvar em AsyncStorage
     const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
     await saveData(appData);
   }, [charges, payments, clients, saveData]);
 
-  const payMonthlyInterest = useCallback(async (chargeId: string) => {
+  const payMonthlyInterest = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const today = new Date().toISOString().split('T')[0];
     
-    // Encontrar a cobrança para obter o valor dos juros
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    // Calcular juros mensais por parcela
     const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
-    // Se já tem nextInterestDueDate, usar como base. Senão, usar dueDate
     const baseDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const nextInterestDate = new Date(baseDate);
     nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
     const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
-    // Pagar apenas 1 parcela de juros (descontar do accumulatedInterest)
     const accumulatedInterest = charge.accumulatedInterest || 0;
     const remainingAccumulatedInterest = Math.max(0, accumulatedInterest - monthlyInterestPerInstallment);
     
@@ -408,7 +406,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     setCharges(updated);
 
-    // Criar pagamento apenas da parcela de juros
     if (monthlyInterestPerInstallment > 0) {
       const interestPayment: Payment = {
         id: generateId(),
@@ -417,42 +414,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
         amount: monthlyInterestPerInstallment,
         paidAt: new Date().toISOString(),
         dueDate: baseDate.toISOString().split('T')[0],
-        notes: "Pagamento de juros mensais",
+        notes: options.notes || "Pagamento de juros mensais",
+        paymentMethod: options.paymentMethod,
+        paymentProof: options.paymentProof,
       };
 
       const updatedPayments = [...payments, interestPayment];
 
-      // Save to AsyncStorage
       const appData: AppData = { clients, charges: updated, payments: updatedPayments };
       await saveData(appData);
 
       setPayments(updatedPayments);
       console.log("Pagamento de juros criado:", interestPayment);
     } else {
-      // Se não há juros, apenas salva as charges
       const appData: AppData = { clients, charges: updated, payments };
       await saveData(appData);
     }
   }, [charges, payments, clients, saveData]);
 
-  const payDelayFee = useCallback(async (chargeId: string) => {
+  const payDelayFee = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
     if (!charge) return;
 
-    // Usar nextInterestDueDate se existir (após pagamentos de juros), senão usar dueDate
     const dueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Calcular quanto de taxa de atraso já foi pago (em dias)
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === chargeId && p.notes === "Pagamento de taxa de atraso")
+      .filter((p) => p.chargeId === chargeId && p.notes?.includes("taxa de atraso"))
       .reduce((sum, p) => sum + p.amount, 0);
     
     const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
     const daysRemainingToPay = Math.max(0, daysOverdue - daysPaidSoFar);
     
-    // Pagar apenas 1 parcela (30 dias)
     const daysPerInstallment = 30;
     const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * charge.dailyDelayRate;
 
@@ -463,7 +457,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         clientId: charge.clientId,
         amount: delayFeeInstallment,
         paidAt: new Date().toISOString(),
-        notes: "Pagamento de taxa de atraso",
+        notes: options.notes || "Pagamento de taxa de atraso",
+        paymentMethod: options.paymentMethod,
+        paymentProof: options.paymentProof,
       };
 
       const updatedPayments = [...payments, delayFeePayment];
