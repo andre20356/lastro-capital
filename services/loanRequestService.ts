@@ -125,3 +125,7 @@ export const loanRequestService = {
     return unsubscribe;
   },
 };
+
+export async function getPendingLoanRequests(): Promise<LoanRequest[]> {
+  return loanRequestService.getPending();
+}
