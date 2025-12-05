@@ -336,7 +336,10 @@ export default function DashboardScreen() {
                     clientPhone: client.phone || "",
                     amount: charge.amount,
                     dueDate: charge.nextInterestDueDate || charge.dueDate,
+                    monthlyInterest: monthlyInterest,
                     accumulatedInterest: calculatedAccumulatedInterest,
+                    delayFee: delayFee,
+                    daysOverdue: isOverdue ? daysOverdue : 0,
                     isOverdue,
                   });
                 }

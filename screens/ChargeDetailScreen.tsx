@@ -10,7 +10,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
-import { ChargeStatus } from "@/types";
+import { ChargeStatus, Charge } from "@/types";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -280,17 +280,22 @@ export default function ChargeDetailScreen() {
 
   const handleSendWhatsAppReminder = () => {
     if (!client) {
-      Alert.alert("Erro", "Cliente não encontrado");
+      Alert.alert("Erro", "Cliente nao encontrado");
       return;
     }
     
     const isOverdue = calculations.hasInterestDelay;
+    const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    
     sendPaymentReminder({
       clientName: client.name,
       clientPhone: client.phone || "",
       amount: charge.amount,
       dueDate: charge.nextInterestDueDate || charge.dueDate,
+      monthlyInterest,
       accumulatedInterest: calculations.calculatedAccumulatedInterest,
+      delayFee: calculations.pendingDelayFee,
+      daysOverdue: calculations.daysRemainingOverdue,
       isOverdue,
     });
   };
