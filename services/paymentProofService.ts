@@ -27,8 +27,12 @@ const COLLECTION_NAME = "paymentProofs";
 
 export const paymentProofService = {
   async create(proof: Omit<PaymentProof, "id" | "createdAt" | "status">): Promise<string> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = await addDoc(collection(db, COLLECTION_NAME), {
         ...proof,
         status: "pending",
@@ -42,8 +46,12 @@ export const paymentProofService = {
   },
 
   async getAll(): Promise<PaymentProof[]> {
+    const db = getDb();
+    if (!db) {
+      return [];
+    }
+    
     try {
-      const db = getDb();
       const q = query(
         collection(db, COLLECTION_NAME),
         orderBy("createdAt", "desc")
@@ -56,13 +64,17 @@ export const paymentProofService = {
       })) as PaymentProof[];
     } catch (error) {
       console.error("Error getting payment proofs:", error);
-      throw error;
+      return [];
     }
   },
 
   async getPending(): Promise<PaymentProof[]> {
+    const db = getDb();
+    if (!db) {
+      return [];
+    }
+    
     try {
-      const db = getDb();
       const q = query(
         collection(db, COLLECTION_NAME),
         where("status", "==", "pending")
@@ -76,13 +88,17 @@ export const paymentProofService = {
       return proofs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       console.error("Error getting pending proofs:", error);
-      throw error;
+      return [];
     }
   },
 
   async updateStatus(id: string, status: "confirmed" | "rejected"): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, { status });
     } catch (error) {
@@ -92,8 +108,12 @@ export const paymentProofService = {
   },
 
   async delete(id: string): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = doc(db, COLLECTION_NAME, id);
       await deleteDoc(docRef);
     } catch (error) {

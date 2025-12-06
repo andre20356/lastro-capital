@@ -11,7 +11,7 @@ import {
   Timestamp,
   onSnapshot
 } from "firebase/firestore";
-import { getDb } from "@/config/firebase";
+import { getDb, isFirestoreAvailable } from "@/config/firebase";
 
 export interface LoanRequest {
   id?: string;
@@ -30,8 +30,12 @@ const COLLECTION_NAME = "loanRequests";
 
 export const loanRequestService = {
   async create(request: Omit<LoanRequest, "id" | "createdAt" | "status">): Promise<string> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = await addDoc(collection(db, COLLECTION_NAME), {
         ...request,
         status: "pending",
@@ -45,8 +49,12 @@ export const loanRequestService = {
   },
 
   async getAll(): Promise<LoanRequest[]> {
+    const db = getDb();
+    if (!db) {
+      return [];
+    }
+    
     try {
-      const db = getDb();
       const q = query(
         collection(db, COLLECTION_NAME),
         orderBy("createdAt", "desc")
@@ -59,13 +67,17 @@ export const loanRequestService = {
       })) as LoanRequest[];
     } catch (error) {
       console.error("Error getting loan requests:", error);
-      throw error;
+      return [];
     }
   },
 
   async getPending(): Promise<LoanRequest[]> {
+    const db = getDb();
+    if (!db) {
+      return [];
+    }
+    
     try {
-      const db = getDb();
       const q = query(
         collection(db, COLLECTION_NAME),
         where("status", "==", "pending")
@@ -79,13 +91,17 @@ export const loanRequestService = {
       return requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       console.error("Error getting pending requests:", error);
-      throw error;
+      return [];
     }
   },
 
   async updateStatus(id: string, status: "approved" | "rejected"): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, { status });
     } catch (error) {
@@ -95,8 +111,12 @@ export const loanRequestService = {
   },
 
   async delete(id: string): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore não está disponível");
+    }
+    
     try {
-      const db = getDb();
       const docRef = doc(db, COLLECTION_NAME, id);
       await deleteDoc(docRef);
     } catch (error) {
@@ -107,6 +127,11 @@ export const loanRequestService = {
 
   subscribeToRequests(callback: (requests: LoanRequest[]) => void): () => void {
     const db = getDb();
+    if (!db) {
+      callback([]);
+      return () => {};
+    }
+    
     const q = query(
       collection(db, COLLECTION_NAME),
       where("status", "==", "pending")
@@ -122,6 +147,7 @@ export const loanRequestService = {
       callback(sortedRequests);
     }, (error) => {
       console.error("Error in subscription:", error);
+      callback([]);
     });
 
     return unsubscribe;
