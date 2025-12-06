@@ -5,16 +5,13 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Image,
   Alert,
   ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "./ThemedText";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { PaymentMethod } from "@/types";
-import { uploadPaymentProof } from "@/services/storageService";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -44,42 +41,9 @@ export function PaymentModal({
   isLoading = false,
 }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
-  const [paymentProof, setPaymentProof] = useState<string | undefined>();
   const [notes, setNotes] = useState("");
-  const [uploading, setUploading] = useState(false);
 
-  const handlePickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setPaymentProof(result.assets[0].uri);
-      }
-    } catch (error) {
-      Alert.alert("Erro", "Nao foi possivel selecionar a imagem");
-    }
-  };
-
-  const handleConfirm = async () => {
-    if (paymentMethod === "pix" && !paymentProof) {
-      Alert.alert(
-        "Comprovante Necessario",
-        "Para pagamento via PIX, e necessario anexar o comprovante.",
-        [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Continuar sem comprovante", onPress: async () => {
-            await processPayment(undefined);
-          }},
-        ]
-      );
-      return;
-    }
-
+  const handleConfirm = () => {
     if (paymentMethod === "dinheiro" && !notes.trim()) {
       Alert.alert(
         "Especificacao Necessaria",
@@ -89,48 +53,12 @@ export function PaymentModal({
       return;
     }
 
-    await processPayment(paymentProof);
-  };
-
-  const processPayment = async (proofUri: string | undefined) => {
-    let uploadedProofUrl: string | undefined = undefined;
-
-    if (proofUri) {
-      try {
-        setUploading(true);
-        const paymentId = `payment_${Date.now()}`;
-        uploadedProofUrl = await uploadPaymentProof(proofUri, paymentId);
-        console.log("Comprovante enviado para nuvem:", uploadedProofUrl);
-      } catch (error) {
-        console.error("Erro ao enviar comprovante:", error);
-        Alert.alert(
-          "Erro no Upload",
-          "Nao foi possivel enviar o comprovante para a nuvem. Deseja continuar salvando localmente?",
-          [
-            { text: "Cancelar", style: "cancel", onPress: () => setUploading(false) },
-            { 
-              text: "Salvar localmente", 
-              onPress: () => {
-                setUploading(false);
-                onConfirm({ paymentMethod, paymentProof: proofUri, notes });
-                resetForm();
-              }
-            },
-          ]
-        );
-        return;
-      } finally {
-        setUploading(false);
-      }
-    }
-
-    onConfirm({ paymentMethod, paymentProof: uploadedProofUrl || proofUri, notes });
+    onConfirm({ paymentMethod, notes });
     resetForm();
   };
 
   const resetForm = () => {
     setPaymentMethod("pix");
-    setPaymentProof(undefined);
     setNotes("");
   };
 
@@ -244,35 +172,6 @@ export function PaymentModal({
             </Pressable>
           </View>
 
-          {paymentMethod === "pix" && (
-            <View style={styles.proofSection}>
-              <ThemedText style={[styles.sectionLabel, { color: theme.secondaryText }]}>
-                Comprovante de PIX
-              </ThemedText>
-              <Pressable
-                style={[styles.proofButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.cardBorder }]}
-                onPress={handlePickImage}
-              >
-                {paymentProof ? (
-                  <Image source={{ uri: paymentProof }} style={styles.proofImage} />
-                ) : (
-                  <View style={styles.proofPlaceholder}>
-                    <Feather name="image" size={32} color={theme.tertiaryText} />
-                    <ThemedText style={[styles.proofText, { color: theme.tertiaryText }]}>
-                      Toque para anexar comprovante
-                    </ThemedText>
-                  </View>
-                )}
-              </Pressable>
-              {paymentProof && (
-                <Pressable onPress={() => setPaymentProof(undefined)}>
-                  <ThemedText style={[styles.removeProof, { color: theme.error }]}>
-                    Remover comprovante
-                  </ThemedText>
-                </Pressable>
-              )}
-            </View>
-          )}
 
           <View style={styles.notesSection}>
             <ThemedText style={[styles.sectionLabel, { color: theme.secondaryText }]}>
@@ -311,17 +210,15 @@ export function PaymentModal({
             <Pressable
               style={[
                 styles.confirmButton, 
-                { backgroundColor: (isLoading || uploading) ? theme.primaryAccent + "80" : theme.primaryAccent }
+                { backgroundColor: isLoading ? theme.primaryAccent + "80" : theme.primaryAccent }
               ]}
               onPress={handleConfirm}
-              disabled={isLoading || uploading}
+              disabled={isLoading}
             >
-              {(isLoading || uploading) ? (
+              {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator color="#fff" size="small" />
-                  <ThemedText style={styles.confirmText}>
-                    {uploading ? "Enviando..." : "Salvando..."}
-                  </ThemedText>
+                  <ThemedText style={styles.confirmText}>Salvando...</ThemedText>
                 </View>
               ) : (
                 <>
@@ -391,34 +288,6 @@ const styles = StyleSheet.create({
   methodText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  proofSection: {
-    marginBottom: Spacing.lg,
-  },
-  proofButton: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
-  },
-  proofPlaceholder: {
-    padding: Spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-  },
-  proofImage: {
-    width: "100%",
-    height: 150,
-    resizeMode: "cover",
-  },
-  proofText: {
-    fontSize: 14,
-  },
-  removeProof: {
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: Spacing.sm,
   },
   notesSection: {
     marginBottom: Spacing.lg,
