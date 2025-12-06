@@ -7,7 +7,7 @@ export async function uploadPaymentProof(
   paymentId: string
 ): Promise<string> {
   try {
-    const storage = getFirebaseStorage();
+    const storage = await getFirebaseStorage();
     const filename = `payment_proofs/${paymentId}_${Date.now()}.jpg`;
     const storageRef = ref(storage, filename);
 
@@ -38,7 +38,7 @@ export async function uploadImage(
   filename: string
 ): Promise<string> {
   try {
-    const storage = getFirebaseStorage();
+    const storage = await getFirebaseStorage();
     const fullPath = `${folder}/${filename}_${Date.now()}.jpg`;
     const storageRef = ref(storage, fullPath);
 

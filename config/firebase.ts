@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore, initializeFirestore, enableNetwork } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getFirestore, Firestore, initializeFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
 if (typeof navigator !== 'undefined' && !navigator.userAgent) {
@@ -18,7 +17,6 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
 let firestoreError: Error | null = null;
 
 function getInitializedApp(): FirebaseApp {
@@ -68,15 +66,6 @@ function initFirestore(): Firestore | null {
   }
 }
 
-function initStorage(): FirebaseStorage {
-  if (!storage) {
-    const firebaseApp = getInitializedApp();
-    storage = getStorage(firebaseApp);
-    console.log("Firebase: Storage initialized");
-  }
-  return storage;
-}
-
 export function getFirebaseApp(): FirebaseApp {
   return getInitializedApp();
 }
@@ -85,8 +74,15 @@ export function getDb(): Firestore | null {
   return initFirestore();
 }
 
-export function getFirebaseStorage(): FirebaseStorage {
-  return initStorage();
+export async function getFirebaseStorage() {
+  try {
+    const firebaseApp = getInitializedApp();
+    const { getStorage } = await import("firebase/storage");
+    return getStorage(firebaseApp);
+  } catch (error) {
+    console.error("Firebase: Error initializing Storage:", error);
+    throw error;
+  }
 }
 
 export function isFirestoreAvailable(): boolean {
