@@ -1,25 +1,17 @@
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseStorage } from "@/config/firebase";
-import { Platform } from "react-native";
 
 export async function uploadPaymentProof(
   localUri: string,
   paymentId: string
 ): Promise<string> {
   try {
+    const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
     const storage = await getFirebaseStorage();
     const filename = `payment_proofs/${paymentId}_${Date.now()}.jpg`;
     const storageRef = ref(storage, filename);
 
-    let blob: Blob;
-
-    if (Platform.OS === "web") {
-      const response = await fetch(localUri);
-      blob = await response.blob();
-    } else {
-      const response = await fetch(localUri);
-      blob = await response.blob();
-    }
+    const response = await fetch(localUri);
+    const blob = await response.blob();
 
     await uploadBytes(storageRef, blob);
     const downloadUrl = await getDownloadURL(storageRef);
@@ -38,6 +30,7 @@ export async function uploadImage(
   filename: string
 ): Promise<string> {
   try {
+    const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
     const storage = await getFirebaseStorage();
     const fullPath = `${folder}/${filename}_${Date.now()}.jpg`;
     const storageRef = ref(storage, fullPath);
