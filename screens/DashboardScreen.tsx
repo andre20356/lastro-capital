@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { StyleSheet, View, Pressable, Share, Alert } from "react-native";
+import { StyleSheet, View, Pressable, Share, Alert, Platform, InteractionManager } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -128,20 +129,42 @@ export default function DashboardScreen() {
   const activeClientsCount = activeClientsSet.size;
 
   const handleShareLoanRequestLink = useCallback(async () => {
-    try {
-      const loanRequestUrl = Linking.createURL("LoanRequest");
-      const devDomain = "8206c3c3-87f0-484f-9f5e-6838c7dd891e-00-csgrx2bzhkh0.picard.replit.dev";
-      const webUrl = `https://${devDomain}/solicitar`;
-      
-      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}`;
-      
-      await Share.share({
-        message,
-        title: "Solicitar Emprestimo - Lastro Capital",
-      });
-    } catch (error) {
-      Alert.alert("Erro", "Nao foi possivel compartilhar o link");
-    }
+    const loanRequestUrl = Linking.createURL("LoanRequest");
+    const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${loanRequestUrl}`;
+    
+    const performShare = async () => {
+      try {
+        if (Platform.OS === "web") {
+          await Clipboard.setStringAsync(message);
+          Alert.alert("Link Copiado", "O link foi copiado para a area de transferencia!");
+          return;
+        }
+        
+        const result = await Share.share(
+          { message },
+          Platform.OS === "android" ? { dialogTitle: "Compartilhar Link - Lastro Capital" } : {}
+        );
+        
+        if (result.action === Share.dismissedAction) {
+          return;
+        }
+      } catch (error) {
+        console.log("Share error:", error);
+        try {
+          await Clipboard.setStringAsync(message);
+          Alert.alert(
+            "Link Copiado",
+            "Nao foi possivel abrir o compartilhamento, mas o link foi copiado para a area de transferencia!"
+          );
+        } catch (clipError) {
+          Alert.alert("Erro", "Nao foi possivel compartilhar o link. Tente novamente.");
+        }
+      }
+    };
+    
+    InteractionManager.runAfterInteractions(() => {
+      performShare();
+    });
   }, []);
 
   // Calculate total interest to receive this month (accumulated interest + expected monthly interest)
