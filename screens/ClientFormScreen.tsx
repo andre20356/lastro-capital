@@ -4,6 +4,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -19,6 +20,7 @@ export default function ClientFormScreen() {
   const route = useRoute<RouteType>();
   const { theme } = useTheme();
   const { addClient, updateClient } = useData();
+  const insets = useSafeAreaInsets();
 
   const existingClient = route.params?.client;
   const isEditing = !!existingClient;
@@ -130,7 +132,10 @@ export default function ClientFormScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xl + 20 }]} 
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             Nome *
