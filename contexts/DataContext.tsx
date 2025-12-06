@@ -488,6 +488,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notes: options.notes || "Pagamento de juros mensais",
         paymentMethod: options.paymentMethod,
         paymentProof: options.paymentProof,
+        type: "interest",
       };
 
       const updatedPayments = [...payments, interestPayment];

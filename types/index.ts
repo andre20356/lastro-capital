@@ -41,6 +41,8 @@ export interface Charge {
 
 export type PaymentMethod = "pix" | "dinheiro" | "outro";
 
+export type PaymentType = "principal" | "interest" | "delay_fee";
+
 export interface Payment {
   id: string;
   chargeId: string;
@@ -51,6 +53,7 @@ export interface Payment {
   notes: string;
   paymentMethod?: PaymentMethod;
   paymentProof?: string;
+  type?: PaymentType;
 }
 
 export interface AppData {
