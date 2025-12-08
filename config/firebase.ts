@@ -74,17 +74,6 @@ export function getDb(): Firestore | null {
   return initFirestore();
 }
 
-export async function getFirebaseStorage() {
-  try {
-    const firebaseApp = getInitializedApp();
-    const { getStorage } = await import("firebase/storage");
-    return getStorage(firebaseApp);
-  } catch (error) {
-    console.error("Firebase: Error initializing Storage:", error);
-    throw error;
-  }
-}
-
 export function isFirestoreAvailable(): boolean {
   if (firestoreError) return false;
   const firestore = initFirestore();

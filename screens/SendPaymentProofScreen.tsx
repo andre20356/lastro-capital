@@ -14,7 +14,6 @@ import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareS
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { Feather } from "@expo/vector-icons";
-import { uploadPaymentProof } from "@/services/storageService";
 import { paymentProofService } from "@/services/paymentProofService";
 
 export default function SendPaymentProofScreen() {
@@ -94,19 +93,11 @@ export default function SendPaymentProofScreen() {
     setIsSubmitting(true);
 
     try {
-      let uploadedUrl = proofUri;
-      try {
-        const proofId = `proof_${Date.now()}`;
-        uploadedUrl = await uploadPaymentProof(proofUri, proofId);
-      } catch (uploadError) {
-        console.log("Upload para nuvem falhou, salvando localmente:", uploadError);
-      }
-
       await paymentProofService.create({
         clientName: name.trim(),
         phone: phone.replace(/\D/g, ""),
         cpf: cpf.replace(/\D/g, "") || undefined,
-        proofUrl: uploadedUrl,
+        proofUrl: proofUri,
         notes: notes.trim() || undefined,
       });
 
