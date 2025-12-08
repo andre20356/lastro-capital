@@ -56,7 +56,7 @@ export default function RegisterScreen({ navigation }: any) {
 
           <View style={styles.logoContainer}>
             <Image 
-              source={require("../assets/app-icon.png")}
+              source={require("../assets/images/app-icon.png")}
               style={styles.logoImage}
             />
           </View>
