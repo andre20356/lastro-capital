@@ -1,0 +1,47 @@
+
+C:\Users\Admin\Downloads\versao 2 lasro capital>nmp install
+'nmp' não é reconhecido como um comando interno
+ou externo, um programa operável ou um arquivo em lotes.
+
+C:\Users\Admin\Downloads\versao 2 lasro capital>npm install
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+
+added 1012 packages, and audited 1013 packages in 19s
+
+181 packages are looking for funding
+  run `npm fund` for details
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+C:\Users\Admin\Downloads\versao 2 lasro capital>eas build --platform android
+EAS project not configured.
+√ Existing EAS project found for @254625/lastro-capital (id = de7980c0-3070-49f7-85d8-d8b2e83e6300). Configure this project? ... yes
+√ Linked local project to EAS project de7980c0-3070-49f7-85d8-d8b2e83e6300
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+Environment variables loaded from the "production" build profile "env" configuration: NPM_CONFIG_LEGACY_PEER_DEPS.
+
+
+
+√ Using remote Android credentials (Expo server)
+√ Using Keystore from configuration: Build Credentials Kne_RiLZaG (default)
+
+Compressing project files and uploading to EAS Build. Learn more: https://expo.fyi/eas-build-archive√ Compressed project files 13s (244 MB)
+Your project archive is 244 MB. You can reduce its size and the time it takes to upload by excluding files that are unnecessary for the build process in .easignore file. Learn more: https://expo.fyi/eas-build-archive
+× Uploading to EAS Build (233 MB / 244 MB)
+Failed to upload the project tarball to EAS Build
+
+Reason: request to https://storage.googleapis.com/turtle-v2-projects/production/5f53a1fd-cbc5-458f-8d5d-c30b71d8ce55/0ad2314d-ce6d-448f-96ea-82d5a39c725a?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20251208%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20251208T160915Z&X-Goog-Expires=3600&X-Goog-SignedHeaders=host%3Bx-goog-content-length-range&X-Goog-Signature=9cd5e9614154b17a7df0cfe73dc26df1a235feefd270423808485dc6b692ac27e2d4d4ca15ae72ab97ef3d77e53c42e5df38b266d94afbd67442a77a15de334cfcfd46cb619bd748d001a98e842bddbc83f50c95067f568e76a69873e38f3c26c44ebf5a9e69ff8d55793806c31a50acd28e64f9c31daa25602fa9fad8794557c9d50eacf142b14b28d71fbcf8ef9a9cf9d10f1ed0ab294472493b7ad8ab4d453828e524426d7c89ba9be52ca27327d6993792334be9794b844602d7ebdfd3b3babeccd9a5f41a3fd751d94668cb6ab0819d08060807f6574c83fb0679fdfaa9ece2ac65bc810695d8d958d659072d0bf894f1882bf000befa803b00621cbde8 failed, reason: write ECONNRESET
+    Error: build command failed.
+
+C:\Users\Admin\Downloads\versao 2 lasro capital>

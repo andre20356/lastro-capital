@@ -39,3 +39,19 @@ yarn-error.log*
 # Replit
 .replit
 replit.nix
+.local/
+
+# Expo cache
+.expo/
+web-build/
+
+# Attached assets (not needed for build)
+attached_assets/
+
+# Temporary files
+/tmp/
+*.tmp
+*.temp
+
+# Package lock (EAS uses fresh install)
+package-lock.json
