@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": []
     },
     "web": {
