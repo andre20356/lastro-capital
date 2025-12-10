@@ -32,13 +32,13 @@ function getMonthYear(dateString: string): string {
 }
 
 function getPaymentType(payment: Payment): { label: string; icon: string; description: string } {
-  if (payment.notes?.includes("juros")) {
+  if (payment.type === "interest" || payment.notes?.toLowerCase().includes("juros")) {
     return { label: "Juros", icon: "percent", description: "Pagamento de juros" };
   }
-  if (payment.notes?.includes("taxa de atraso")) {
+  if (payment.type === "delay_fee" || payment.notes?.toLowerCase().includes("taxa de atraso") || payment.notes?.toLowerCase().includes("atraso")) {
     return { label: "Taxa de Atraso", icon: "alert-circle", description: "Pagamento de taxa de atraso" };
   }
-  if (payment.notes?.includes("Quitacao") || payment.notes?.includes("Quitação")) {
+  if (payment.type === "principal" || payment.notes?.includes("Quitacao") || payment.notes?.includes("Quitação") || payment.notes?.toLowerCase().includes("divida")) {
     return { label: "Quitacao", icon: "check-circle", description: "Pagamento completo" };
   }
   return { label: "Pagamento", icon: "check", description: "Pagamento registrado" };
