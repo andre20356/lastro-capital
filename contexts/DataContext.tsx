@@ -439,6 +439,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       notes: options.notes || "Quitacao de divida",
       paymentMethod: options.paymentMethod,
       paymentProof: options.paymentProof,
+      type: "principal",
     };
 
     const updatedPayments = [...payments, payment];
@@ -533,6 +534,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notes: options.notes || "Pagamento de taxa de atraso",
         paymentMethod: options.paymentMethod,
         paymentProof: options.paymentProof,
+        type: "delay_fee",
       };
 
       const updatedPayments = [...payments, delayFeePayment];
