@@ -39,13 +39,9 @@ export default function InterestDetailsScreen() {
   const jurosRecebidos = payments
     .filter((p) => {
       const paymentDate = new Date(p.paidAt);
-      return (
-        paymentDate.getMonth() === currentMonth &&
-        paymentDate.getFullYear() === currentYear &&
-        p.notes?.includes("interesse") ||
-        p.notes?.includes("juros") ||
-        p.notes?.includes("interest")
-      );
+      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+      const isInterest = p.type === "interest" || p.notes?.toLowerCase().includes("juros");
+      return isCurrentMonth && isInterest;
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
@@ -53,11 +49,9 @@ export default function InterestDetailsScreen() {
   const taxasAtraso = payments
     .filter((p) => {
       const paymentDate = new Date(p.paidAt);
-      return (
-        paymentDate.getMonth() === currentMonth &&
-        paymentDate.getFullYear() === currentYear &&
-        p.notes === "Pagamento de taxa de atraso"
-      );
+      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+      const isDelayFee = p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso") || p.notes?.toLowerCase().includes("atraso");
+      return isCurrentMonth && isDelayFee;
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
@@ -65,11 +59,9 @@ export default function InterestDetailsScreen() {
   const quitacoes = payments
     .filter((p) => {
       const paymentDate = new Date(p.paidAt);
-      return (
-        paymentDate.getMonth() === currentMonth &&
-        paymentDate.getFullYear() === currentYear &&
-        (p.notes === "Quitação" || p.notes?.includes("Quitação"))
-      );
+      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+      const isQuitacao = p.type === "principal" || p.notes?.toLowerCase().includes("quitacao") || p.notes?.toLowerCase().includes("divida");
+      return isCurrentMonth && isQuitacao;
     })
     .reduce((sum, p) => sum + p.amount, 0);
 
@@ -77,14 +69,13 @@ export default function InterestDetailsScreen() {
   const monthPayments = payments
     .filter((p) => {
       const paymentDate = new Date(p.paidAt);
-      return (
-        paymentDate.getMonth() === currentMonth &&
-        paymentDate.getFullYear() === currentYear &&
-        (p.notes?.includes("juros") || p.notes === "Pagamento de taxa de atraso")
-      );
+      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+      const isInterest = p.type === "interest" || p.notes?.toLowerCase().includes("juros");
+      const isDelayFee = p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso") || p.notes?.toLowerCase().includes("atraso");
+      return isCurrentMonth && (isInterest || isDelayFee);
     })
     .map((p) => {
-      const isDelayFee = p.notes === "Pagamento de taxa de atraso";
+      const isDelayFee = p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso") || p.notes?.toLowerCase().includes("atraso");
       return {
         ...p,
         clientName: getClientById(p.clientId)?.name || "Cliente",
