@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
-      "versionCode": 7,
+      "versionCode": 8,
       "permissions": []
     },
     "web": {
@@ -32,6 +32,9 @@
     },
     "plugins": [
       "expo-web-browser"
-    ]
+    ],
+    "updates": {
+      "enabled": false
+    }
   }
 }
