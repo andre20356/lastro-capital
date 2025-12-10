@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lastro Capital",
     "slug": "lastro-capital",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "lastrocapital",
@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": []
     },
     "web": {
