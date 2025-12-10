@@ -207,11 +207,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const saveToLocal = useCallback(async (data: AppData) => {
     try {
-      if (!userId) return;
+      if (!userId) {
+        console.log("saveToLocal: userId vazio, não salvando");
+        return;
+      }
       const key = getStorageKeyForUser(userId);
-      await AsyncStorage.setItem(key, JSON.stringify(data));
+      const jsonData = JSON.stringify(data);
+      console.log("saveToLocal: Salvando para chave:", key, "tamanho:", jsonData.length);
+      await AsyncStorage.setItem(key, jsonData);
+      
+      // Verificar se foi salvo corretamente (com proteção contra null)
+      try {
+        const saved = await AsyncStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log("saveToLocal: Verificação - payments salvos:", parsed?.payments?.length || 0);
+        } else {
+          console.warn("saveToLocal: Verificação falhou - dados não encontrados após salvar");
+        }
+      } catch (verifyError) {
+        console.warn("saveToLocal: Erro na verificação:", verifyError);
+      }
     } catch (error) {
-      console.error("Error saving to local:", error);
+      console.error("saveToLocal: ERRO:", error);
     }
   }, [userId]);
 
@@ -243,10 +261,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   const saveData = useCallback(async (data: AppData) => {
-    await saveToLocal(data);
+    console.log("saveData: Iniciando salvamento...", {
+      clients: data.clients.length,
+      charges: data.charges.length,
+      payments: data.payments.length,
+    });
     
-    if (useFirestore) {
-      await saveToFirestore(data);
+    try {
+      await saveToLocal(data);
+      console.log("saveData: Salvo localmente com sucesso");
+      
+      if (useFirestore) {
+        const firestoreResult = await saveToFirestore(data);
+        console.log("saveData: Firestore resultado:", firestoreResult);
+      }
+    } catch (error) {
+      console.error("saveData: ERRO ao salvar:", error);
     }
   }, [saveToLocal, saveToFirestore, useFirestore]);
 
@@ -421,20 +451,57 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const markAsPaid = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
-    if (!charge) return;
+    if (!charge) {
+      console.log("markAsPaid: Cobrança não encontrada:", chargeId);
+      return;
+    }
 
+    console.log("markAsPaid: Iniciando quitação para:", chargeId);
     const paidDate = new Date().toISOString();
 
+    // Atualizar cobrança com status paid e zerar valores pendentes
     const updatedCharges = charges.map((c) =>
-      c.id === chargeId ? { ...c, status: "paid" as ChargeStatus, paidDate } : c
+      c.id === chargeId 
+        ? { 
+            ...c, 
+            status: "paid" as ChargeStatus, 
+            paidDate,
+            remainingPrincipal: 0,
+            accumulatedInterest: 0,
+          } 
+        : c
     );
-    setCharges(updatedCharges);
+
+    // Calcular valor total quitado (principal + juros acumulados + taxa de atraso pendente)
+    const accumulatedInterest = charge.accumulatedInterest || 0;
+    
+    // Calcular taxa de atraso pendente - usar dueDate ORIGINAL para cálculo de multa
+    const originalDueDate = new Date(charge.dueDate);
+    const today = new Date();
+    const daysOverdue = Math.max(0, Math.floor((today.getTime() - originalDueDate.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const delayFeeAlreadyPaid = payments
+      .filter((p) => p.chargeId === chargeId && (p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso")))
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    const totalDelayFee = (charge.dailyDelayRate || 0) * daysOverdue;
+    const pendingDelayFee = Math.max(0, totalDelayFee - delayFeeAlreadyPaid);
+    
+    const totalAmount = charge.amount + accumulatedInterest + pendingDelayFee;
+
+    console.log("markAsPaid: Valores calculados:", {
+      principal: charge.amount,
+      accumulatedInterest,
+      pendingDelayFee,
+      totalAmount,
+      daysOverdue,
+    });
 
     const payment: Payment = {
       id: generateId(),
       chargeId,
       clientId: charge.clientId,
-      amount: charge.amount,
+      amount: totalAmount,
       paidAt: paidDate,
       notes: options.notes || "Quitacao de divida",
       paymentMethod: options.paymentMethod,
@@ -442,18 +509,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
       type: "principal",
     };
 
-    const updatedPayments = [...payments, payment];
-    setPayments(updatedPayments);
+    console.log("markAsPaid: Criando pagamento:", payment);
 
+    const updatedPayments = [...payments, payment];
+    
+    // Salvar antes de atualizar estado para garantir persistência
     const appData: AppData = { clients, charges: updatedCharges, payments: updatedPayments };
+    console.log("markAsPaid: Salvando dados...");
     await saveData(appData);
+    console.log("markAsPaid: Dados salvos com sucesso!");
+    
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
   }, [charges, payments, clients, saveData]);
 
   const payMonthlyInterest = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const today = new Date().toISOString().split('T')[0];
     
     const charge = charges.find((c) => c.id === chargeId);
-    if (!charge) return;
+    if (!charge) {
+      console.log("payMonthlyInterest: Cobrança não encontrada:", chargeId);
+      return;
+    }
+
+    console.log("payMonthlyInterest: Iniciando pagamento de juros para:", chargeId);
 
     const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
@@ -477,7 +556,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
     
     const checkedUpdated = checkOverdue(updated);
-    setCharges(checkedUpdated);
 
     if (monthlyInterestPerInstallment > 0) {
       const interestPayment: Payment = {
@@ -493,15 +571,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         type: "interest",
       };
 
+      console.log("payMonthlyInterest: Criando pagamento:", interestPayment);
+
       const updatedPayments = [...payments, interestPayment];
 
+      // Salvar ANTES de atualizar estado
       const appData: AppData = { clients, charges: checkedUpdated, payments: updatedPayments };
+      console.log("payMonthlyInterest: Salvando dados...");
       await saveData(appData);
+      console.log("payMonthlyInterest: Dados salvos!");
 
+      setCharges(checkedUpdated);
       setPayments(updatedPayments);
     } else {
+      console.log("payMonthlyInterest: Sem valor de juros a pagar");
       const appData: AppData = { clients, charges: checkedUpdated, payments };
       await saveData(appData);
+      setCharges(checkedUpdated);
     }
   }, [charges, payments, clients, saveData]);
 
@@ -512,12 +598,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    console.log("payDelayFee: Iniciando pagamento de taxa de atraso para:", chargeId);
+
     const dueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === chargeId && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
+      .filter((p) => p.chargeId === chargeId && (p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso")))
       .reduce((sum, p) => sum + p.amount, 0);
     
     const dailyRate = charge.dailyDelayRate || 0;
@@ -555,10 +643,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.log("payDelayFee: Criando pagamento:", delayFeePayment);
 
       const updatedPayments = [...payments, delayFeePayment];
+      
+      // Salvar ANTES de atualizar estado
       const appData: AppData = { clients, charges, payments: updatedPayments };
+      console.log("payDelayFee: Salvando dados...");
       await saveData(appData);
+      console.log("payDelayFee: Dados salvos!");
+      
       setPayments(updatedPayments);
-      console.log("payDelayFee: Pagamento salvo com sucesso!");
     } else {
       console.log("payDelayFee: Nenhum valor a pagar (delayFeeInstallment = 0)");
     }
