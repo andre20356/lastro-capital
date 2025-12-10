@@ -114,20 +114,14 @@ export function useWhatsApp() {
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
     try {
-      const canOpen = await Linking.canOpenURL(whatsappUrl);
-      if (canOpen) {
-        await Linking.openURL(whatsappUrl);
-        return true;
-      } else {
-        Alert.alert(
-          "WhatsApp nao disponivel",
-          "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
-        );
-        return false;
-      }
+      await Linking.openURL(whatsappUrl);
+      return true;
     } catch (error) {
       console.error("Erro ao abrir WhatsApp:", error);
-      Alert.alert("Erro", "Nao foi possivel abrir o WhatsApp.");
+      Alert.alert(
+        "WhatsApp nao disponivel",
+        "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
+      );
       return false;
     }
   };
@@ -164,20 +158,14 @@ export function useWhatsApp() {
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
     try {
-      const canOpen = await Linking.canOpenURL(whatsappUrl);
-      if (canOpen) {
-        await Linking.openURL(whatsappUrl);
-        return true;
-      } else {
-        Alert.alert(
-          "WhatsApp nao disponivel",
-          "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
-        );
-        return false;
-      }
+      await Linking.openURL(whatsappUrl);
+      return true;
     } catch (error) {
       console.error("Erro ao abrir WhatsApp:", error);
-      Alert.alert("Erro", "Nao foi possivel abrir o WhatsApp.");
+      Alert.alert(
+        "WhatsApp nao disponivel",
+        "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
+      );
       return false;
     }
   };
@@ -193,20 +181,14 @@ export function useWhatsApp() {
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
     try {
-      const canOpen = await Linking.canOpenURL(whatsappUrl);
-      if (canOpen) {
-        await Linking.openURL(whatsappUrl);
-        return true;
-      } else {
-        Alert.alert(
-          "WhatsApp nao disponivel",
-          "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
-        );
-        return false;
-      }
+      await Linking.openURL(whatsappUrl);
+      return true;
     } catch (error) {
       console.error("Erro ao abrir WhatsApp:", error);
-      Alert.alert("Erro", "Nao foi possivel abrir o WhatsApp.");
+      Alert.alert(
+        "WhatsApp nao disponivel",
+        "Nao foi possivel abrir o WhatsApp. Verifique se esta instalado no dispositivo."
+      );
       return false;
     }
   };
