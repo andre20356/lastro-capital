@@ -1,8 +1,8 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, { Polyline, Circle, Text as SvgText, Line, Defs, LinearGradient, Stop, Polygon } from "react-native-svg";
+import Svg, { G, Path, Text as SvgText } from "react-native-svg";
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 
 interface ChartDataPoint {
   label: string;
@@ -16,212 +16,122 @@ interface FinanceChartProps {
   theme: any;
 }
 
-export function FinanceChart({ data, theme }: FinanceChartProps) {
-  const chartWidth = 300;
-  const chartHeight = 200;
-  const padding = 30;
-  const innerWidth = chartWidth - padding * 2;
-  const innerHeight = chartHeight - padding * 2;
-
-  // Find max value for scaling, ensure it's not 0
-  let maxValue = Math.max(
-    ...data.flatMap((d) => [d.borrowed, d.earned, d.overdue])
-  );
-  
-  // If maxValue is 0 or NaN, set a default value
-  if (maxValue <= 0 || isNaN(maxValue)) {
-    maxValue = 1;
+function formatCurrency(value: number): string {
+  if (isNaN(value) || value === undefined || value === null) {
+    return "R$ 0,00";
   }
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
-  // Generate points for polylines
-  const generatePoints = (values: number[]) => {
-    return values
-      .map((value, index) => {
-        const x = padding + (index / (values.length - 1 || 1)) * innerWidth;
-        const y = chartHeight - padding - ((isNaN(value) ? 0 : value) / maxValue) * innerHeight;
-        return `${Math.round(x)},${Math.round(y)}`;
-      })
-      .join(" ");
+export function FinanceChart({ data, theme }: FinanceChartProps) {
+  const chartSize = 200;
+  const radius = 70;
+  const centerX = chartSize / 2;
+  const centerY = chartSize / 2;
+
+  const latestData = data[data.length - 1] || { borrowed: 0, earned: 0, overdue: 0 };
+  
+  const borrowed = isNaN(latestData.borrowed) ? 0 : latestData.borrowed;
+  const earned = isNaN(latestData.earned) ? 0 : latestData.earned;
+  const overdue = isNaN(latestData.overdue) ? 0 : latestData.overdue;
+  
+  const total = borrowed + earned + overdue;
+
+  const slices = [
+    { value: borrowed, color: "#FF6B6B", label: "Emprestado" },
+    { value: earned, color: "#51CF66", label: "Rendimentos" },
+    { value: overdue, color: "#FF922B", label: "Negativados" },
+  ];
+
+  const createArcPath = (startAngle: number, endAngle: number, r: number) => {
+    const startRad = (startAngle - 90) * (Math.PI / 180);
+    const endRad = (endAngle - 90) * (Math.PI / 180);
+    
+    const x1 = centerX + r * Math.cos(startRad);
+    const y1 = centerY + r * Math.sin(startRad);
+    const x2 = centerX + r * Math.cos(endRad);
+    const y2 = centerY + r * Math.sin(endRad);
+    
+    const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+    
+    return `M ${centerX} ${centerY} L ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
   };
 
-  const borrowedPoints = generatePoints(data.map((d) => d.borrowed));
-  const earnedPoints = generatePoints(data.map((d) => d.earned));
-  const overduePoints = generatePoints(data.map((d) => d.overdue));
+  let currentAngle = 0;
+  const paths = slices.map((slice, index) => {
+    if (total === 0 || slice.value === 0) {
+      return null;
+    }
+    
+    const sliceAngle = (slice.value / total) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + sliceAngle;
+    currentAngle = endAngle;
+    
+    const path = createArcPath(startAngle, endAngle, radius);
+    
+    return (
+      <Path
+        key={index}
+        d={path}
+        fill={slice.color}
+        stroke="#fff"
+        strokeWidth="2"
+      />
+    );
+  });
+
+  const hasData = total > 0;
 
   return (
     <View style={styles.container}>
       <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "#FF6B6B" }]} />
-          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
-            Emprestado
-          </ThemedText>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "#51CF66" }]} />
-          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
-            Rendimentos
-          </ThemedText>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "#FF922B" }]} />
-          <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
-            Negativados
-          </ThemedText>
-        </View>
+        {slices.map((slice, index) => (
+          <View key={index} style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: slice.color }]} />
+            <ThemedText style={[styles.legendText, { color: theme.secondaryText }]}>
+              {slice.label}
+            </ThemedText>
+          </View>
+        ))}
       </View>
 
-      <Svg width={chartWidth} height={chartHeight} style={styles.chart}>
-        <Defs>
-          <LinearGradient id="borrowedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#FF6B6B" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#FF6B6B" stopOpacity="0" />
-          </LinearGradient>
-          <LinearGradient id="earnedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#51CF66" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#51CF66" stopOpacity="0" />
-          </LinearGradient>
-          <LinearGradient id="overdueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#FF922B" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#FF922B" stopOpacity="0" />
-          </LinearGradient>
-        </Defs>
+      <View style={styles.chartContainer}>
+        <Svg width={chartSize} height={chartSize} style={styles.chart}>
+          <G>
+            {hasData ? (
+              paths
+            ) : (
+              <Path
+                d={createArcPath(0, 359.99, radius)}
+                fill={theme.backgroundSecondary}
+                stroke={theme.cardBorder}
+                strokeWidth="1"
+              />
+            )}
+          </G>
+        </Svg>
 
-        {/* Grid lines */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Line
-            key={`hline-${i}`}
-            x1={padding}
-            y1={padding + (i * innerHeight) / 4}
-            x2={chartWidth - padding}
-            y2={padding + (i * innerHeight) / 4}
-            stroke={theme.tertiaryText}
-            strokeWidth="0.5"
-            opacity="0.3"
-          />
-        ))}
-
-        {/* X axis */}
-        <Line
-          x1={padding}
-          y1={chartHeight - padding}
-          x2={chartWidth - padding}
-          y2={chartHeight - padding}
-          stroke={theme.secondaryText}
-          strokeWidth="1"
-        />
-
-        {/* Y axis */}
-        <Line
-          x1={padding}
-          y1={padding}
-          x2={padding}
-          y2={chartHeight - padding}
-          stroke={theme.secondaryText}
-          strokeWidth="1"
-        />
-
-        {/* Earned area */}
-        <Polyline
-          points={earnedPoints}
-          fill="none"
-          stroke="#51CF66"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Overdue area */}
-        <Polyline
-          points={overduePoints}
-          fill="none"
-          stroke="#FF922B"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Borrowed area */}
-        <Polyline
-          points={borrowedPoints}
-          fill="none"
-          stroke="#FF6B6B"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Data points for borrowed */}
-        {data.map((_, index) => {
-          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const borrowed = isNaN(data[index].borrowed) ? 0 : data[index].borrowed;
-          const y = chartHeight - padding - (borrowed / maxValue) * innerHeight;
-          return (
-            <Circle
-              key={`borrowed-point-${index}`}
-              cx={Math.round(x)}
-              cy={Math.round(y)}
-              r="3"
-              fill="#FF6B6B"
-              stroke="#fff"
-              strokeWidth="1.5"
-            />
-          );
-        })}
-
-        {/* Data points for earned */}
-        {data.map((_, index) => {
-          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const earned = isNaN(data[index].earned) ? 0 : data[index].earned;
-          const y = chartHeight - padding - (earned / maxValue) * innerHeight;
-          return (
-            <Circle
-              key={`earned-point-${index}`}
-              cx={Math.round(x)}
-              cy={Math.round(y)}
-              r="3"
-              fill="#51CF66"
-              stroke="#fff"
-              strokeWidth="1.5"
-            />
-          );
-        })}
-
-        {/* Data points for overdue */}
-        {data.map((_, index) => {
-          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          const overdue = isNaN(data[index].overdue) ? 0 : data[index].overdue;
-          const y = chartHeight - padding - (overdue / maxValue) * innerHeight;
-          return (
-            <Circle
-              key={`overdue-point-${index}`}
-              cx={Math.round(x)}
-              cy={Math.round(y)}
-              r="3"
-              fill="#FF922B"
-              stroke="#fff"
-              strokeWidth="1.5"
-            />
-          );
-        })}
-
-        {/* X axis labels */}
-        {data.map((point, index) => {
-          const x = padding + (index / (data.length - 1 || 1)) * innerWidth;
-          return (
-            <SvgText
-              key={`label-${index}`}
-              x={x}
-              y={chartHeight - padding + 15}
-              textAnchor="middle"
-              fontSize="11"
-              fill={theme.tertiaryText}
-            >
-              {point.label}
-            </SvgText>
-          );
-        })}
-      </Svg>
+        <View style={styles.valuesContainer}>
+          {slices.map((slice, index) => {
+            const percentage = total > 0 ? ((slice.value / total) * 100).toFixed(0) : "0";
+            return (
+              <View key={index} style={styles.valueRow}>
+                <View style={[styles.valueIndicator, { backgroundColor: slice.color }]} />
+                <ThemedText style={[styles.valueLabel, { color: theme.secondaryText }]}>
+                  {slice.label}:
+                </ThemedText>
+                <ThemedText style={[styles.valueAmount, { color: slice.color }]}>
+                  {formatCurrency(slice.value)}
+                </ThemedText>
+                <ThemedText style={[styles.valuePercentage, { color: theme.tertiaryText }]}>
+                  ({percentage}%)
+                </ThemedText>
+              </View>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }
@@ -244,12 +154,43 @@ const styles = StyleSheet.create({
   legendColor: {
     width: 12,
     height: 12,
-    borderRadius: 2,
+    borderRadius: 6,
   },
   legendText: {
     fontSize: 12,
   },
+  chartContainer: {
+    alignItems: "center",
+  },
   chart: {
     alignSelf: "center",
+  },
+  valuesContainer: {
+    marginTop: Spacing.lg,
+    width: "100%",
+    paddingHorizontal: Spacing.md,
+  },
+  valueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  valueIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  valueLabel: {
+    fontSize: 12,
+    flex: 1,
+  },
+  valueAmount: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  valuePercentage: {
+    fontSize: 11,
+    marginLeft: Spacing.xs,
   },
 });
