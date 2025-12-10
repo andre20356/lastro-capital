@@ -58,30 +58,34 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
   };
 
   let currentAngle = 0;
-  const paths = slices.map((slice, index) => {
+  const sliceData: Array<{path: string; color: string; midAngle: number; percentage: number}> = [];
+  
+  slices.forEach((slice) => {
     if (total === 0 || slice.value === 0) {
-      return null;
+      return;
     }
     
     const sliceAngle = (slice.value / total) * 360;
     const startAngle = currentAngle;
     const endAngle = currentAngle + sliceAngle;
+    const midAngle = startAngle + sliceAngle / 2;
     currentAngle = endAngle;
     
     const path = createArcPath(startAngle, endAngle, radius);
+    const percentage = Math.round((slice.value / total) * 100);
     
-    return (
-      <Path
-        key={index}
-        d={path}
-        fill={slice.color}
-        stroke="#fff"
-        strokeWidth="2"
-      />
-    );
+    sliceData.push({ path, color: slice.color, midAngle, percentage });
   });
 
   const hasData = total > 0;
+  
+  const getLabelPosition = (midAngle: number, r: number) => {
+    const rad = (midAngle - 90) * (Math.PI / 180);
+    return {
+      x: centerX + r * Math.cos(rad),
+      y: centerY + r * Math.sin(rad),
+    };
+  };
 
   return (
     <View style={styles.container}>
@@ -100,7 +104,35 @@ export function FinanceChart({ data, theme }: FinanceChartProps) {
         <Svg width={chartSize} height={chartSize} style={styles.chart}>
           <G>
             {hasData ? (
-              paths
+              <>
+                {sliceData.map((slice, index) => (
+                  <Path
+                    key={`path-${index}`}
+                    d={slice.path}
+                    fill={slice.color}
+                    stroke="#fff"
+                    strokeWidth="2"
+                  />
+                ))}
+                {sliceData.map((slice, index) => {
+                  if (slice.percentage < 5) return null;
+                  const labelPos = getLabelPosition(slice.midAngle, radius * 0.6);
+                  return (
+                    <SvgText
+                      key={`label-${index}`}
+                      x={labelPos.x}
+                      y={labelPos.y}
+                      textAnchor="middle"
+                      alignmentBaseline="middle"
+                      fontSize="12"
+                      fontWeight="bold"
+                      fill="#fff"
+                    >
+                      {slice.percentage}%
+                    </SvgText>
+                  );
+                })}
+              </>
             ) : (
               <Path
                 d={createArcPath(0, 359.99, radius)}
