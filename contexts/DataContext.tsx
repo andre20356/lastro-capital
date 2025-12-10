@@ -344,12 +344,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
     loadData();
   }, [loadData]);
 
+  // Flag para evitar salvar dados vazios no início
+  const [hasLoadedInitialData, setHasLoadedInitialData] = React.useState(false);
+
   useEffect(() => {
-    if (!isLoading && userId) {
-      const updatedCharges = checkOverdue(charges);
-      saveData({ clients, charges: updatedCharges, payments });
+    // NÃO salvar se:
+    // 1. Ainda está carregando
+    // 2. Não carregou dados iniciais ainda
+    // 3. Todos os arrays estão vazios (evita sobrescrever dados existentes)
+    if (isLoading || !userId) return;
+    
+    // Só permite salvar se já carregou dados iniciais ou se tem dados para salvar
+    const hasAnyData = clients.length > 0 || charges.length > 0 || payments.length > 0;
+    
+    if (!hasLoadedInitialData) {
+      if (hasAnyData) {
+        console.log("saveData useEffect: Dados iniciais carregados, permitindo salvamento futuro");
+        setHasLoadedInitialData(true);
+      } else {
+        console.log("saveData useEffect: Ignorando salvamento - sem dados iniciais ainda");
+        return;
+      }
     }
-  }, [clients, charges, payments, isLoading, saveData, userId]);
+    
+    const updatedCharges = checkOverdue(charges);
+    saveData({ clients, charges: updatedCharges, payments });
+  }, [clients, charges, payments, isLoading, saveData, userId, hasLoadedInitialData]);
 
   const refreshData = useCallback(async () => {
     await loadData();
