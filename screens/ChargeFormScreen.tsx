@@ -128,16 +128,6 @@ export default function ChargeFormScreen() {
           status: "pending" as ChargeStatus,
         });
         
-        if (selectedClient && selectedClient.phone) {
-          sendLoanApprovalNotification({
-            clientName: selectedClient.name,
-            clientPhone: selectedClient.phone,
-            amount: amountNum,
-            dueDate: parsedDate.toISOString(),
-            loanPercentage: loanPercentageNum,
-          });
-        }
-        
         navigation.goBack();
       }
     } catch (error) {
@@ -454,6 +444,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.lg,
+    paddingBottom: 100,
   },
   field: {
     marginBottom: Spacing.lg,
