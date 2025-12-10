@@ -132,7 +132,7 @@ export default function ChargeDetailScreen() {
     
     // Verificar se já há pagamento de taxa de atraso
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+      .filter((p) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
       .reduce((sum, p) => sum + p.amount, 0);
     
     // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
@@ -326,11 +326,13 @@ export default function ChargeDetailScreen() {
     const daysOverdueLocal = Math.floor((new Date().getTime() - interestDueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaidLocal = payments
-      .filter((p) => p.chargeId === charge.id && p.notes?.includes("taxa de atraso"))
+      .filter((p) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
       .reduce((sum, p) => sum + p.amount, 0);
     
     const daysPaidSoFar = (charge.dailyDelayRate || 0) > 0 ? Math.floor(delayFeeAlreadyPaidLocal / (charge.dailyDelayRate || 1)) : 0;
     const daysRemainingToPay = Math.max(0, daysOverdueLocal - daysPaidSoFar);
+    
+    console.log("handlePayDelayFee:", { daysOverdueLocal, delayFeeAlreadyPaidLocal, daysPaidSoFar, daysRemainingToPay, dailyRate: charge.dailyDelayRate });
     
     if (daysRemainingToPay <= 0) {
       Alert.alert("Aviso", "Nao ha taxa de atraso em aberto");
@@ -532,7 +534,7 @@ export default function ChargeDetailScreen() {
           ) : null}
 
           {/* Taxas de Atraso Pagas */}
-          {payments.filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso").length > 0 ? (
+          {payments.filter((p) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee")).length > 0 ? (
             <View
               style={[
                 styles.interestCard,
@@ -549,7 +551,7 @@ export default function ChargeDetailScreen() {
                 </ThemedText>
               </View>
               {payments
-                .filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de taxa de atraso")
+                .filter((p) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
                 .map((payment) => (
                   <View key={payment.id} style={styles.debtBreakdown}>
                     <View style={styles.debtItem}>

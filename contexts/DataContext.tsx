@@ -507,14 +507,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const payDelayFee = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
     const charge = charges.find((c) => c.id === chargeId);
-    if (!charge) return;
+    if (!charge) {
+      console.log("payDelayFee: Cobrança não encontrada:", chargeId);
+      return;
+    }
 
     const dueDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
     const today = new Date();
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === chargeId && p.notes?.includes("taxa de atraso"))
+      .filter((p) => p.chargeId === chargeId && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
       .reduce((sum, p) => sum + p.amount, 0);
     
     const dailyRate = charge.dailyDelayRate || 0;
@@ -523,6 +526,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     const daysPerInstallment = 30;
     const delayFeeInstallment = Math.min(daysPerInstallment, daysRemainingToPay) * dailyRate;
+
+    console.log("payDelayFee DEBUG:", {
+      chargeId,
+      dueDate: dueDate.toISOString(),
+      today: today.toISOString(),
+      daysOverdue,
+      delayFeeAlreadyPaid,
+      dailyRate,
+      daysPaidSoFar,
+      daysRemainingToPay,
+      delayFeeInstallment
+    });
 
     if (delayFeeInstallment > 0) {
       const delayFeePayment: Payment = {
@@ -537,10 +552,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         type: "delay_fee",
       };
 
+      console.log("payDelayFee: Criando pagamento:", delayFeePayment);
+
       const updatedPayments = [...payments, delayFeePayment];
       const appData: AppData = { clients, charges, payments: updatedPayments };
       await saveData(appData);
       setPayments(updatedPayments);
+      console.log("payDelayFee: Pagamento salvo com sucesso!");
+    } else {
+      console.log("payDelayFee: Nenhum valor a pagar (delayFeeInstallment = 0)");
     }
   }, [charges, payments, clients, saveData]);
 
@@ -637,7 +657,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       
       const delayFeeAlreadyPaid = payments
-        .filter((p) => p.chargeId === c.id && p.notes === "Pagamento de taxa de atraso")
+        .filter((p) => p.chargeId === c.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
         .reduce((sum, p) => sum + p.amount, 0);
       
       const delayFee = daysOverdue > 0 && c.dailyDelayRate 

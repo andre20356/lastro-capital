@@ -66,7 +66,7 @@ export default function PendingClientsScreen() {
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === item.id && p.notes === "Pagamento de taxa de atraso")
+      .filter((p) => p.chargeId === item.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
       .reduce((sum, p) => sum + p.amount, 0);
     
     const delayFee = daysOverdue > 0 && item.dailyDelayRate 
