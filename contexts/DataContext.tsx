@@ -79,17 +79,17 @@ function checkOverdue(charges: Charge[]): Charge[] {
       
       const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
       const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
-      const dailyInterestAmount = monthlyInterestAmount / 30;
       
       if (daysOverdue >= 1) {
-        const totalAccumulatedInterest = dailyInterestAmount * daysOverdue;
+        const monthsOverdue = Math.max(1, Math.ceil(daysOverdue / 30));
+        const totalAccumulatedInterest = monthlyInterestAmount * monthsOverdue;
         return { 
           ...charge, 
           status: "overdue" as ChargeStatus,
-          accumulatedInterest: Math.max(totalAccumulatedInterest, charge.accumulatedInterest || 0)
+          accumulatedInterest: totalAccumulatedInterest
         };
       } else {
-        return charge;
+        return { ...charge, accumulatedInterest: 0 };
       }
     }
     return charge;
@@ -461,8 +461,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     nextInterestDate.setMonth(nextInterestDate.getMonth() + 1);
     const nextDueDateStr = nextInterestDate.toISOString().split('T')[0];
 
-    const accumulatedInterest = charge.accumulatedInterest || 0;
-    const remainingAccumulatedInterest = Math.max(0, accumulatedInterest - monthlyInterestPerInstallment);
+    const currentInstallmentsPaid = charge.interestInstallmentsPaid || 0;
     
     const updated = charges.map((c) => 
       c.id === chargeId 
@@ -470,12 +469,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...c, 
             lastInterestPaymentDate: today,
             nextInterestDueDate: nextDueDateStr,
-            accumulatedInterest: remainingAccumulatedInterest
+            interestInstallmentsPaid: currentInstallmentsPaid + 1,
+            accumulatedInterest: 0
           }
         : c
     );
     
-    setCharges(updated);
+    const checkedUpdated = checkOverdue(updated);
+    setCharges(checkedUpdated);
 
     if (monthlyInterestPerInstallment > 0) {
       const interestPayment: Payment = {
@@ -485,7 +486,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         amount: monthlyInterestPerInstallment,
         paidAt: new Date().toISOString(),
         dueDate: baseDate.toISOString().split('T')[0],
-        notes: options.notes || "Pagamento de juros mensais",
+        notes: options.notes || `Pagamento de juros - Parcela ${currentInstallmentsPaid + 1}`,
         paymentMethod: options.paymentMethod,
         paymentProof: options.paymentProof,
         type: "interest",
@@ -493,12 +494,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const updatedPayments = [...payments, interestPayment];
 
-      const appData: AppData = { clients, charges: updated, payments: updatedPayments };
+      const appData: AppData = { clients, charges: checkedUpdated, payments: updatedPayments };
       await saveData(appData);
 
       setPayments(updatedPayments);
     } else {
-      const appData: AppData = { clients, charges: updated, payments };
+      const appData: AppData = { clients, charges: checkedUpdated, payments };
       await saveData(appData);
     }
   }, [charges, payments, clients, saveData]);

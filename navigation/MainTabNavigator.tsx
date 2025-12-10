@@ -27,7 +27,7 @@ import PendingRequestsScreen from "@/screens/PendingRequestsScreen";
 import LoanRequestScreen from "@/screens/LoanRequestScreen";
 
 export type RootStackParamList = {
-  MainTabs: undefined;
+  MainTabs: { screen?: keyof MainTabParamList } | undefined;
   ChargeForm: { charge?: Charge; clientId?: string };
   ClientForm: { client?: Client };
   ChargeDetail: { chargeId: string };

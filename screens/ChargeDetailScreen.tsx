@@ -136,7 +136,7 @@ export default function ChargeDetailScreen() {
       .reduce((sum, p) => sum + p.amount, 0);
     
     // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
-    const daysPaidSoFar = charge.dailyDelayRate > 0 && hasRealDelay ? Math.floor(delayFeeAlreadyPaid / charge.dailyDelayRate) : 0;
+    const daysPaidSoFar = (charge.dailyDelayRate || 0) > 0 && hasRealDelay ? Math.floor(delayFeeAlreadyPaid / (charge.dailyDelayRate || 1)) : 0;
     
     // Calcular dias ainda pendentes de pagamento (só se houver atraso real)
     const daysRemainingOverdue = hasRealDelay ? Math.max(0, daysOverdue - daysPaidSoFar) : 0;
@@ -329,7 +329,7 @@ export default function ChargeDetailScreen() {
       .filter((p) => p.chargeId === charge.id && p.notes?.includes("taxa de atraso"))
       .reduce((sum, p) => sum + p.amount, 0);
     
-    const daysPaidSoFar = charge.dailyDelayRate > 0 ? Math.floor(delayFeeAlreadyPaidLocal / charge.dailyDelayRate) : 0;
+    const daysPaidSoFar = (charge.dailyDelayRate || 0) > 0 ? Math.floor(delayFeeAlreadyPaidLocal / (charge.dailyDelayRate || 1)) : 0;
     const daysRemainingToPay = Math.max(0, daysOverdueLocal - daysPaidSoFar);
     
     if (daysRemainingToPay <= 0) {
@@ -338,7 +338,7 @@ export default function ChargeDetailScreen() {
     }
     
     const daysPerInstallment = 30;
-    const delayFeeInstallmentAmount = Math.min(daysPerInstallment, daysRemainingToPay) * charge.dailyDelayRate;
+    const delayFeeInstallmentAmount = Math.min(daysPerInstallment, daysRemainingToPay) * (charge.dailyDelayRate || 0);
     
     openPaymentModal("taxa_atraso", delayFeeInstallmentAmount);
   };
@@ -499,7 +499,7 @@ export default function ChargeDetailScreen() {
                 </ThemedText>
                 <ThemedText style={[styles.infoValue, { color: theme.success }]}>
                   {(() => {
-                    const interestPayments = payments.filter((p) => p.chargeId === charge.id && p.notes === "Pagamento de juros mensais").length;
+                    const interestPayments = charge.interestInstallmentsPaid || payments.filter((p) => p.chargeId === charge.id && p.type === "interest").length;
                     return interestPayments > 0 ? `${interestPayments} parcela${interestPayments > 1 ? 's' : ''}` : "0 parcelas";
                   })()}
                 </ThemedText>

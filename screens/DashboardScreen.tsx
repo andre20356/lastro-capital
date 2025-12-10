@@ -220,7 +220,7 @@ export default function DashboardScreen() {
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
-            onPress={() => navigation.navigate("Charges")}
+            onPress={() => navigation.navigate("MainTabs", { screen: "Charges" })}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.warning + "20" }]}>
               <Feather name="clock" size={20} color={theme.warning} />
@@ -258,7 +258,7 @@ export default function DashboardScreen() {
               styles.summaryCard,
               { backgroundColor: theme.backgroundDefault, borderColor: theme.cardBorder },
             ]}
-            onPress={() => navigation.navigate("Clients")}
+            onPress={() => navigation.navigate("MainTabs", { screen: "Clients" })}
           >
             <View style={[styles.iconCircle, { backgroundColor: theme.primaryAccent + "20" }]}>
               <Feather name="users" size={20} color={theme.primaryAccent} />

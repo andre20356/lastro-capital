@@ -35,6 +35,7 @@ export interface Charge {
   accumulatedInterest?: number;
   lastInterestPaymentDate?: string;
   nextInterestDueDate?: string;
+  interestInstallmentsPaid?: number;
   paidDate?: string;
   createdAt: string;
 }
