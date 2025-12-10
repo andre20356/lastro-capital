@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, View, Pressable, Alert, ActivityIndicator, RefreshControl } from "react-native";
+import { StyleSheet, View, Pressable, Alert, ActivityIndicator, RefreshControl, Modal, TextInput } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -50,6 +50,9 @@ export default function PendingRequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [approvalModalVisible, setApprovalModalVisible] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<LoanRequest | null>(null);
+  const [loanPercentageInput, setLoanPercentageInput] = useState("20");
 
   const loadRequests = useCallback(async () => {
     try {
@@ -95,62 +98,68 @@ export default function PendingRequestsScreen() {
     loadRequests();
   };
 
-  const handleApprove = async (request: LoanRequest) => {
-    Alert.alert(
-      "Aprovar Solicitacao",
-      `Deseja aprovar a solicitacao de ${request.name}?\n\nValor: ${formatCurrency(request.requestedAmount)}`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Aprovar",
-          onPress: async () => {
-            setProcessingId(request.id!);
-            try {
-              const newClient = await addClient({
-                name: request.name,
-                phone: request.phone,
-                email: request.email || "",
-                notes: request.purpose || "",
-                requestedAmount: request.requestedAmount,
-                requestDate: new Date().toISOString(),
-              });
+  const handleApprove = (request: LoanRequest) => {
+    setSelectedRequest(request);
+    setLoanPercentageInput("20");
+    setApprovalModalVisible(true);
+  };
 
-              const dueDate = new Date();
-              dueDate.setMonth(dueDate.getMonth() + 1);
+  const confirmApprove = async () => {
+    if (!selectedRequest) return;
+    
+    const loanPercentage = parseFloat(loanPercentageInput) || 20;
+    
+    if (loanPercentage <= 0 || loanPercentage > 100) {
+      Alert.alert("Erro", "A porcentagem deve ser entre 1 e 100");
+      return;
+    }
 
-              await addCharge({
-                clientId: newClient.id,
-                amount: request.requestedAmount,
-                dueDate: dueDate.toISOString(),
-                description: request.purpose || "Emprestimo aprovado",
-                status: "pending",
-                loanPercentage: 20,
-              });
+    setApprovalModalVisible(false);
+    setProcessingId(selectedRequest.id!);
+    
+    try {
+      const newClient = await addClient({
+        name: selectedRequest.name,
+        phone: selectedRequest.phone,
+        email: selectedRequest.email || "",
+        notes: selectedRequest.purpose || "",
+        requestedAmount: selectedRequest.requestedAmount,
+        requestDate: new Date().toISOString(),
+      });
 
-              await loanRequestService.updateStatus(request.id!, "approved");
+      const dueDate = new Date();
+      dueDate.setMonth(dueDate.getMonth() + 1);
 
-              sendLoanApprovalNotification({
-                clientName: request.name,
-                clientPhone: request.phone,
-                amount: request.requestedAmount,
-                dueDate: dueDate.toISOString(),
-                loanPercentage: 20,
-              });
+      await addCharge({
+        clientId: newClient.id,
+        amount: selectedRequest.requestedAmount,
+        dueDate: dueDate.toISOString(),
+        description: selectedRequest.purpose || "Emprestimo aprovado",
+        status: "pending",
+        loanPercentage: loanPercentage,
+      });
 
-              Alert.alert(
-                "Aprovado!",
-                "O cliente foi cadastrado e a notificacao foi enviada via WhatsApp."
-              );
-            } catch (error) {
-              console.error("Error approving request:", error);
-              Alert.alert("Erro", "Nao foi possivel aprovar a solicitacao");
-            } finally {
-              setProcessingId(null);
-            }
-          },
-        },
-      ]
-    );
+      await loanRequestService.updateStatus(selectedRequest.id!, "approved");
+
+      sendLoanApprovalNotification({
+        clientName: selectedRequest.name,
+        clientPhone: selectedRequest.phone,
+        amount: selectedRequest.requestedAmount,
+        dueDate: dueDate.toISOString(),
+        loanPercentage: loanPercentage,
+      });
+
+      Alert.alert(
+        "Aprovado!",
+        `Cliente cadastrado com juros de ${loanPercentage}%. Notificacao enviada via WhatsApp.`
+      );
+    } catch (error) {
+      console.error("Error approving request:", error);
+      Alert.alert("Erro", "Nao foi possivel aprovar a solicitacao");
+    } finally {
+      setProcessingId(null);
+      setSelectedRequest(null);
+    }
   };
 
   const handleReject = async (request: LoanRequest) => {
@@ -286,31 +295,87 @@ export default function PendingRequestsScreen() {
   }
 
   return (
-    <ScreenFlatList
-      data={requests}
-      renderItem={renderRequest}
-      keyExtractor={(item) => item.id!}
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[theme.primaryAccent]}
-          tintColor={theme.primaryAccent}
-        />
-      }
-      ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIcon, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="inbox" size={48} color={theme.tertiaryText} />
+    <>
+      <ScreenFlatList
+        data={requests}
+        renderItem={renderRequest}
+        keyExtractor={(item) => item.id!}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.primaryAccent]}
+            tintColor={theme.primaryAccent}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIcon, { backgroundColor: theme.backgroundDefault }]}>
+              <Feather name="inbox" size={48} color={theme.tertiaryText} />
+            </View>
+            <ThemedText style={styles.emptyTitle}>Nenhuma solicitacao</ThemedText>
+            <ThemedText style={[styles.emptyText, { color: theme.secondaryText }]}>
+              Quando clientes preencherem o formulario de solicitacao, as solicitacoes aparecerao aqui.
+            </ThemedText>
           </View>
-          <ThemedText style={styles.emptyTitle}>Nenhuma solicitacao</ThemedText>
-          <ThemedText style={[styles.emptyText, { color: theme.secondaryText }]}>
-            Quando clientes preencherem o formulario de solicitacao, as solicitacoes aparecerao aqui.
-          </ThemedText>
+        }
+      />
+
+      <Modal
+        visible={approvalModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setApprovalModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText style={styles.modalTitle}>Aprovar Solicitacao</ThemedText>
+            
+            {selectedRequest ? (
+              <>
+                <ThemedText style={[styles.modalSubtitle, { color: theme.secondaryText }]}>
+                  {selectedRequest.name} - {formatCurrency(selectedRequest.requestedAmount)}
+                </ThemedText>
+                
+                <ThemedText style={[styles.modalLabel, { color: theme.text }]}>
+                  Porcentagem de Juros Mensal (%)
+                </ThemedText>
+                
+                <TextInput
+                  style={[styles.modalInput, { 
+                    backgroundColor: theme.backgroundSecondary,
+                    color: theme.text,
+                    borderColor: theme.cardBorder,
+                  }]}
+                  value={loanPercentageInput}
+                  onChangeText={setLoanPercentageInput}
+                  keyboardType="numeric"
+                  placeholder="20"
+                  placeholderTextColor={theme.tertiaryText}
+                />
+                
+                <View style={styles.modalButtons}>
+                  <Pressable
+                    style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]}
+                    onPress={() => setApprovalModalVisible(false)}
+                  >
+                    <ThemedText style={{ color: theme.text }}>Cancelar</ThemedText>
+                  </Pressable>
+                  
+                  <Pressable
+                    style={[styles.modalButton, { backgroundColor: theme.success }]}
+                    onPress={confirmApprove}
+                  >
+                    <ThemedText style={{ color: "#fff", fontWeight: "600" }}>Aprovar</ThemedText>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
+          </View>
         </View>
-      }
-    />
+      </Modal>
+    </>
   );
 }
 
@@ -438,5 +503,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: Spacing.sm,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginBottom: Spacing.lg,
+    textAlign: "center",
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  modalInput: {
+    height: 50,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md,
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: Spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
