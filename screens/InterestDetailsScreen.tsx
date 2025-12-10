@@ -35,25 +35,53 @@ export default function InterestDetailsScreen() {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
+  // DEBUG: Log all payments
+  console.log("InterestDetailsScreen - DEBUG:", {
+    totalPayments: payments.length,
+    currentMonth,
+    currentYear,
+    allPayments: payments.map(p => ({
+      id: p.id,
+      type: p.type,
+      notes: p.notes,
+      amount: p.amount,
+      paidAt: p.paidAt,
+      month: new Date(p.paidAt).getMonth(),
+      year: new Date(p.paidAt).getFullYear(),
+    })),
+  });
+
   // Calculate juros recebidos (interest payments from this month)
-  const jurosRecebidos = payments
-    .filter((p) => {
-      const paymentDate = new Date(p.paidAt);
-      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-      const isInterest = p.type === "interest" || p.notes?.toLowerCase().includes("juros");
-      return isCurrentMonth && isInterest;
-    })
-    .reduce((sum, p) => sum + p.amount, 0);
+  const interestPaymentsFiltered = payments.filter((p) => {
+    const paymentDate = new Date(p.paidAt);
+    const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+    const isInterest = p.type === "interest" || p.notes?.toLowerCase().includes("juros");
+    return isCurrentMonth && isInterest;
+  });
+  
+  const jurosRecebidos = interestPaymentsFiltered.reduce((sum, p) => sum + p.amount, 0);
+  
+  console.log("InterestDetailsScreen - Juros:", {
+    filtered: interestPaymentsFiltered.length,
+    total: jurosRecebidos,
+    details: interestPaymentsFiltered.map(p => ({ type: p.type, notes: p.notes, amount: p.amount })),
+  });
 
   // Calculate taxa de atraso total (delay fee payments from this month)
-  const taxasAtraso = payments
-    .filter((p) => {
-      const paymentDate = new Date(p.paidAt);
-      const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-      const isDelayFee = p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso") || p.notes?.toLowerCase().includes("atraso");
-      return isCurrentMonth && isDelayFee;
-    })
-    .reduce((sum, p) => sum + p.amount, 0);
+  const delayFeePaymentsFiltered = payments.filter((p) => {
+    const paymentDate = new Date(p.paidAt);
+    const isCurrentMonth = paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+    const isDelayFee = p.type === "delay_fee" || p.notes?.toLowerCase().includes("taxa de atraso") || p.notes?.toLowerCase().includes("atraso");
+    return isCurrentMonth && isDelayFee;
+  });
+  
+  const taxasAtraso = delayFeePaymentsFiltered.reduce((sum, p) => sum + p.amount, 0);
+  
+  console.log("InterestDetailsScreen - Taxas Atraso:", {
+    filtered: delayFeePaymentsFiltered.length,
+    total: taxasAtraso,
+    details: delayFeePaymentsFiltered.map(p => ({ type: p.type, notes: p.notes, amount: p.amount })),
+  });
 
   // Calculate quitações total (full charge settlements from this month)
   const quitacoes = payments
