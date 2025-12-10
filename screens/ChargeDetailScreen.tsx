@@ -501,7 +501,7 @@ export default function ChargeDetailScreen() {
                 </ThemedText>
                 <ThemedText style={[styles.infoValue, { color: theme.success }]}>
                   {(() => {
-                    const interestPayments = charge.interestInstallmentsPaid || payments.filter((p) => p.chargeId === charge.id && p.type === "interest").length;
+                    const interestPayments = charge.interestInstallmentsPaid || payments.filter((p) => p.chargeId === charge.id && (p.type === "interest" || p.notes?.toLowerCase().includes("juros"))).length;
                     return interestPayments > 0 ? `${interestPayments} parcela${interestPayments > 1 ? 's' : ''}` : "0 parcelas";
                   })()}
                 </ThemedText>
