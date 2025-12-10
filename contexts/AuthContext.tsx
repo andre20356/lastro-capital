@@ -17,6 +17,8 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string, newPassword: string) => Promise<void>;
+  checkEmailExists: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,14 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      console.log("Iniciando logout...");
       setIsLoading(true);
       await AsyncStorage.removeItem(AUTH_KEY);
-      console.log("AUTH_KEY removida");
       setUser(null);
-      console.log("Usuário setado para null");
       setIsSignedIn(false);
-      console.log("isSignedIn setado para false - logout concluído");
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -127,8 +125,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    try {
+      const usersData = await AsyncStorage.getItem(USERS_KEY);
+      const users: User[] = usersData ? JSON.parse(usersData) : [];
+      return users.some(u => u.email.toLowerCase() === email.toLowerCase());
+    } catch (error) {
+      console.error("Error checking email:", error);
+      return false;
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email: string, newPassword: string) => {
+    try {
+      setIsLoading(true);
+      
+      const usersData = await AsyncStorage.getItem(USERS_KEY);
+      const users: User[] = usersData ? JSON.parse(usersData) : [];
+      
+      const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+      if (userIndex === -1) {
+        throw new Error("Email não encontrado");
+      }
+
+      users[userIndex].password = newPassword;
+      await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ isLoading, isSignedIn, user, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ isLoading, isSignedIn, user, signUp, signIn, signOut, resetPassword, checkEmailExists }}>
       {children}
     </AuthContext.Provider>
   );
