@@ -123,10 +123,9 @@ export default function ProfileScreen() {
 
   const handleShareLoanRequestLink = useCallback(async () => {
     try {
-      const devDomain = "8206c3c3-87f0-484f-9f5e-6838c7dd891e-00-csgrx2bzhkh0.picard.replit.dev";
-      const webUrl = `https://${devDomain}/solicitar`;
+      const webFormUrl = "https://andre20356.github.io/lastrocapital-privacidade/solicitar.html";
       
-      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webUrl}`;
+      const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webFormUrl}`;
       
       await Share.share({
         message,

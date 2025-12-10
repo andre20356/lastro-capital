@@ -129,8 +129,8 @@ export default function DashboardScreen() {
   const activeClientsCount = activeClientsSet.size;
 
   const handleShareLoanRequestLink = useCallback(async () => {
-    const loanRequestUrl = Linking.createURL("LoanRequest");
-    const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${loanRequestUrl}`;
+    const webFormUrl = "https://andre20356.github.io/lastrocapital-privacidade/solicitar.html";
+    const message = `Solicite seu emprestimo na Lastro Capital!\n\nAcesse o link abaixo para preencher sua solicitacao:\n${webFormUrl}`;
     
     const performShare = async () => {
       try {
