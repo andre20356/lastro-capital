@@ -308,8 +308,13 @@
           </div>
 
           <div class="form-group">
-            <label for="purpose">Motivo do Emprestimo *</label>
-            <textarea id="purpose" name="purpose" placeholder="Descreva brevemente para que precisa do emprestimo..." required></textarea>
+            <label for="address">Endereco *</label>
+            <input type="text" id="address" name="address" placeholder="Rua, numero, bairro, cidade" required>
+          </div>
+
+          <div class="form-group">
+            <label for="purpose">Indicacao e Observacao (opcional)</label>
+            <textarea id="purpose" name="purpose" placeholder="Quem indicou? Alguma observacao adicional..."></textarea>
           </div>
 
           <button type="submit" class="submit-btn" id="submitBtn">
@@ -410,13 +415,14 @@
           email: document.getElementById('email').value.trim() || null,
           cpf: document.getElementById('cpf').value.trim(),
           requestedAmount: parseCurrency(document.getElementById('amount').value),
-          purpose: document.getElementById('purpose').value.trim(),
+          address: document.getElementById('address').value.trim(),
+          purpose: document.getElementById('purpose').value.trim() || null,
           status: 'pending',
           createdAt: serverTimestamp(),
           source: 'web_form'
         };
 
-        if (!formData.name || !formData.phone || !formData.cpf || !formData.requestedAmount || !formData.purpose) {
+        if (!formData.name || !formData.phone || !formData.cpf || !formData.requestedAmount || !formData.address) {
           throw new Error('Por favor, preencha todos os campos obrigatorios.');
         }
 
