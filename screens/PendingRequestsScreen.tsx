@@ -53,6 +53,7 @@ export default function PendingRequestsScreen() {
   const [approvalModalVisible, setApprovalModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LoanRequest | null>(null);
   const [loanPercentageInput, setLoanPercentageInput] = useState("20");
+  const [dailyDelayRateInput, setDailyDelayRateInput] = useState("5");
 
   const loadRequests = useCallback(async () => {
     try {
@@ -101,6 +102,7 @@ export default function PendingRequestsScreen() {
   const handleApprove = (request: LoanRequest) => {
     setSelectedRequest(request);
     setLoanPercentageInput("20");
+    setDailyDelayRateInput("5");
     setApprovalModalVisible(true);
   };
 
@@ -108,9 +110,15 @@ export default function PendingRequestsScreen() {
     if (!selectedRequest) return;
     
     const loanPercentage = parseFloat(loanPercentageInput) || 20;
+    const dailyDelayRate = parseFloat(dailyDelayRateInput) || 5;
     
     if (loanPercentage <= 0 || loanPercentage > 100) {
       Alert.alert("Erro", "A porcentagem deve ser entre 1 e 100");
+      return;
+    }
+
+    if (dailyDelayRate < 0) {
+      Alert.alert("Erro", "A taxa de atraso nao pode ser negativa");
       return;
     }
 
@@ -137,6 +145,7 @@ export default function PendingRequestsScreen() {
         description: selectedRequest.purpose || "Emprestimo aprovado",
         status: "pending",
         loanPercentage: loanPercentage,
+        dailyDelayRate: dailyDelayRate,
       });
 
       await loanRequestService.updateStatus(selectedRequest.id!, "approved");
@@ -147,11 +156,12 @@ export default function PendingRequestsScreen() {
         amount: selectedRequest.requestedAmount,
         dueDate: dueDate.toISOString(),
         loanPercentage: loanPercentage,
+        dailyDelayRate: dailyDelayRate,
       });
 
       Alert.alert(
         "Aprovado!",
-        `Cliente cadastrado com juros de ${loanPercentage}%. Notificacao enviada via WhatsApp.`
+        `Cliente cadastrado com juros de ${loanPercentage}% e taxa de atraso de R$ ${dailyDelayRate.toFixed(2)}/dia.`
       );
     } catch (error) {
       console.error("Error approving request:", error);
@@ -352,6 +362,23 @@ export default function PendingRequestsScreen() {
                   onChangeText={setLoanPercentageInput}
                   keyboardType="numeric"
                   placeholder="20"
+                  placeholderTextColor={theme.tertiaryText}
+                />
+
+                <ThemedText style={[styles.modalLabel, { color: theme.text }]}>
+                  Taxa de Atraso Diaria (R$)
+                </ThemedText>
+                
+                <TextInput
+                  style={[styles.modalInput, { 
+                    backgroundColor: theme.backgroundSecondary,
+                    color: theme.text,
+                    borderColor: theme.cardBorder,
+                  }]}
+                  value={dailyDelayRateInput}
+                  onChangeText={setDailyDelayRateInput}
+                  keyboardType="numeric"
+                  placeholder="5"
                   placeholderTextColor={theme.tertiaryText}
                 />
                 
