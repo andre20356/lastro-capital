@@ -82,55 +82,19 @@ export default function ChargesScreen() {
   };
 
   const filteredCharges = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Atualizar juros acumulados em tempo real (sem mudar status na BD)
-    let result = charges.map((charge) => {
-      // Se está pago, não recalcula - retorna como está
-      if (charge.status === "paid") {
-        return charge;
-      }
-      
-      const referenceDate = charge.nextInterestDueDate ? new Date(charge.nextInterestDueDate) : new Date(charge.dueDate);
-      referenceDate.setHours(0, 0, 0, 0);
-      const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Calcular juros acumulados diariamente
-      const monthlyInterestAmount = (charge.loanPercentage || 0) / 100 * charge.amount;
-      const dailyInterestAmount = monthlyInterestAmount / 30;
-      
-      if (daysOverdue > 0) {
-        // Juros acumula diariamente
-        const calculatedAccumulatedInterest = dailyInterestAmount * daysOverdue;
-        const newAccumulatedInterest = Math.max(calculatedAccumulatedInterest, charge.accumulatedInterest || 0);
-        
-        // Se mudou o valor de juros acumulados, persiste no armazenamento
-        if (newAccumulatedInterest !== (charge.accumulatedInterest || 0)) {
-          updateCharge(charge.id, { accumulatedInterest: newAccumulatedInterest });
-        }
-        
-        // Retorna a charge com juros atualizados (mas sem mudar status na BD)
-        return {
-          ...charge,
-          accumulatedInterest: newAccumulatedInterest
-        };
-      }
-      return charge;
-    });
+    // Filtro inicial e ordenação
+    let result = [...charges];
     
     if (filter !== "all") {
       if (filter === "pending") {
-        // "Pendentes" mostra apenas charges com atraso (status visual = overdue)
         result = result.filter((c) => getVisualStatus(c) === "overdue");
       } else {
-        // Para outros filtros, usa o status visual também
         result = result.filter((c) => getVisualStatus(c) === filter);
       }
     }
     
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [charges, filter, updateTrigger]);
+  }, [charges, filter]);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Todos" },
@@ -148,8 +112,8 @@ export default function ChargesScreen() {
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     
     const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === item.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
-      .reduce((sum, p) => sum + p.amount, 0);
+      .filter((p: any) => p.chargeId === item.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
+      .reduce((sum: number, p: any) => sum + p.amount, 0);
     
     const delayFee = daysOverdue > 0 && item.dailyDelayRate 
       ? item.dailyDelayRate * daysOverdue 

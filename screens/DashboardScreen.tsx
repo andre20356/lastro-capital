@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { StyleSheet, View, Pressable, Share, Alert, Platform, InteractionManager } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -65,27 +65,28 @@ export default function DashboardScreen() {
   const overdueCharges = getOverdueCharges();
   const upcomingCharges = getUpcomingCharges(31);
   
-  // TODAS as cobranças não-pagas (vencidas + próximas 31 dias) ordenadas por data
-  const allChargesForDisplay = charges
-    .filter(c => c.status !== "paid")
-    .sort((a, b) => {
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    });
+  const allChargesForDisplay = useMemo(() => {
+    return charges
+      .filter((c: any) => c.status !== "paid")
+      .sort((a: any, b: any) => {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+  }, [charges]);
 
   // Chart statistics calculations
   // Total Borrowed = apenas charges NÃO-PAGAS (pending + overdue)
   const totalBorrowed = charges
-    .filter(c => c.status !== "paid")
-    .reduce((sum, c) => sum + c.amount, 0);
+    .filter((c: any) => c.status !== "paid")
+    .reduce((sum: number, c: any) => sum + c.amount, 0);
   
   // Total Earned = sum of all payments (includes monthly interest payments + full charge payments)
-  const totalEarned = payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalEarned = payments.reduce((sum: number, p: any) => sum + p.amount, 0);
   
   // Soma total das TAXAS DE ATRASO de todos os clientes (para "Taxas de Atraso")
   // Calcula: dailyDelayRate * dias de atraso para cada charge atrasada
   const totalDelayFees = charges
-    .filter(c => c.status !== "paid")
-    .reduce((sum, c) => {
+    .filter((c: any) => c.status !== "paid")
+    .reduce((sum: number, c: any) => {
       const todayCalc = new Date();
       todayCalc.setHours(0, 0, 0, 0);
       
@@ -103,12 +104,12 @@ export default function DashboardScreen() {
       return sum;
     }, 0);
   
-  console.log("Dashboard - Total Delay Fees:", { totalDelayFees, chargesWithRate: charges.filter(c => c.dailyDelayRate && c.dailyDelayRate > 0).length });
+  console.log("Dashboard - Total Delay Fees:", { totalDelayFees, chargesWithRate: charges.filter((c: any) => c.dailyDelayRate && c.dailyDelayRate > 0).length });
   
   // Count clients with overdue charges (status visual = overdue, não apenas BD)
   const overdueClientsSet = new Set(
     charges
-      .filter(c => {
+      .filter((c: any) => {
         if (c.status === "paid") return false;
         
         const today = new Date();
@@ -120,12 +121,12 @@ export default function DashboardScreen() {
         
         return daysOverdue >= 1; // Apenas charges com 1+ dias de atraso
       })
-      .map(c => c.clientId)
+      .map((c: any) => c.clientId)
   );
   const overdueClientsCount = overdueClientsSet.size;
   
   // Count active clients (those with at least one charge)
-  const activeClientsSet = new Set(charges.map(c => c.clientId));
+  const activeClientsSet = new Set(charges.map((c: any) => c.clientId));
   const activeClientsCount = activeClientsSet.size;
 
   const handleShareLoanRequestLink = useCallback(async () => {
@@ -167,30 +168,31 @@ export default function DashboardScreen() {
     });
   }, []);
 
-  // Calculate total interest to receive this month (accumulated interest + expected monthly interest)
-  const today = new Date();
-  const totalInterestToReceiveMonth = charges
-    .filter(c => c.status === "pending" || c.status === "overdue")
-    .reduce((sum, c) => {
-      // Juros acumulados (atraso + atraso fees)
-      const dueDate = new Date(c.dueDate);
-      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const delayFee = daysOverdue > 0 && c.dailyDelayRate 
-        ? c.dailyDelayRate * daysOverdue 
-        : 0;
-      const accumulatedInterest = (c.accumulatedInterest || 0) + delayFee;
-      
-      // Juros mensais esperados (loanPercentage mensal)
-      const monthlyInterest = c.loanPercentage ? (c.amount * c.loanPercentage) / 100 : 0;
-      
-      return sum + accumulatedInterest + monthlyInterest;
-    }, 0);
+  const totalInterestToReceiveMonth = useMemo(() => {
+    const todayCalc = new Date();
+    return charges
+      .filter((c: any) => c.status === "pending" || c.status === "overdue")
+      .reduce((sum: number, c: any) => {
+        // Juros acumulados (atraso + atraso fees)
+        const dueDate = new Date(c.dueDate);
+        const daysOverdue = Math.floor((todayCalc.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        const delayFee = daysOverdue > 0 && c.dailyDelayRate 
+          ? c.dailyDelayRate * daysOverdue 
+          : 0;
+        const accumulatedInterest = (c.accumulatedInterest || 0) + delayFee;
+        
+        // Juros mensais esperados (loanPercentage mensal)
+        const monthlyInterest = c.loanPercentage ? (c.amount * c.loanPercentage) / 100 : 0;
+        
+        return sum + accumulatedInterest + monthlyInterest;
+      }, 0);
+  }, [charges]);
   
   console.log("Dashboard - Total Interest to Receive:", {
     chargesCount: charges.length,
-    pendingCharges: charges.filter(c => c.status === "pending" || c.status === "overdue").length,
+    pendingCharges: charges.filter((c: any) => c.status === "pending" || c.status === "overdue").length,
     totalInterestToReceiveMonth,
-    charges: charges.map(c => ({ 
+    charges: charges.map((c: any) => ({ 
       id: c.id, 
       accumulatedInterest: c.accumulatedInterest, 
       loanPercentage: c.loanPercentage,
@@ -201,7 +203,7 @@ export default function DashboardScreen() {
 
   // Generate chart data - using actual data instead of random
   const chartData = Array.from({ length: 6 }, (_, i) => {
-    const dateForChart = new Date(today);
+    const dateForChart = new Date();
     dateForChart.setMonth(dateForChart.getMonth() - (5 - i));
     return {
       label: dateForChart.toLocaleDateString("pt-BR", { month: "short" }),
@@ -407,7 +409,7 @@ export default function DashboardScreen() {
               </ThemedText>
             </View>
           ) : (
-            allChargesForDisplay.map((charge) => {
+            allChargesForDisplay.map((charge: any) => {
               const client = getClientById(charge.clientId);
               const monthlyInterest = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
               
@@ -418,9 +420,15 @@ export default function DashboardScreen() {
               const daysOverdue = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
               const isOverdue = daysOverdue >= 1;
               
-              const numberOfOverdueInstallments = isOverdue ? Math.ceil(daysOverdue / 30) : 0;
-              const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
-              const calculatedAccumulatedInterest = isOverdue ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+              const billingType = charge.billingType || "monthly";
+              let periods = 0;
+              if (billingType === "monthly") periods = Math.floor(daysOverdue / 30);
+              else if (billingType === "weekly") periods = Math.floor(daysOverdue / 7);
+              else if (billingType === "daily") periods = daysOverdue;
+
+              const numberOfOverdueInstallments = isOverdue ? Math.max(0, periods) : 0;
+              const interestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+              const calculatedAccumulatedInterest = numberOfOverdueInstallments > 0 ? interestPerInstallment * numberOfOverdueInstallments : 0;
               
               const delayFee = isOverdue && charge.dailyDelayRate 
                 ? charge.dailyDelayRate * daysOverdue 
