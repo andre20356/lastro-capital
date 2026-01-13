@@ -58,9 +58,6 @@ const DataContext = createContext<any>(undefined);
 const generateId = () =>
   Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-const getBillingType = (charge: Charge) =>
-  charge.billingType ?? "monthly";
- m 
 // =======================
 // JUROS / ATRASO
 // =======================
