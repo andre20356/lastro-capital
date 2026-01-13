@@ -146,14 +146,20 @@ export default function ChargeDetailScreen() {
     const daysInterestOverdue = daysOverdue;
     const hasInterestDelay = daysInterestOverdue >= 1; // Reforço: só atraso se passou 1 dia completo
     
-    // Calcular número de parcelas em atraso (baseado em dias de juros)
-    const numberOfOverdueInstallments = hasInterestDelay ? Math.ceil(daysInterestOverdue / 30) : 0;
+    // Calcular número de parcelas em atraso (baseado em dias de juros e modalidade)
+    const billingType = charge.billingType || "monthly";
+    let periods = 0;
+    if (billingType === "monthly") periods = Math.floor(daysOverdue / 30);
+    else if (billingType === "weekly") periods = Math.floor(daysOverdue / 7);
+    else if (billingType === "daily") periods = daysOverdue;
+
+    const numberOfOverdueInstallments = hasInterestDelay ? Math.max(0, periods) : 0;
     
-    // Calcular juros mensais por parcela
-    const monthlyInterestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+    // Calcular juros mensais/período por parcela
+    const interestPerInstallment = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
     
-    // Juros acumulados = juros mensais * número de parcelas em atraso
-    const calculatedAccumulatedInterest = hasInterestDelay ? monthlyInterestPerInstallment * numberOfOverdueInstallments : 0;
+    // Juros acumulados = juros do período * número de parcelas em atraso
+    const calculatedAccumulatedInterest = numberOfOverdueInstallments > 0 ? interestPerInstallment * numberOfOverdueInstallments : 0;
     
     const delayFee = hasRealDelay && charge.dailyDelayRate 
       ? charge.dailyDelayRate * daysOverdue 
@@ -371,7 +377,7 @@ export default function ChargeDetailScreen() {
             <View style={{ flex: 1 }}>
               <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
               <ThemedText style={[styles.installmentText, { color: theme.secondaryText }]}>
-                Parcela: {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
+                Parcela ({charge.billingType === "daily" ? "Diária" : charge.billingType === "weekly" ? "Semanal" : "Mensal"}): {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
               </ThemedText>
             </View>
             <StatusBadge status={getVisualStatus(charge)} theme={theme} hasDelay={hasInterestDelay} />

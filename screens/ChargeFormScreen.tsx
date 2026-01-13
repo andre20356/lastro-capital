@@ -10,7 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
-import { ChargeStatus } from "@/types";
+import { ChargeStatus, BillingType } from "@/types";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeForm">;
 type RouteType = RouteProp<RootStackParamList, "ChargeForm">;
@@ -44,6 +44,7 @@ export default function ChargeFormScreen() {
   const [description, setDescription] = useState(existingCharge?.description || "");
   const [loanPercentage, setLoanPercentage] = useState(existingCharge?.loanPercentage?.toString() || "");
   const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
+  const [billingType, setBillingType] = useState<BillingType>(existingCharge?.billingType || selectedClient?.billingType || "monthly");
   const [showClientPicker, setShowClientPicker] = useState(false);
 
   const selectedClient = clients.find((c) => c.id === clientId);
@@ -75,6 +76,9 @@ export default function ChargeFormScreen() {
       // Preencher descrição do cliente
       if (selectedClient.notes) {
         setDescription(selectedClient.notes);
+      }
+      if (selectedClient.billingType) {
+        setBillingType(selectedClient.billingType);
       }
     }
   }, [selectedClient, clientId, isEditing]);
@@ -117,6 +121,7 @@ export default function ChargeFormScreen() {
         description,
         loanPercentage: loanPercentageNum,
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
+        billingType,
       };
 
       if (isEditing && existingCharge) {
@@ -235,6 +240,34 @@ export default function ChargeFormScreen() {
               )}
             </View>
           ) : null}
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            Modalidade de Cobrança *
+          </ThemedText>
+          <View style={styles.billingTypeContainer}>
+            {(["monthly", "weekly", "daily"] as BillingType[]).map((type) => (
+              <Pressable
+                key={type}
+                style={[
+                  styles.billingTypeOption,
+                  { borderColor: theme.inputBorder },
+                  billingType === type && { backgroundColor: theme.primaryAccent, borderColor: theme.primaryAccent },
+                ]}
+                onPress={() => setBillingType(type)}
+              >
+                <ThemedText
+                  style={[
+                    styles.billingTypeOptionText,
+                    billingType === type && { color: "#fff", fontWeight: "700" },
+                  ]}
+                >
+                  {type === "monthly" ? "Mensal" : type === "weekly" ? "Semanal" : "Diário"}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -524,5 +557,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginLeft: Spacing.sm,
+  },
+  billingTypeContainer: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  billingTypeOption: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderWidth: 1,
+    borderRadius: BorderRadius.xs,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  billingTypeOptionText: {
+    fontSize: 14,
   },
 });

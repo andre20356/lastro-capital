@@ -85,13 +85,18 @@ function checkOverdue(charges: Charge[]): Charge[] {
       return { ...charge, accumulatedInterest: 0 };
     }
 
-    const billingType = getBillingType(charge);
+    const billingType = charge.billingType || "monthly";
     const rate = (charge.loanPercentage || 0) / 100;
 
-    let periods = 1;
-    if (billingType === "monthly") periods = Math.ceil(daysOverdue / 30);
-    if (billingType === "weekly") periods = Math.ceil(daysOverdue / 7);
+    let periods = 0;
+    if (billingType === "monthly") periods = Math.floor(daysOverdue / 30);
+    if (billingType === "weekly") periods = Math.floor(daysOverdue / 7);
     if (billingType === "daily") periods = daysOverdue;
+
+    // Apenas cobrar juros se completou pelo menos 1 período
+    if (periods <= 0) {
+      return { ...charge, accumulatedInterest: 0 };
+    }
 
     return {
       ...charge,
