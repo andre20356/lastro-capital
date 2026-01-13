@@ -119,11 +119,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // FIRESTORE CHECK
   // =======================
   useEffect(() => {
-    const available = isFirestoreAvailable();
-    setUseFirestore(available);
-    if (!available) {
-      console.log(getFirestoreError()?.message);
-    }
+    const checkFirestore = async () => {
+      const available = isFirestoreAvailable();
+      setUseFirestore(available);
+      if (!available) {
+        console.log(getFirestoreError()?.message);
+      }
+    };
+    checkFirestore();
   }, []);
 
   // =======================
@@ -268,6 +271,56 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [charges, payments, clients, saveData]
   );
 
+  // =======================
+  // HOOKS
+  // =======================
+  const getPaidTotal = useCallback(() => {
+    return payments.reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
+  const getInterestPaidThisMonth = useCallback(() => {
+    const todayCalc = new Date();
+    const m = todayCalc.getMonth();
+    const y = todayCalc.getFullYear();
+    return payments
+      .filter((p) => {
+        const d = new Date(p.paidAt);
+        return d.getMonth() === m && d.getFullYear() === y && (p.type === "interest" || p.notes?.toLowerCase().includes("juros"));
+      })
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
+  const getOverdueCharges = useCallback(() => {
+    return charges.filter((c) => c.status === "overdue");
+  }, [charges]);
+
+  const getUpcomingCharges = useCallback((days: number) => {
+    const todayCalc = new Date();
+    const future = new Date();
+    future.setDate(todayCalc.getDate() + days);
+    return charges.filter((c) => {
+      const d = new Date(c.dueDate);
+      return d > todayCalc && d <= future && c.status !== "paid";
+    });
+  }, [charges]);
+
+  const getClientById = useCallback((id: string) => {
+    return clients.find((c) => c.id === id);
+  }, [clients]);
+
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    if (!userId) return;
+    const local = await AsyncStorage.getItem(getStorageKeyForUser(userId));
+    if (local) {
+      const data: AppData = JSON.parse(local);
+      setClients(data.clients || []);
+      setCharges(checkOverdue(data.charges || []));
+      setPayments(data.payments || []);
+    }
+    setIsLoading(false);
+  }, [userId, checkOverdue]);
+
   return (
     <DataContext.Provider
       value={{
@@ -277,7 +330,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         isLoading,
         canUndo,
         getPendingTotal,
+        getPaidTotal,
+        getInterestPaidThisMonth,
+        getOverdueCharges,
+        getUpcomingCharges,
+        getClientById,
         payMonthlyInterest,
+        refreshData,
       }}
     >
       {children}
