@@ -7,34 +7,44 @@
     "icon": "./assets/images/icon.png",
     "scheme": "lastrocapital",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1e293b"
     },
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lastro.capital"
     },
+
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1e293b",
         "foregroundImage": "./assets/images/icon.png"
       },
       "package": "com.lastro.capital",
-      "versionCode": 12,
-      "permissions": []
+      "versionCode": 21
     },
+
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-web-browser"
     ],
+
     "updates": {
       "enabled": false
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }
