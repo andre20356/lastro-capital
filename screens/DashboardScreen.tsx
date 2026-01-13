@@ -125,7 +125,6 @@ export default function DashboardScreen() {
   );
   const overdueClientsCount = overdueClientsSet.size;
   
-  // Count active clients (those with at least one charge)
   const activeClientsSet = new Set(charges.map((c: any) => c.clientId));
   const activeClientsCount = activeClientsSet.size;
 
@@ -171,20 +170,25 @@ export default function DashboardScreen() {
   const totalInterestToReceiveMonth = useMemo(() => {
     const todayCalc = new Date();
     return charges
-      .filter((c: any) => c.status === "pending" || c.status === "overdue")
+      .filter((c: any) => c.status !== "paid")
       .reduce((sum: number, c: any) => {
-        // Juros acumulados (atraso + atraso fees)
+        const rate = (c.loanPercentage || 0) / 100;
+        const principal = c.amount || 0;
+        
+        // Juros fixos do mês (baseado no valor solicitado)
+        const monthlyInterest = principal * rate;
+        
+        // Juros que já acumularam por atraso (se houver)
+        const accumulated = c.accumulatedInterest || 0;
+        
+        // Taxa de atraso diária acumulada (se houver atraso)
         const dueDate = new Date(c.dueDate);
         const daysOverdue = Math.floor((todayCalc.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
         const delayFee = daysOverdue > 0 && c.dailyDelayRate 
           ? c.dailyDelayRate * daysOverdue 
           : 0;
-        const accumulatedInterest = (c.accumulatedInterest || 0) + delayFee;
         
-        // Juros mensais esperados (loanPercentage mensal)
-        const monthlyInterest = c.loanPercentage ? (c.amount * c.loanPercentage) / 100 : 0;
-        
-        return sum + accumulatedInterest + monthlyInterest;
+        return sum + monthlyInterest + accumulated + delayFee;
       }, 0);
   }, [charges]);
   
