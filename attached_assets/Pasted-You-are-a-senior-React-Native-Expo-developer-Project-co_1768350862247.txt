@@ -1,0 +1,84 @@
+You are a senior React Native / Expo developer.
+
+Project context:
+This is a financial management app called "Lastro Capital", built with Expo + React Native + TypeScript.
+The app manages clients, loans, charges, payments and financial dashboards.
+The project already has contexts such as AuthContext, DataContext and uses AsyncStorage / Firestore.
+
+TASK:
+Add DAILY and WEEKLY billing modalities when creating a new client.
+
+REQUIREMENTS:
+
+1) New Billing Modalities
+Add two new billing types:
+- Daily (Cobrança Diária)
+- Weekly (Cobrança Semanal)
+
+Currently the app only supports monthly or fixed billing.
+These new options must work across the entire system.
+
+2) Client Creation Flow
+When adding a new client, include a required field called:
+- billingFrequency
+
+Available options:
+- "daily"
+- "weekly"
+- "monthly" (keep existing option)
+
+This selection must be done during client registration.
+
+3) Data Model Changes
+Update the client model/interface to include:
+- billingFrequency: "daily" | "weekly" | "monthly"
+
+Update any related types (Client, Charge, Payment, Loan, etc.) so they support this field correctly.
+
+4) Charge Generation Logic
+Update the charge generation logic so that:
+- DAILY billing creates charges every day
+- WEEKLY billing creates charges every 7 days
+- MONTHLY billing keeps current behavior
+
+Charges must automatically calculate:
+- dueDate
+- nextChargeDate
+based on the selected billingFrequency.
+
+5) Payment Registration
+When a payment is registered:
+- Update the nextChargeDate correctly based on the billing frequency
+- Keep financial totals (paid, pending, overdue) accurate
+
+6) Dashboard & Statistics
+Update dashboard calculations so:
+- Pending
+- Total Loaned
+- Interest to Receive
+work correctly for daily and weekly billing.
+
+Charts and summaries must not break.
+
+7) UI Changes
+- Update the "Add Client" screen to include a selector (Picker / Select / Modal) for billing frequency
+- Labels must be in Portuguese:
+  - Diária
+  - Semanal
+  - Mensal
+
+8) Backward Compatibility
+Existing clients must continue working normally.
+If billingFrequency is missing, default to "monthly".
+
+9) Code Quality
+- Do not break existing features
+- Use clean, readable TypeScript
+- Update all necessary files (screens, contexts, services, utils)
+- Ensure the app builds without errors on Android (EAS Build compatible)
+
+OUTPUT:
+- Apply all changes directly to the existing codebase
+- Modify only what is necessary
+- Do NOT remove existing functionality
+- Ensure the app runs correctly after changes
