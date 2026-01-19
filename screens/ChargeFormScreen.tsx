@@ -33,7 +33,10 @@ export default function ChargeFormScreen() {
     return nextMonth.toLocaleDateString("pt-BR");
   };
 
-  const [clientId, setClientId] = useState(existingCharge?.clientId || preselectedClientId || "");
+  const initialClientId = existingCharge?.clientId || preselectedClientId || "";
+  const initialSelectedClient = clients.find((c) => c.id === initialClientId);
+
+  const [clientId, setClientId] = useState(initialClientId);
   const [amount, setAmount] = useState(existingCharge?.amount.toString() || "");
   const [dueDate, setDueDate] = useState(
     existingCharge?.dueDate
@@ -44,7 +47,7 @@ export default function ChargeFormScreen() {
   const [description, setDescription] = useState(existingCharge?.description || "");
   const [loanPercentage, setLoanPercentage] = useState(existingCharge?.loanPercentage?.toString() || "");
   const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
-  const [billingType, setBillingType] = useState<BillingType>(existingCharge?.billingType || selectedClient?.billingType || "monthly");
+  const [billingType, setBillingType] = useState<BillingType>(existingCharge?.billingType || initialSelectedClient?.billingType || "monthly");
   const [showClientPicker, setShowClientPicker] = useState(false);
 
   const selectedClient = clients.find((c) => c.id === clientId);
