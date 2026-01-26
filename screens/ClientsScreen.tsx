@@ -51,10 +51,10 @@ export default function ClientsScreen() {
   }, [clients, searchQuery]);
 
   const getClientPendingAmount = (clientId: string): number => {
-    const charges = getChargesByClient(clientId);
-    return charges
-      .filter((c) => c.status === "pending" || c.status === "overdue")
-      .reduce((sum, c) => sum + c.amount, 0);
+    const clientCharges = getChargesByClient(clientId);
+    return clientCharges
+      .filter((c: any) => c.status === "pending" || c.status === "overdue")
+      .reduce((sum: number, c: any) => sum + c.amount, 0);
   };
 
   const renderItem = ({ item }: { item: Client }) => {

@@ -131,9 +131,9 @@ export default function ChargeDetailScreen() {
     const hasRealDelay = daysOverdue >= 1;
     
     // Verificar se já há pagamento de taxa de atraso
-    const delayFeeAlreadyPaid = payments
-      .filter((p) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || p.type === "delay_fee"))
-      .reduce((sum, p) => sum + p.amount, 0);
+    const delayFeeAlreadyPaid = (payments || [])
+      .filter((p: any) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || (p as any).type === "delay_fee"))
+      .reduce((sum: number, p: any) => sum + p.amount, 0);
     
     // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
     const daysPaidSoFar = (charge.dailyDelayRate || 0) > 0 && hasRealDelay ? Math.floor(delayFeeAlreadyPaid / (charge.dailyDelayRate || 1)) : 0;
@@ -200,6 +200,19 @@ export default function ChargeDetailScreen() {
       hasAnyDelay,
     };
   }, [renderKey, payments, charge, charge?.id, charge?.dueDate, charge?.dailyDelayRate, charge?.loanPercentage, charge?.amount, charge?.nextInterestDueDate, charge?.accumulatedInterest]);
+
+  const {
+    daysOverdue: calcDaysOverdue,
+    numberOfOverdueInstallments: calcNumberOfOverdueInstallments,
+    calculatedAccumulatedInterest: calcCalculatedAccumulatedInterest,
+    daysRemainingOverdue: calcDaysRemainingOverdue,
+    delayFeeAlreadyPaid: calcDelayFeeAlreadyPaid,
+    pendingDelayFee: calcPendingDelayFee,
+    totalDebt: calcTotalDebt,
+    hasInterestDelay: calcHasInterestDelay,
+    shouldShowTotalDebt: calcShouldShowTotalDebt,
+    hasAnyDelay: calcHasAnyDelay,
+  } = calculations;
 
   if (!charge) {
     return (
