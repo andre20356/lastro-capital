@@ -54,6 +54,7 @@ function initFirestore(): Firestore | null {
         experimentalAutoDetectLongPolling: true,
       });
     } else {
+      // Para nativo, garantimos que o Firestore seja inicializado corretamente
       db = getFirestore(firebaseApp);
     }
     

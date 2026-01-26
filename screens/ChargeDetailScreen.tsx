@@ -132,8 +132,8 @@ export default function ChargeDetailScreen() {
     
     // Verificar se já há pagamento de taxa de atraso
     const delayFeeAlreadyPaid = (payments || [])
-      .filter((p: any) => p.chargeId === charge.id && (p.notes?.includes("taxa de atraso") || (p as any).type === "delay_fee"))
-      .reduce((sum: number, p: any) => sum + p.amount, 0);
+      .filter((p: any) => p.chargeId === charge.id && (p.notes?.toLowerCase().includes("taxa de atraso") || (p as any).type === "delay_fee"))
+      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
     
     // Calcular quantos dias já foram cobertos pelos pagamentos de taxa de atraso
     const daysPaidSoFar = (charge.dailyDelayRate || 0) > 0 && hasRealDelay ? Math.floor(delayFeeAlreadyPaid / (charge.dailyDelayRate || 1)) : 0;
