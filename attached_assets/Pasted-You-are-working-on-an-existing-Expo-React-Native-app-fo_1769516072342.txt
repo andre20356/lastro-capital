@@ -1,0 +1,132 @@
+You are working on an existing Expo React Native app for managing customer charges (billing app).
+
+IMPORTANT RULES:
+- DO NOT refactor, reorganize, rename, or change any code that is already working.
+- DO NOT change navigation, authentication, UI layout, styling, or existing business rules.
+- ONLY modify the parts strictly necessary to support DAILY and WEEKLY recurring charges, interest calculation, and late fee logic.
+- Keep all existing monthly charge behavior EXACTLY as it is.
+
+GOAL:
+Implement correct business logic for DAILY and WEEKLY charge modalities, including automatic interest calculation and late fee handling, without breaking existing features.
+
+--------------------------------------------------
+CHARGE MODALITIES RULES
+--------------------------------------------------
+
+1) DAILY CHARGE ("diaria"):
+- The charge value represents a DAILY installment amount.
+- The due date is the current charge due date.
+- When a daily charge is marked as PAID:
+  - Automatically generate a new charge for the SAME CLIENT
+  - Same installment value and same description
+  - Due date = previous due date + 1 day
+  - Status = pending
+- Do NOT generate multiple future charges in advance.
+- Always generate only the NEXT charge after payment.
+
+2) WEEKLY CHARGE ("semanal"):
+- The charge value represents a WEEKLY installment amount.
+- When a weekly charge is marked as PAID:
+  - Automatically generate a new charge for the SAME CLIENT
+  - Same installment value and same description
+  - Due date = previous due date + 7 days
+  - Status = pending
+- Do NOT generate multiple future charges in advance.
+
+3) MONTHLY CHARGE ("mensal"):
+- Keep the existing monthly logic EXACTLY as it is.
+- Do NOT modify any monthly calculations, flows, or UI.
+
+--------------------------------------------------
+INTEREST (JUROS) LOGIC – DAILY AND WEEKLY ONLY
+--------------------------------------------------
+
+- DAILY and WEEKLY charges represent installment-based contracts.
+- The user provides:
+  - Principal amount (borrowed value)
+  - Installment value
+  - Number of installments
+- The app must automatically calculate:
+  - Total amount to be paid
+  - Total interest percentage of the contract
+
+Interest percentage formula:
+((installmentValue × numberOfInstallments - principalAmount) / principalAmount) × 100
+
+RULES:
+- Interest is calculated for the FULL CONTRACT, not per day or per week.
+- The calculated interest percentage must be read-only (auto-calculated).
+- Do NOT apply interest calculation to monthly charges.
+
+--------------------------------------------------
+LATE FEE (TAXA DE ATRASO) LOGIC
+--------------------------------------------------
+
+- DAILY and WEEKLY contracts must include a configurable late fee rate.
+
+Required new field (only if not existing):
+- lateFeeRatePerPeriod
+
+RULES:
+- Late fee is applied ONLY when a charge is overdue.
+- Late fee affects ONLY the overdue installment.
+- Late fee must NOT:
+  - Generate new charges
+  - Modify future installments
+  - Modify the original contract values
+
+Late fee calculation:
+- DAILY: late fee applied per DAY of delay
+- WEEKLY: late fee applied per WEEK of delay
+
+Examples:
+- Weekly installment: 350
+- Late fee rate: 10% per week
+- 1 week late → 350 + 10% = 385
+
+- Daily installment: 50
+- Late fee rate: 2% per day
+- 3 days late → 50 + (2% × 3)
+
+The updated amount should be calculated dynamically based on delay time.
+
+--------------------------------------------------
+DATA CONSISTENCY & STABILITY
+--------------------------------------------------
+
+- Ensure DAILY, WEEKLY, and MONTHLY charges appear correctly in:
+  - Client details
+  - Charge history
+  - Lists and filters
+- Fix any crash or error related to:
+  - Client screen
+  - Charge history screen
+  caused by DAILY or WEEKLY logic.
+
+--------------------------------------------------
+UI BEHAVIOR (MINIMAL CHANGES ONLY)
+--------------------------------------------------
+
+- When selecting charge modality, display helper text:
+  - DAILY: "This charge will be generated automatically every day."
+  - WEEKLY: "This charge will be generated automatically every 7 days."
+  - MONTHLY: keep existing behavior.
+
+- Interest percentage must be displayed as auto-calculated (read-only).
+- Late fee rate must be editable only at contract creation.
+
+--------------------------------------------------
+TECHNICAL CONSTRAINTS
+--------------------------------------------------
+
+- Use existing data structures whenever possible.
+- Add new fields ONLY if strictly required.
+- Ensure backward compatibility with existing stored data.
+
+--------------------------------------------------
+FINAL CHECK
+--------------------------------------------------
+
+- The app MUST NOT break.
+- No existing working feature should stop working.
+- Only DAILY and WEEKLY recurring logic, interest calculation, and late fee handling should be added or fixed.

@@ -1,0 +1,62 @@
+You are working on an existing Expo React Native app for managing customer charges (billing app).
+
+IMPORTANT RULES:
+- DO NOT refactor, reorganize, rename, or change any code that is already working.
+- DO NOT change navigation, authentication, UI layout, styling, or existing business rules.
+- ONLY modify the parts strictly necessary to support DAILY and WEEKLY recurring charges.
+- Keep all existing monthly charge behavior exactly as it is.
+
+GOAL:
+Implement correct business logic for DAILY and WEEKLY charge modalities, following the rules below.
+
+CHARGE MODALITIES RULES:
+
+1) DAILY CHARGE ("diaria"):
+- The charge value represents a DAILY amount.
+- The due date is the charge's current due date.
+- When a daily charge is marked as PAID:
+  - Automatically generate a new charge for the SAME CLIENT
+  - Same value and same description
+  - Due date = previous due date + 1 day
+  - Status = pending
+- Do NOT generate multiple future charges in advance.
+- Always generate only the NEXT charge after payment.
+
+2) WEEKLY CHARGE ("semanal"):
+- The charge value represents a WEEKLY amount.
+- When a weekly charge is marked as PAID:
+  - Automatically generate a new charge for the SAME CLIENT
+  - Same value and same description
+  - Due date = previous due date + 7 days
+  - Status = pending
+- Do NOT generate multiple future charges in advance.
+
+3) MONTHLY CHARGE ("mensal"):
+- Keep the existing monthly logic EXACTLY as it is.
+- Do NOT modify any monthly calculations or flows.
+
+DATA CONSISTENCY:
+- Ensure that DAILY, WEEKLY, and MONTHLY charges all appear correctly in:
+  - Client details
+  - Charge history
+  - Lists and filters
+- Fix any crash or error that occurs when opening:
+  - Client screen
+  - Charge history screen
+  caused by the new modalities.
+
+UI BEHAVIOR (MINIMAL CHANGES ONLY):
+- When selecting the charge modality, display a short helper text:
+  - DAILY: "This charge will be generated automatically every day."
+  - WEEKLY: "This charge will be generated automatically every 7 days."
+  - MONTHLY: keep existing behavior.
+
+TECHNICAL CONSTRAINTS:
+- Use existing data structures whenever possible.
+- If a new field is strictly required, add it without breaking existing stored data.
+- Ensure backward compatibility with existing charges.
+
+FINAL CHECK:
+- The app must NOT break.
+- No existing working feature should stop working.
+- Only DAILY and WEEKLY recurring logic should be added or fixed.
