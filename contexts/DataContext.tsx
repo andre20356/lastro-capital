@@ -313,6 +313,167 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return clients.find((c) => c.id === id);
   }, [clients]);
 
+  const getChargesByClient = useCallback((clientId: string) => {
+    return charges.filter((c) => c.clientId === clientId);
+  }, [charges]);
+
+  const getPaymentsByCharge = useCallback((chargeId: string) => {
+    return payments.filter((p) => p.chargeId === chargeId);
+  }, [payments]);
+
+  // =======================
+  // CRUD CLIENTS
+  // =======================
+  const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">) => {
+    const newClient: Client = {
+      ...clientData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    const updatedClients = [...clients, newClient];
+    setClients(updatedClients);
+    await saveData({ clients: updatedClients, charges, payments });
+    return newClient;
+  }, [clients, charges, payments, saveData]);
+
+  const updateClient = useCallback(async (clientId: string, updates: Partial<Client>) => {
+    const updatedClients = clients.map((c) =>
+      c.id === clientId ? { ...c, ...updates } : c
+    );
+    setClients(updatedClients);
+    await saveData({ clients: updatedClients, charges, payments });
+  }, [clients, charges, payments, saveData]);
+
+  const deleteClient = useCallback(async (clientId: string) => {
+    const updatedClients = clients.filter((c) => c.id !== clientId);
+    const updatedCharges = charges.filter((c) => c.clientId !== clientId);
+    const chargeIds = charges.filter((c) => c.clientId === clientId).map((c) => c.id);
+    const updatedPayments = payments.filter((p) => !chargeIds.includes(p.chargeId));
+    
+    setClients(updatedClients);
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+    await saveData({ clients: updatedClients, charges: updatedCharges, payments: updatedPayments });
+  }, [clients, charges, payments, saveData]);
+
+  const toggleArchiveClient = useCallback(async (clientId: string) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return;
+    
+    const updatedClients = clients.map((c) =>
+      c.id === clientId ? { ...c, archived: !c.archived } : c
+    );
+    setClients(updatedClients);
+    await saveData({ clients: updatedClients, charges, payments });
+  }, [clients, charges, payments, saveData]);
+
+  // =======================
+  // CRUD CHARGES
+  // =======================
+  const addCharge = useCallback(async (chargeData: Omit<Charge, "id" | "createdAt">) => {
+    const newCharge: Charge = {
+      ...chargeData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    const updatedCharges = checkOverdue([...charges, newCharge]);
+    setCharges(updatedCharges);
+    await saveData({ clients, charges: updatedCharges, payments });
+    return newCharge;
+  }, [clients, charges, payments, saveData]);
+
+  const updateCharge = useCallback(async (chargeId: string, updates: Partial<Charge>) => {
+    const updatedCharges = checkOverdue(
+      charges.map((c) => (c.id === chargeId ? { ...c, ...updates } : c))
+    );
+    setCharges(updatedCharges);
+    await saveData({ clients, charges: updatedCharges, payments });
+  }, [clients, charges, payments, saveData]);
+
+  const deleteCharge = useCallback(async (chargeId: string) => {
+    const updatedCharges = charges.filter((c) => c.id !== chargeId);
+    const updatedPayments = payments.filter((p) => p.chargeId !== chargeId);
+    
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+    await saveData({ clients, charges: updatedCharges, payments: updatedPayments });
+  }, [clients, charges, payments, saveData]);
+
+  // =======================
+  // CRUD PAYMENTS
+  // =======================
+  const addPayment = useCallback(async (paymentData: Omit<Payment, "id">) => {
+    const newPayment: Payment = {
+      ...paymentData,
+      id: generateId(),
+    };
+    const updatedPayments = [...payments, newPayment];
+    setPayments(updatedPayments);
+    await saveData({ clients, charges, payments: updatedPayments });
+    return newPayment;
+  }, [clients, charges, payments, saveData]);
+
+  const deletePayment = useCallback(async (paymentId: string) => {
+    const updatedPayments = payments.filter((p) => p.id !== paymentId);
+    setPayments(updatedPayments);
+    await saveData({ clients, charges, payments: updatedPayments });
+  }, [clients, charges, payments, saveData]);
+
+  // =======================
+  // PAY DELAY FEE
+  // =======================
+  const payDelayFee = useCallback(async (chargeId: string, amount: number, options: PaymentOptions = {}) => {
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) return;
+
+    const payment: Payment = {
+      id: generateId(),
+      chargeId,
+      clientId: charge.clientId,
+      amount,
+      paidAt: new Date().toISOString(),
+      notes: options.notes || "Taxa de atraso",
+      paymentMethod: options.paymentMethod,
+      paymentProof: options.paymentProof,
+      type: "delay_fee",
+    };
+
+    const updatedPayments = [...payments, payment];
+    setPayments(updatedPayments);
+    await saveData({ clients, charges, payments: updatedPayments });
+  }, [clients, charges, payments, saveData]);
+
+  // =======================
+  // PAY PRINCIPAL
+  // =======================
+  const payPrincipal = useCallback(async (chargeId: string, options: PaymentOptions = {}) => {
+    const charge = charges.find((c) => c.id === chargeId);
+    if (!charge) return;
+
+    const payment: Payment = {
+      id: generateId(),
+      chargeId,
+      clientId: charge.clientId,
+      amount: charge.amount,
+      paidAt: new Date().toISOString(),
+      notes: options.notes || "Pagamento do principal",
+      paymentMethod: options.paymentMethod,
+      paymentProof: options.paymentProof,
+      type: "principal",
+    };
+
+    const updatedCharges = charges.map((c) =>
+      c.id === chargeId
+        ? { ...c, status: "paid" as ChargeStatus, paidDate: new Date().toISOString() }
+        : c
+    );
+
+    const updatedPayments = [...payments, payment];
+    setCharges(updatedCharges);
+    setPayments(updatedPayments);
+    await saveData({ clients, charges: updatedCharges, payments: updatedPayments });
+  }, [clients, charges, payments, saveData]);
+
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     if (!userId) return;
@@ -340,7 +501,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getOverdueCharges,
         getUpcomingCharges,
         getClientById,
+        getChargesByClient,
+        getPaymentsByCharge,
+        addClient,
+        updateClient,
+        deleteClient,
+        toggleArchiveClient,
+        addCharge,
+        updateCharge,
+        deleteCharge,
+        addPayment,
+        deletePayment,
         payMonthlyInterest,
+        payDelayFee,
+        payPrincipal,
         refreshData,
       }}
     >

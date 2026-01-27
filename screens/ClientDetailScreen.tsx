@@ -72,12 +72,12 @@ export default function ClientDetailScreen() {
   };
 
   const pendingTotal = charges
-    .filter((c) => c.status === "pending" || c.status === "overdue")
-    .reduce((sum, c) => sum + c.amount, 0);
+    .filter((c: Charge) => c.status === "pending" || c.status === "overdue")
+    .reduce((sum: number, c: Charge) => sum + c.amount, 0);
 
   const totalAccumulatedInterest = charges
-    .filter((c) => c.status === "pending" || c.status === "overdue")
-    .reduce((sum, c) => sum + (c.accumulatedInterest || 0), 0);
+    .filter((c: Charge) => c.status === "pending" || c.status === "overdue")
+    .reduce((sum: number, c: Charge) => sum + (c.accumulatedInterest || 0), 0);
 
   if (!client) {
     return (
@@ -297,7 +297,7 @@ export default function ClientDetailScreen() {
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={charges.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())}
+        data={charges.sort((a: Charge, b: Charge) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())}
         renderItem={renderCharge}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
