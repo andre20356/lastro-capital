@@ -313,6 +313,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return clients.find((c) => c.id === id);
   }, [clients]);
 
+  const getChargeById = useCallback((id: string) => {
+    return charges.find((c) => c.id === id);
+  }, [charges]);
+
   const getChargesByClient = useCallback((clientId: string) => {
     return charges.filter((c) => c.clientId === clientId);
   }, [charges]);
@@ -501,6 +505,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getOverdueCharges,
         getUpcomingCharges,
         getClientById,
+        getChargeById,
         getChargesByClient,
         getPaymentsByCharge,
         addClient,
