@@ -39,6 +39,7 @@ export interface Client {
   dailyDelayRate?: number;      // multa diária
 
   billingType?: BillingType;    // ✅ MODALIDADE DO EMPRÉSTIMO
+  weekCount?: number;           // quantidade de semanas (semanal)
 
   requestDate?: string;
   notes: string;
@@ -74,6 +75,7 @@ export interface Charge {
   createdAt: string;
 
   billingType?: BillingType; // ✅ mensal | semanal | diário
+  weekCount?: number;        // quantidade de semanas (semanal)
 }
 
 // =====================
