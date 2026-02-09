@@ -49,6 +49,7 @@ export default function ChargeFormScreen() {
   const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
   const [billingType, setBillingType] = useState<BillingType>(existingCharge?.billingType || initialSelectedClient?.billingType || "monthly");
   const [weekCount, setWeekCount] = useState(existingCharge?.weekCount?.toString() || initialSelectedClient?.weekCount?.toString() || "");
+  const [dayCount, setDayCount] = useState(existingCharge?.dayCount?.toString() || initialSelectedClient?.dayCount?.toString() || "");
   const [showClientPicker, setShowClientPicker] = useState(false);
 
   const selectedClient = clients.find((c: Client) => c.id === clientId);
@@ -86,6 +87,9 @@ export default function ChargeFormScreen() {
       }
       if (selectedClient.weekCount) {
         setWeekCount(selectedClient.weekCount.toString());
+      }
+      if (selectedClient.dayCount) {
+        setDayCount(selectedClient.dayCount.toString());
       }
     }
   }, [selectedClient, clientId, isEditing]);
@@ -130,6 +134,7 @@ export default function ChargeFormScreen() {
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
         billingType,
         weekCount: billingType === "weekly" && weekCount ? parseInt(weekCount) : undefined,
+        dayCount: billingType === "daily" && dayCount ? parseInt(dayCount) : undefined,
       };
 
       if (isEditing && existingCharge) {
@@ -297,6 +302,25 @@ export default function ChargeFormScreen() {
           </View>
         ) : null}
 
+        {billingType === "daily" ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+              Quantidade de Dias *
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+              ]}
+              placeholder="Ex: 30"
+              placeholderTextColor={theme.tertiaryText}
+              value={dayCount}
+              onChangeText={setDayCount}
+              keyboardType="number-pad"
+            />
+          </View>
+        ) : null}
+
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             Valor (R$) *
@@ -428,6 +452,15 @@ export default function ChargeFormScreen() {
                         ? `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ${weeks}x R$ ${parcelaSemanal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe as semanas`;
                     }
+                    if (billingType === "daily") {
+                      const days = parseInt(dayCount) || 0;
+                      const jurosDiario = jurosTotal;
+                      const parcelaDiaria = days > 0 ? amtVal / days : 0;
+                      const valorDia = parcelaDiaria + jurosDiario;
+                      return days > 0
+                        ? `Juros/dia: R$ ${jurosDiario.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Dia: R$ ${valorDia.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `Juros/dia: R$ ${jurosDiario.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe os dias`;
+                    }
                     return `R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                   })()
                 : "Preencha o valor e a porcentagem"}
@@ -475,6 +508,64 @@ export default function ChargeFormScreen() {
           </View>
         ) : null}
 
+        {billingType === "daily" && amount && loanPercentage && dayCount ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText, fontWeight: "700" }]}>
+              Resumo Diário
+            </ThemedText>
+            <View
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.primaryAccent, borderWidth: 2, justifyContent: "center", paddingVertical: Spacing.md },
+              ]}
+            >
+              {(() => {
+                const amtVal = parseFloat(amount.replace(",", "."));
+                const pctVal = parseFloat(loanPercentage.replace(",", "."));
+                const days = parseInt(dayCount) || 0;
+                if (isNaN(amtVal) || isNaN(pctVal) || days <= 0) return null;
+                const parcelaDiaria = amtVal / days;
+                const jurosDiario = (amtVal * pctVal) / 100;
+                const valorDiaSemAtraso = parcelaDiaria + jurosDiario;
+
+                const parsedDueDate = parseDate(dueDate);
+                const today = new Date();
+                const daysOverdue = parsedDueDate ? Math.max(0, Math.floor((today.getTime() - parsedDueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+                const dailyRateNum = parseFloat(dailyDelayRate.replace(",", ".")) || 0;
+                const taxaAtrasoTotal = daysOverdue > 0 ? dailyRateNum * daysOverdue : 0;
+                const valorDiaComAtraso = valorDiaSemAtraso + taxaAtrasoTotal;
+
+                return (
+                  <View>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Capital: R$ ${amtVal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Parcela diária: R$ ${parcelaDiaria.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Juros diário (${pctVal}%): R$ ${jurosDiario.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    {daysOverdue > 0 ? (
+                      <ThemedText style={{ fontSize: 14, marginBottom: 4, color: "#FF6B6B" }}>
+                        {`Taxa atraso (${daysOverdue} dias): R$ ${taxaAtrasoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      </ThemedText>
+                    ) : null}
+                    <ThemedText style={{ fontSize: 16, fontWeight: "700", color: theme.primaryAccent, marginTop: 4 }}>
+                      {daysOverdue > 0
+                        ? `Valor do dia: R$ ${valorDiaComAtraso.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `Valor do dia: R$ ${valorDiaSemAtraso.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 12, marginTop: 4, color: theme.secondaryText }}>
+                      {`${days} dias de R$ ${valorDiaSemAtraso.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                  </View>
+                );
+              })()}
+            </View>
+          </View>
+        ) : null}
+
         {(() => {
           const parsedDate = parseDate(dueDate);
           if (!parsedDate) return null;
@@ -508,7 +599,7 @@ export default function ChargeFormScreen() {
         })()}
 
         {(() => {
-          if (billingType === "weekly") return null;
+          if (billingType === "weekly" || billingType === "daily") return null;
 
           const amountNum = parseFloat(amount.replace(",", "."));
           const loanPercentageNum = parseFloat(loanPercentage.replace(",", "."));
