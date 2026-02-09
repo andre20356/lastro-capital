@@ -13,7 +13,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme();
+  const systemColorScheme = useColorScheme() ?? null;
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
   const [isReady, setIsReady] = useState(false);
 

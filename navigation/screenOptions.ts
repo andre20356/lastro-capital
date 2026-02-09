@@ -20,7 +20,7 @@ export function getCommonScreenOptions({
     },
     headerTintColor: theme.text,
     headerShadowVisible: false,
-    headerBackTitleVisible: false,
+    headerBackVisible: true,
     contentStyle: {
       backgroundColor: theme.backgroundRoot,
     },

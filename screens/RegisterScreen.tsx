@@ -51,7 +51,7 @@ export default function RegisterScreen({ navigation }: any) {
             style={styles.backButton}
             onPress={() => navigation?.navigate("Login")}
           >
-            <Feather name="arrow-left" size={24} color={Colors.light.tint} />
+            <Feather name="arrow-left" size={24} color={Colors.light.primaryAccent} />
           </Pressable>
 
           <View style={styles.logoContainer}>
@@ -68,7 +68,7 @@ export default function RegisterScreen({ navigation }: any) {
         <View style={styles.formContainer}>
           <View style={styles.inputGroup}>
             <View style={styles.inputLabel}>
-              <Feather name="mail" size={16} color={Colors.light.tint} />
+              <Feather name="mail" size={16} color={Colors.light.primaryAccent} />
               <ThemedText style={styles.label}>Email</ThemedText>
             </View>
             <TextInput
@@ -84,7 +84,7 @@ export default function RegisterScreen({ navigation }: any) {
 
           <View style={styles.inputGroup}>
             <View style={styles.inputLabel}>
-              <Feather name="lock" size={16} color={Colors.light.tint} />
+              <Feather name="lock" size={16} color={Colors.light.primaryAccent} />
               <ThemedText style={styles.label}>Senha</ThemedText>
             </View>
             <View style={styles.passwordContainer}>
@@ -104,7 +104,7 @@ export default function RegisterScreen({ navigation }: any) {
                 <Feather 
                   name={showPassword ? "eye" : "eye-off"} 
                   size={18} 
-                  color={Colors.light.tint} 
+                  color={Colors.light.primaryAccent} 
                 />
               </Pressable>
             </View>
@@ -113,7 +113,7 @@ export default function RegisterScreen({ navigation }: any) {
 
           <View style={styles.inputGroup}>
             <View style={styles.inputLabel}>
-              <Feather name="check-circle" size={16} color={Colors.light.tint} />
+              <Feather name="check-circle" size={16} color={Colors.light.primaryAccent} />
               <ThemedText style={styles.label}>Confirmar Senha</ThemedText>
             </View>
             <View style={styles.passwordContainer}>
@@ -133,7 +133,7 @@ export default function RegisterScreen({ navigation }: any) {
                 <Feather 
                   name={showConfirmPassword ? "eye" : "eye-off"} 
                   size={18} 
-                  color={Colors.light.tint} 
+                  color={Colors.light.primaryAccent} 
                 />
               </Pressable>
             </View>
@@ -255,14 +255,14 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   button: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: Colors.light.primaryAccent,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     marginTop: 32,
-    shadowColor: Colors.light.tint,
+    shadowColor: Colors.light.primaryAccent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
