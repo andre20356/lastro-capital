@@ -396,6 +396,11 @@ export default function ChargeDetailScreen() {
                     const totalPagar = charge.amount + jurosTotal;
                     return formatCurrency(totalPagar / charge.weekCount);
                   }
+                  if (charge.billingType === "daily" && charge.dayCount) {
+                    const parcelaDiaria = charge.amount / charge.dayCount;
+                    const jurosDiario = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+                    return formatCurrency(parcelaDiaria + jurosDiario);
+                  }
                   return formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0);
                 })()}
               </ThemedText>
@@ -404,7 +409,9 @@ export default function ChargeDetailScreen() {
           </View>
 
           {(() => {
-            const totalInstallments = charge.weekCount || 0;
+            const isDaily = charge.billingType === "daily";
+            const isWeekly = charge.billingType === "weekly";
+            const totalInstallments = isDaily ? (charge.dayCount || 0) : (charge.weekCount || 0);
             if (totalInstallments <= 0) return null;
 
             const installmentPayments = (payments || []).filter(
@@ -413,16 +420,29 @@ export default function ChargeDetailScreen() {
             const paidInstallments = installmentPayments.length;
             const remainingInstallments = Math.max(0, totalInstallments - paidInstallments);
 
-            const jurosTotal = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
-            const totalPagar = charge.amount + jurosTotal;
-            const parcelaValor = totalPagar / totalInstallments;
+            let parcelaValor = 0;
+            let totalPagar = 0;
+            let summaryText = "";
+
+            if (isDaily) {
+              const parcelaDiaria = charge.amount / totalInstallments;
+              const jurosDiario = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+              parcelaValor = parcelaDiaria + jurosDiario;
+              totalPagar = parcelaValor * totalInstallments;
+              summaryText = `Valor do dia: ${formatCurrency(parcelaValor)} | Total: ${formatCurrency(totalPagar)}`;
+            } else {
+              const jurosTotal = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+              totalPagar = charge.amount + jurosTotal;
+              parcelaValor = totalPagar / totalInstallments;
+              summaryText = `Valor por parcela: ${formatCurrency(parcelaValor)} | Total: ${formatCurrency(totalPagar)}`;
+            }
 
             return (
               <View style={[styles.installmentTracker, { borderColor: theme.primaryAccent }]}>
                 <View style={styles.debtHeader}>
                   <Feather name="layers" size={20} color={theme.primaryAccent} />
                   <ThemedText style={[styles.debtTitle, { color: theme.primaryAccent }]}>
-                    Controle de Parcelas
+                    {isDaily ? "Controle Diário" : "Controle de Parcelas"}
                   </ThemedText>
                 </View>
 
@@ -432,7 +452,7 @@ export default function ChargeDetailScreen() {
                       {totalInstallments}
                     </ThemedText>
                     <ThemedText style={[styles.installmentColLabel, { color: theme.secondaryText }]}>
-                      Acordadas
+                      {isDaily ? "Dias" : "Acordadas"}
                     </ThemedText>
                   </View>
                   <View style={styles.installmentCol}>
@@ -463,7 +483,7 @@ export default function ChargeDetailScreen() {
                 </View>
 
                 <ThemedText style={[styles.installmentSummary, { color: theme.secondaryText }]}>
-                  {`Valor por parcela: ${formatCurrency(parcelaValor)} | Total: ${formatCurrency(totalPagar)}`}
+                  {summaryText}
                 </ThemedText>
               </View>
             );
