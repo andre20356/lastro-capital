@@ -10,7 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
-import { ChargeStatus, BillingType } from "@/types";
+import { ChargeStatus, BillingType, Client } from "@/types";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeForm">;
 type RouteType = RouteProp<RootStackParamList, "ChargeForm">;
@@ -34,7 +34,7 @@ export default function ChargeFormScreen() {
   };
 
   const initialClientId = existingCharge?.clientId || preselectedClientId || "";
-  const initialSelectedClient = clients.find((c) => c.id === initialClientId);
+  const initialSelectedClient = clients.find((c: Client) => c.id === initialClientId);
 
   const [clientId, setClientId] = useState(initialClientId);
   const [amount, setAmount] = useState(existingCharge?.amount.toString() || "");
@@ -48,9 +48,10 @@ export default function ChargeFormScreen() {
   const [loanPercentage, setLoanPercentage] = useState(existingCharge?.loanPercentage?.toString() || "");
   const [dailyDelayRate, setDailyDelayRate] = useState(existingCharge?.dailyDelayRate?.toString() || "");
   const [billingType, setBillingType] = useState<BillingType>(existingCharge?.billingType || initialSelectedClient?.billingType || "monthly");
+  const [weekCount, setWeekCount] = useState(existingCharge?.weekCount?.toString() || initialSelectedClient?.weekCount?.toString() || "");
   const [showClientPicker, setShowClientPicker] = useState(false);
 
-  const selectedClient = clients.find((c) => c.id === clientId);
+  const selectedClient = clients.find((c: Client) => c.id === clientId);
 
   // Auto-fill fields when client is selected
   useEffect(() => {
@@ -82,6 +83,9 @@ export default function ChargeFormScreen() {
       }
       if (selectedClient.billingType) {
         setBillingType(selectedClient.billingType);
+      }
+      if (selectedClient.weekCount) {
+        setWeekCount(selectedClient.weekCount.toString());
       }
     }
   }, [selectedClient, clientId, isEditing]);
@@ -125,6 +129,7 @@ export default function ChargeFormScreen() {
         loanPercentage: loanPercentageNum,
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
         billingType,
+        weekCount: billingType === "weekly" && weekCount ? parseInt(weekCount) : undefined,
       };
 
       if (isEditing && existingCharge) {
@@ -221,7 +226,7 @@ export default function ChargeFormScreen() {
                 </ThemedText>
               ) : (
                 <ScrollView scrollEnabled nestedScrollEnabled>
-                  {clients.map((client) => (
+                  {clients.map((client: Client) => (
                     <Pressable
                       key={client.id}
                       style={[
@@ -272,6 +277,25 @@ export default function ChargeFormScreen() {
             ))}
           </View>
         </View>
+
+        {billingType === "weekly" ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+              Quantidade de Semanas *
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+              ]}
+              placeholder="Ex: 5"
+              placeholderTextColor={theme.tertiaryText}
+              value={weekCount}
+              onChangeText={setWeekCount}
+              keyboardType="number-pad"
+            />
+          </View>
+        ) : null}
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
@@ -382,7 +406,7 @@ export default function ChargeFormScreen() {
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
-            Juros do Mês (R$)
+            {billingType === "monthly" ? "Juros Mensal (R$)" : billingType === "weekly" ? "Juros Semanal (%)" : "Juros Diário (R$)"}
           </ThemedText>
           <View
             style={[
@@ -392,11 +416,64 @@ export default function ChargeFormScreen() {
           >
             <ThemedText style={[{ fontSize: 16 }, amount && loanPercentage ? {} : { color: theme.tertiaryText }]}>
               {amount && loanPercentage
-                ? `R$ ${((parseFloat(amount.replace(",", ".")) * parseFloat(loanPercentage.replace(",", "."))) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                ? (() => {
+                    const amtVal = parseFloat(amount.replace(",", "."));
+                    const pctVal = parseFloat(loanPercentage.replace(",", "."));
+                    const jurosTotal = (amtVal * pctVal) / 100;
+                    if (billingType === "weekly") {
+                      const weeks = parseInt(weekCount) || 0;
+                      const totalPagar = amtVal + jurosTotal;
+                      const parcelaSemanal = weeks > 0 ? totalPagar / weeks : 0;
+                      return weeks > 0
+                        ? `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ${weeks}x R$ ${parcelaSemanal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe as semanas`;
+                    }
+                    return `R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                  })()
                 : "Preencha o valor e a porcentagem"}
             </ThemedText>
           </View>
         </View>
+
+        {billingType === "weekly" && amount && loanPercentage && weekCount ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText, fontWeight: "700" }]}>
+              Resumo Semanal
+            </ThemedText>
+            <View
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.primaryAccent, borderWidth: 2, justifyContent: "center", paddingVertical: Spacing.md },
+              ]}
+            >
+              {(() => {
+                const amtVal = parseFloat(amount.replace(",", "."));
+                const pctVal = parseFloat(loanPercentage.replace(",", "."));
+                const weeks = parseInt(weekCount) || 0;
+                if (isNaN(amtVal) || isNaN(pctVal) || weeks <= 0) return null;
+                const jurosTotal = (amtVal * pctVal) / 100;
+                const totalPagar = amtVal + jurosTotal;
+                const parcelaSemanal = totalPagar / weeks;
+                return (
+                  <View>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Capital: R$ ${amtVal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Juros (${pctVal}%): R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 14, marginBottom: 4 }}>
+                      {`Total a pagar: R$ ${totalPagar.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 16, fontWeight: "700", color: theme.primaryAccent }}>
+                      {`${weeks} semanas de R$ ${parcelaSemanal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </ThemedText>
+                  </View>
+                );
+              })()}
+            </View>
+          </View>
+        ) : null}
 
         {(() => {
           const parsedDate = parseDate(dueDate);
@@ -431,6 +508,8 @@ export default function ChargeFormScreen() {
         })()}
 
         {(() => {
+          if (billingType === "weekly") return null;
+
           const amountNum = parseFloat(amount.replace(",", "."));
           const loanPercentageNum = parseFloat(loanPercentage.replace(",", "."));
           const monthlyInterest = amount && loanPercentage && !isNaN(amountNum) && !isNaN(loanPercentageNum)
