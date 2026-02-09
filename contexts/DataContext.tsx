@@ -147,20 +147,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
       );
 
       if (useFirestore) {
-        const db = getDb();
-        if (!db) return;
+        try {
+          const db = getDb();
+          if (!db) return;
 
-        const batch = writeBatch(db);
-        data.clients.forEach((c) =>
-          batch.set(doc(db, `users/${userId}/clients`, c.id), c)
-        );
-        data.charges.forEach((c) =>
-          batch.set(doc(db, `users/${userId}/charges`, c.id), c)
-        );
-        data.payments.forEach((p) =>
-          batch.set(doc(db, `users/${userId}/payments`, p.id), p)
-        );
-        await batch.commit();
+          const batch = writeBatch(db);
+          data.clients.forEach((c) =>
+            batch.set(doc(db, `users/${userId}/clients`, c.id), c)
+          );
+          data.charges.forEach((c) =>
+            batch.set(doc(db, `users/${userId}/charges`, c.id), c)
+          );
+          data.payments.forEach((p) =>
+            batch.set(doc(db, `users/${userId}/payments`, p.id), p)
+          );
+          await batch.commit();
+        } catch (e) {
+          console.log("Firestore sync failed, data saved locally:", e);
+        }
       }
     },
     [userId, useFirestore]
