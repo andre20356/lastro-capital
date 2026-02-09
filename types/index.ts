@@ -40,6 +40,7 @@ export interface Client {
 
   billingType?: BillingType;    // ✅ MODALIDADE DO EMPRÉSTIMO
   weekCount?: number;           // quantidade de semanas (semanal)
+  dayCount?: number;            // quantidade de dias (diário)
 
   requestDate?: string;
   notes: string;
@@ -76,6 +77,7 @@ export interface Charge {
 
   billingType?: BillingType; // ✅ mensal | semanal | diário
   weekCount?: number;        // quantidade de semanas (semanal)
+  dayCount?: number;         // quantidade de dias (diário)
 }
 
 // =====================
