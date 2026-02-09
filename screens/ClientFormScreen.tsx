@@ -11,6 +11,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
+import { BillingType } from "@/types";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ClientForm">;
 type RouteType = RouteProp<RootStackParamList, "ClientForm">;
@@ -38,6 +39,7 @@ export default function ClientFormScreen() {
   );
   const [documentPhoto, setDocumentPhoto] = useState(existingClient?.documentPhoto || "");
   const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
+  const [billingType, setBillingType] = useState<BillingType>(existingClient?.billingType || "monthly");
   const [notes, setNotes] = useState(existingClient?.notes || "");
 
   const formatPhone = (text: string) => {
@@ -114,6 +116,7 @@ export default function ClientFormScreen() {
         loanPercentage: loanPercentage ? parseFloat(loanPercentage.replace(",", ".")) : undefined,
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
         requestDate: requestDate ? parseDate(requestDate)?.toISOString() : undefined,
+        billingType,
         documentPhoto,
         addressProof,
         notes: notes.trim(),
@@ -261,7 +264,35 @@ export default function ClientFormScreen() {
 
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
-            Juros do Mês (R$)
+            Modalidade de Cobrança
+          </ThemedText>
+          <View style={styles.billingTypeContainer}>
+            {(["monthly", "weekly", "daily"] as BillingType[]).map((type) => (
+              <Pressable
+                key={type}
+                style={[
+                  styles.billingTypeOption,
+                  { borderColor: theme.inputBorder },
+                  billingType === type && { backgroundColor: theme.primaryAccent, borderColor: theme.primaryAccent },
+                ]}
+                onPress={() => setBillingType(type)}
+              >
+                <ThemedText
+                  style={[
+                    styles.billingTypeOptionText,
+                    billingType === type && { color: "#fff", fontWeight: "700" },
+                  ]}
+                >
+                  {type === "monthly" ? "Mensal" : type === "weekly" ? "Semanal" : "Diário"}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+            {billingType === "monthly" ? "Juros Mensal (R$)" : billingType === "weekly" ? "Juros Semanal (R$)" : "Juros Diário (R$)"}
           </ThemedText>
           <View
             style={[
@@ -447,6 +478,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000cc",
     alignItems: "center",
     justifyContent: "center",
+  },
+  billingTypeContainer: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  billingTypeOption: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  billingTypeOptionText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   saveButton: {
     padding: Spacing.lg,
