@@ -261,7 +261,7 @@ export default function ChargeDetailScreen() {
         await refreshData();
       } else if (paymentType === "taxa_atraso") {
         console.log("Pagando 1 parcela de taxa de atraso para:", charge.id, paymentOptions);
-        await payDelayFee(charge.id, paymentOptions);
+        await payDelayFee(charge.id, paymentAmount, paymentOptions);
         console.log("Taxa de atraso paga com sucesso!");
         setPaymentModalVisible(false);
         await new Promise(resolve => setTimeout(resolve, 800));

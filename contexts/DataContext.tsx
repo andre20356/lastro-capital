@@ -489,7 +489,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setPayments(data.payments || []);
     }
     setIsLoading(false);
-  }, [userId, checkOverdue]);
+  }, [userId]);
 
   return (
     <DataContext.Provider
@@ -520,6 +520,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         payMonthlyInterest,
         payDelayFee,
         payPrincipal,
+        markAsPaid: payPrincipal,
         refreshData,
       }}
     >
