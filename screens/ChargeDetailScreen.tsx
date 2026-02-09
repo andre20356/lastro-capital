@@ -390,11 +390,84 @@ export default function ChargeDetailScreen() {
             <View style={{ flex: 1 }}>
               <ThemedText style={styles.amount}>{formatCurrency(charge.amount)}</ThemedText>
               <ThemedText style={[styles.installmentText, { color: theme.secondaryText }]}>
-                Parcela ({charge.billingType === "daily" ? "Diária" : charge.billingType === "weekly" ? "Semanal" : "Mensal"}): {formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0)}
+                Parcela ({charge.billingType === "daily" ? "Diária" : charge.billingType === "weekly" ? "Semanal" : "Mensal"}): {(() => {
+                  if (charge.billingType === "weekly" && charge.weekCount && charge.loanPercentage) {
+                    const jurosTotal = (charge.amount * charge.loanPercentage) / 100;
+                    const totalPagar = charge.amount + jurosTotal;
+                    return formatCurrency(totalPagar / charge.weekCount);
+                  }
+                  return formatCurrency(charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0);
+                })()}
               </ThemedText>
             </View>
             <StatusBadge status={getVisualStatus(charge)} theme={theme} hasDelay={hasInterestDelay} />
           </View>
+
+          {(() => {
+            const totalInstallments = charge.weekCount || 0;
+            if (totalInstallments <= 0) return null;
+
+            const installmentPayments = (payments || []).filter(
+              (p: any) => p.chargeId === charge.id && (p.type === "interest" || p.notes?.toLowerCase().includes("juros"))
+            );
+            const paidInstallments = installmentPayments.length;
+            const remainingInstallments = Math.max(0, totalInstallments - paidInstallments);
+
+            const jurosTotal = charge.loanPercentage ? (charge.amount * charge.loanPercentage) / 100 : 0;
+            const totalPagar = charge.amount + jurosTotal;
+            const parcelaValor = totalPagar / totalInstallments;
+
+            return (
+              <View style={[styles.installmentTracker, { borderColor: theme.primaryAccent }]}>
+                <View style={styles.debtHeader}>
+                  <Feather name="layers" size={20} color={theme.primaryAccent} />
+                  <ThemedText style={[styles.debtTitle, { color: theme.primaryAccent }]}>
+                    Controle de Parcelas
+                  </ThemedText>
+                </View>
+
+                <View style={styles.installmentRow}>
+                  <View style={styles.installmentCol}>
+                    <ThemedText style={[styles.installmentNumber, { color: theme.primaryAccent }]}>
+                      {totalInstallments}
+                    </ThemedText>
+                    <ThemedText style={[styles.installmentColLabel, { color: theme.secondaryText }]}>
+                      Acordadas
+                    </ThemedText>
+                  </View>
+                  <View style={styles.installmentCol}>
+                    <ThemedText style={[styles.installmentNumber, { color: theme.success }]}>
+                      {paidInstallments}
+                    </ThemedText>
+                    <ThemedText style={[styles.installmentColLabel, { color: theme.secondaryText }]}>
+                      Pagas
+                    </ThemedText>
+                  </View>
+                  <View style={styles.installmentCol}>
+                    <ThemedText style={[styles.installmentNumber, { color: remainingInstallments > 0 ? theme.error : theme.success }]}>
+                      {remainingInstallments}
+                    </ThemedText>
+                    <ThemedText style={[styles.installmentColLabel, { color: theme.secondaryText }]}>
+                      Restantes
+                    </ThemedText>
+                  </View>
+                </View>
+
+                <View style={[styles.installmentProgressBar, { backgroundColor: theme.backgroundSecondary }]}>
+                  <View
+                    style={[
+                      styles.installmentProgressFill,
+                      { backgroundColor: theme.success, width: `${(paidInstallments / totalInstallments) * 100}%` },
+                    ]}
+                  />
+                </View>
+
+                <ThemedText style={[styles.installmentSummary, { color: theme.secondaryText }]}>
+                  {`Valor por parcela: ${formatCurrency(parcelaValor)} | Total: ${formatCurrency(totalPagar)}`}
+                </ThemedText>
+              </View>
+            );
+          })()}
 
           <View style={styles.divider} />
 
@@ -851,5 +924,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
+  },
+  installmentTracker: {
+    borderRadius: BorderRadius.sm,
+    borderWidth: 2,
+    padding: Spacing.lg,
+    marginTop: Spacing.lg,
+  },
+  installmentRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: Spacing.md,
+  },
+  installmentCol: {
+    alignItems: "center",
+  },
+  installmentNumber: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  installmentColLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  installmentProgressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: Spacing.sm,
+  },
+  installmentProgressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  installmentSummary: {
+    fontSize: 12,
+    textAlign: "center",
   },
 });
