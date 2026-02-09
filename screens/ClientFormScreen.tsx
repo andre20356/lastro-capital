@@ -41,6 +41,7 @@ export default function ClientFormScreen() {
   const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
   const [billingType, setBillingType] = useState<BillingType>(existingClient?.billingType || "monthly");
   const [weekCount, setWeekCount] = useState(existingClient?.weekCount?.toString() || "");
+  const [dayCount, setDayCount] = useState(existingClient?.dayCount?.toString() || "");
   const [notes, setNotes] = useState(existingClient?.notes || "");
 
   const formatPhone = (text: string) => {
@@ -119,6 +120,7 @@ export default function ClientFormScreen() {
         requestDate: requestDate ? parseDate(requestDate)?.toISOString() : undefined,
         billingType,
         weekCount: billingType === "weekly" && weekCount ? parseInt(weekCount) : undefined,
+        dayCount: billingType === "daily" && dayCount ? parseInt(dayCount) : undefined,
         documentPhoto,
         addressProof,
         notes: notes.trim(),
@@ -311,6 +313,25 @@ export default function ClientFormScreen() {
           </View>
         ) : null}
 
+        {billingType === "daily" ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+              Quantidade de Dias
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+              ]}
+              placeholder="Ex: 30"
+              placeholderTextColor={theme.tertiaryText}
+              value={dayCount}
+              onChangeText={setDayCount}
+              keyboardType="number-pad"
+            />
+          </View>
+        ) : null}
+
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
             {billingType === "monthly" ? "Juros Mensal (R$)" : billingType === "weekly" ? "Juros Semanal (%)" : "Juros Diário (R$)"}
@@ -334,6 +355,15 @@ export default function ClientFormScreen() {
                       return weeks > 0
                         ? `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ${weeks}x R$ ${parcelaSemanal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe as semanas`;
+                    }
+                    if (billingType === "daily") {
+                      const days = parseInt(dayCount) || 0;
+                      const jurosDiario = jurosTotal;
+                      const parcelaDiaria = days > 0 ? amtVal / days : 0;
+                      const valorDia = parcelaDiaria + jurosDiario;
+                      return days > 0
+                        ? `Juros/dia: R$ ${jurosDiario.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Dia: R$ ${valorDia.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `Juros/dia: R$ ${jurosDiario.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe os dias`;
                     }
                     return `R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                   })()
