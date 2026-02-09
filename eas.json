@@ -11,9 +11,7 @@
     },
     "preview": {
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "image": "latest"
+        "buildType": "apk"
       },
       "distribution": "internal",
       "node": "20.18.0",
@@ -23,8 +21,7 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle",
-        "image": "latest"
+        "buildType": "app-bundle"
       },
       "node": "20.18.0",
       "env": {
