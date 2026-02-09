@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -151,7 +151,6 @@ export default function ArchiveClientScreen() {
   );
 }
 
-import { Pressable } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
