@@ -40,6 +40,7 @@ export default function ClientFormScreen() {
   const [documentPhoto, setDocumentPhoto] = useState(existingClient?.documentPhoto || "");
   const [addressProof, setAddressProof] = useState(existingClient?.addressProof || "");
   const [billingType, setBillingType] = useState<BillingType>(existingClient?.billingType || "monthly");
+  const [weekCount, setWeekCount] = useState(existingClient?.weekCount?.toString() || "");
   const [notes, setNotes] = useState(existingClient?.notes || "");
 
   const formatPhone = (text: string) => {
@@ -117,6 +118,7 @@ export default function ClientFormScreen() {
         dailyDelayRate: dailyDelayRate ? parseFloat(dailyDelayRate.replace(",", ".")) : undefined,
         requestDate: requestDate ? parseDate(requestDate)?.toISOString() : undefined,
         billingType,
+        weekCount: billingType === "weekly" && weekCount ? parseInt(weekCount) : undefined,
         documentPhoto,
         addressProof,
         notes: notes.trim(),
@@ -290,9 +292,28 @@ export default function ClientFormScreen() {
           </View>
         </View>
 
+        {billingType === "weekly" ? (
+          <View style={styles.field}>
+            <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
+              Quantidade de Semanas
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.backgroundDefault, borderColor: theme.inputBorder, color: theme.text },
+              ]}
+              placeholder="Ex: 5"
+              placeholderTextColor={theme.tertiaryText}
+              value={weekCount}
+              onChangeText={setWeekCount}
+              keyboardType="number-pad"
+            />
+          </View>
+        ) : null}
+
         <View style={styles.field}>
           <ThemedText style={[styles.label, { color: theme.secondaryText }]}>
-            {billingType === "monthly" ? "Juros Mensal (R$)" : billingType === "weekly" ? "Juros Semanal (R$)" : "Juros Diário (R$)"}
+            {billingType === "monthly" ? "Juros Mensal (R$)" : billingType === "weekly" ? "Juros Semanal (%)" : "Juros Diário (R$)"}
           </ThemedText>
           <View
             style={[
@@ -302,7 +323,20 @@ export default function ClientFormScreen() {
           >
             <ThemedText style={[{ fontSize: 16 }, requestedAmount && loanPercentage ? {} : { color: theme.tertiaryText }]}>
               {requestedAmount && loanPercentage
-                ? `R$ ${((parseFloat(requestedAmount.replace(",", ".")) * parseFloat(loanPercentage.replace(",", "."))) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                ? (() => {
+                    const amtVal = parseFloat(requestedAmount.replace(",", "."));
+                    const pctVal = parseFloat(loanPercentage.replace(",", "."));
+                    const jurosTotal = (amtVal * pctVal) / 100;
+                    if (billingType === "weekly") {
+                      const weeks = parseInt(weekCount) || 0;
+                      const totalPagar = amtVal + jurosTotal;
+                      const parcelaSemanal = weeks > 0 ? totalPagar / weeks : 0;
+                      return weeks > 0
+                        ? `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ${weeks}x R$ ${parcelaSemanal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : `Juros: R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Informe as semanas`;
+                    }
+                    return `R$ ${jurosTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                  })()
                 : "Preencha o valor e a porcentagem"}
             </ThemedText>
           </View>
