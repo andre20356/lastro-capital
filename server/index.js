@@ -28,6 +28,13 @@ let cachedPrices = { pro: null, premium: null };
 let cachedProducts = { pro: null, premium: null };
 
 async function getCredentials() {
+  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY) {
+    return {
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      secretKey: process.env.STRIPE_SECRET_KEY,
+    };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -36,7 +43,7 @@ async function getCredentials() {
       : null;
 
   if (!xReplitToken) {
-    throw new Error('Stripe connector credentials not available');
+    throw new Error('Stripe credentials not available. Set STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY.');
   }
 
   const isProduction = process.env.REPLIT_DEPLOYMENT === '1';
@@ -72,6 +79,7 @@ async function getStripe() {
     const creds = await getCredentials();
     stripeClient = new Stripe(creds.secretKey);
     publishableKey = creds.publishableKey;
+    console.log('Stripe initialized successfully');
   }
   return { stripe: stripeClient, publishableKey };
 }
