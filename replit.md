@@ -142,4 +142,17 @@ Preferred communication style: Simple, everyday language.
 - Android: Adaptive icons, edge-to-edge display, package `com.lastro.capital`
 - Web: Single-page application output
 
+### Stripe Payment Integration
+- **Stripe API Server**: Minimal Express server (`server/index.js`) on port 3001 for Stripe operations
+- **Auto-starts**: Launched automatically via `metro.config.js` when the dev server starts
+- **Routes**:
+  - `GET /api/stripe/config` - Returns Stripe publishable key
+  - `POST /api/stripe/create-checkout` - Creates Stripe Checkout Session
+  - `POST /api/stripe/create-payment-link` - Creates reusable Stripe Payment Link
+  - `GET /api/stripe/health` - Health check endpoint
+- **Credentials**: Uses Replit Stripe connector API for secure credential management
+- **Client Service**: `services/stripeApi.ts` handles API calls from the Expo app
+- **UI**: ChargeDetailScreen has "Cobrar com Stripe" and "Gerar Link de Pagamento" buttons for unpaid charges
+- **Port Mapping**: Internal port 3001 maps to external port 3002
+
 **Note**: The application currently uses AsyncStorage for local persistence. No external database (like PostgreSQL) is configured, but the data structure supports future migration to a backend database system.
