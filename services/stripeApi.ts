@@ -3,11 +3,7 @@ import Constants from "expo-constants";
 
 function getApiBaseUrl(): string {
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `http://${hostname}:3001`;
-    }
-    return `https://${hostname}:3001`;
+    return window.location.origin;
   }
 
   const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
