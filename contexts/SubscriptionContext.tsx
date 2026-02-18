@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSubscriptionStatus, SubscriptionStatus } from "@/services/stripeApi";
+import { getSubscriptionStatus, SubscriptionStatus, PlanType } from "@/services/stripeApi";
 
 const SUBSCRIPTION_KEY = "@lastro_capital_subscription";
 
 interface SubscriptionContextType {
   isLoading: boolean;
   isActive: boolean;
+  currentPlan: PlanType | null;
   subscriptionData: SubscriptionStatus | null;
   checkSubscription: () => Promise<void>;
   clearSubscription: () => Promise<void>;
@@ -24,6 +25,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     subscriptionData.status === "active" ||
     subscriptionData.status === "trialing"
   );
+
+  const currentPlan = subscriptionData?.currentPlan || null;
 
   const checkSubscription = useCallback(async () => {
     if (!user?.email) {
@@ -65,7 +68,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [isSignedIn, user?.email, checkSubscription]);
 
   return (
-    <SubscriptionContext.Provider value={{ isLoading, isActive, subscriptionData, checkSubscription, clearSubscription }}>
+    <SubscriptionContext.Provider value={{ isLoading, isActive, currentPlan, subscriptionData, checkSubscription, clearSubscription }}>
       {children}
     </SubscriptionContext.Provider>
   );

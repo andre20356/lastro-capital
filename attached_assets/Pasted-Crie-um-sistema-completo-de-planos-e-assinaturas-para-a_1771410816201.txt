@@ -1,0 +1,104 @@
+Crie um sistema completo de planos e assinaturas para a plataforma Lastro Capital.
+
+PLANOS DISPONÍVEIS:
+
+1) COMEÇAR GRÁTIS
+- 7 dias de teste grátis
+- Após 7 dias o usuário deve escolher um plano pago
+- Durante o trial tem acesso total ao sistema
+
+2) PLANO PRO
+- R$ 49,90 por mês
+- Acesso completo ao sistema
+- Suporte padrão
+
+3) PLANO PREMIUM
+- R$ 99,90 por mês
+- Acesso completo
+- Recursos avançados exclusivos
+- Suporte prioritário
+
+INTEGRAÇÃO COM STRIPE:
+
+- Criar produtos e preços recorrentes mensais
+- Criar assinatura com 7 dias de trial quando o usuário escolher começar grátis
+- Criar checkout session para cada plano
+- Implementar Webhook para:
+   - checkout.session.completed
+   - invoice.paid
+   - invoice.payment_failed
+   - customer.subscription.deleted
+
+REGRAS DE NEGÓCIO:
+
+- Usuário pode usar sistema normalmente durante 7 dias (status trialing)
+- Após 7 dias:
+   - Se não contratar plano pago → bloquear acesso
+- Se assinatura ativa → acesso liberado
+- Se pagamento falhar → bloquear acesso
+- Se cancelar assinatura → acesso até final do período pago
+
+STATUS QUE LIBERAM ACESSO:
+- active
+- trialing
+
+STATUS QUE BLOQUEIAM:
+- past_due
+- canceled
+- unpaid
+
+BANCO DE DADOS (adicionar no model User):
+
+- stripeCustomerId
+- stripeSubscriptionId
+- subscriptionStatus
+- currentPlan (free, pro, premium)
+- trialEndsAt
+
+CRIAR PÁGINA DE ASSINATURA MODERNA CONTENDO:
+
+- Título: "Escolha seu Plano"
+- 3 Cards de plano:
+
+CARD 1 – Comece Grátis
+- Texto: 7 dias grátis
+- Botão: Começar Agora
+
+CARD 2 – Plano Pro
+- Preço: R$ 49,90/mês
+- Lista de benefícios
+- Botão: Assinar Plano Pro
+
+CARD 3 – Plano Premium
+- Preço: R$ 99,90/mês
+- Lista de benefícios avançados
+- Botão: Assinar Plano Premium
+
+LAYOUT:
+- Design moderno
+- Responsivo
+- Call to action forte
+- Destaque visual no plano Premium
+
+PROTEGER ROTAS:
+
+Criar middleware que:
+- Verifique subscriptionStatus
+- Redirecione para página de planos se bloqueado
+
+SEGURANÇA:
+
+- Usar variáveis de ambiente:
+   STRIPE_SECRET_KEY
+   STRIPE_WEBHOOK_SECRET
+   STRIPE_PRICE_PRO
+   STRIPE_PRICE_PREMIUM
+- Nunca expor chave secreta no frontend
+- Validar assinatura do webhook
+
+TECNOLOGIA:
+
+- Node.js
+- Express
+- Stripe SDK oficial
+- Frontend em HTML/CSS moderno ou React

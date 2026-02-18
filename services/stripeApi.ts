@@ -38,6 +38,8 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+export type PlanType = "free" | "pro" | "premium";
+
 export async function getStripeConfig(): Promise<{ publishableKey: string }> {
   return apiRequest("/api/stripe/config");
 }
@@ -72,6 +74,7 @@ export async function createPaymentLink(params: {
 export async function createSubscriptionCheckout(params: {
   email: string;
   userId?: string;
+  plan: PlanType;
 }): Promise<{ url: string; sessionId: string }> {
   return apiRequest("/api/stripe/create-subscription-checkout", {
     method: "POST",
@@ -82,6 +85,7 @@ export async function createSubscriptionCheckout(params: {
 export interface SubscriptionStatus {
   hasSubscription: boolean;
   status: string | null;
+  currentPlan: PlanType | null;
   customerId: string | null;
   subscriptionId: string | null;
   trialEnd: string | null;

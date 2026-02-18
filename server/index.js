@@ -24,8 +24,8 @@ app.use((req, res, next) => {
 
 let stripeClient = null;
 let publishableKey = null;
-let cachedPriceId = null;
-let cachedProductId = null;
+let cachedPrices = { pro: null, premium: null };
+let cachedProducts = { pro: null, premium: null };
 
 async function getCredentials() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
@@ -76,36 +76,54 @@ async function getStripe() {
   return { stripe: stripeClient, publishableKey };
 }
 
-async function getOrCreateSubscriptionPrice() {
-  if (cachedPriceId) return cachedPriceId;
+const PLANS = {
+  pro: {
+    name: 'Plano Pro - Lastro Capital',
+    description: 'Acesso completo ao sistema com suporte padrao',
+    amount: 4990,
+    metadataType: 'lastro_pro_subscription',
+  },
+  premium: {
+    name: 'Plano Premium - Lastro Capital',
+    description: 'Acesso completo com recursos avancados e suporte prioritario',
+    amount: 9990,
+    metadataType: 'lastro_premium_subscription',
+  },
+};
+
+async function getOrCreatePlanPrice(planKey) {
+  if (cachedPrices[planKey]) return cachedPrices[planKey];
+
+  const plan = PLANS[planKey];
+  if (!plan) throw new Error(`Invalid plan: ${planKey}`);
 
   const { stripe } = await getStripe();
 
   const products = await stripe.products.list({ limit: 100 });
-  let product = products.data.find(p => p.metadata?.type === 'lastro_premium_subscription');
+  let product = products.data.find(p => p.metadata?.type === plan.metadataType);
 
   if (!product) {
     product = await stripe.products.create({
-      name: 'Plano Premium - Lastro Capital',
-      description: 'Acesso completo a todas as funcionalidades da plataforma Lastro Capital',
-      metadata: { type: 'lastro_premium_subscription' },
+      name: plan.name,
+      description: plan.description,
+      metadata: { type: plan.metadataType },
     });
   }
-  cachedProductId = product.id;
+  cachedProducts[planKey] = product.id;
 
   const prices = await stripe.prices.list({ product: product.id, active: true, limit: 10 });
-  let price = prices.data.find(p => p.unit_amount === 9700 && p.recurring?.interval === 'month' && p.currency === 'brl');
+  let price = prices.data.find(p => p.unit_amount === plan.amount && p.recurring?.interval === 'month' && p.currency === 'brl');
 
   if (!price) {
     price = await stripe.prices.create({
       product: product.id,
-      unit_amount: 9700,
+      unit_amount: plan.amount,
       currency: 'brl',
       recurring: { interval: 'month' },
     });
   }
-  cachedPriceId = price.id;
-  return cachedPriceId;
+  cachedPrices[planKey] = price.id;
+  return cachedPrices[planKey];
 }
 
 app.get('/api/stripe/config', async (req, res) => {
@@ -196,28 +214,51 @@ app.post('/api/stripe/create-payment-link', async (req, res) => {
 
 app.post('/api/stripe/create-subscription-checkout', async (req, res) => {
   try {
-    const { email, userId } = req.body;
+    const { email, userId, plan } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    const validPlans = ['free', 'pro', 'premium'];
+    const selectedPlan = validPlans.includes(plan) ? plan : 'free';
+
     const { stripe } = await getStripe();
-    const priceId = await getOrCreateSubscriptionPrice();
     const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}`;
+
+    if (selectedPlan === 'free') {
+      const proPriceId = await getOrCreatePlanPrice('pro');
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: proPriceId, quantity: 1 }],
+        mode: 'subscription',
+        subscription_data: {
+          trial_period_days: 7,
+          metadata: { userId: userId || '', source: 'lastro_capital', plan: 'free_trial' },
+        },
+        customer_email: email,
+        success_url: `${baseUrl}?subscription=success`,
+        cancel_url: `${baseUrl}?subscription=cancelled`,
+        metadata: { userId: userId || '', source: 'lastro_capital', plan: 'free_trial' },
+      });
+
+      return res.json({ url: session.url, sessionId: session.id });
+    }
+
+    const priceId = await getOrCreatePlanPrice(selectedPlan);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       subscription_data: {
-        trial_period_days: 7,
-        metadata: { userId: userId || '', source: 'lastro_capital' },
+        metadata: { userId: userId || '', source: 'lastro_capital', plan: selectedPlan },
       },
       customer_email: email,
       success_url: `${baseUrl}?subscription=success`,
       cancel_url: `${baseUrl}?subscription=cancelled`,
-      metadata: { userId: userId || '', source: 'lastro_capital' },
+      metadata: { userId: userId || '', source: 'lastro_capital', plan: selectedPlan },
     });
 
     res.json({ url: session.url, sessionId: session.id });
@@ -242,6 +283,7 @@ app.post('/api/stripe/subscription-status', async (req, res) => {
       return res.json({
         hasSubscription: false,
         status: null,
+        currentPlan: null,
         customerId: null,
         subscriptionId: null,
         trialEnd: null,
@@ -252,14 +294,18 @@ app.post('/api/stripe/subscription-status', async (req, res) => {
     const customer = customers.data[0];
     const subscriptions = await stripe.subscriptions.list({
       customer: customer.id,
-      limit: 1,
+      limit: 5,
       status: 'all',
     });
 
-    if (subscriptions.data.length === 0) {
+    const activeSub = subscriptions.data.find(s => ['active', 'trialing'].includes(s.status))
+      || subscriptions.data[0];
+
+    if (!activeSub) {
       return res.json({
         hasSubscription: false,
         status: null,
+        currentPlan: null,
         customerId: customer.id,
         subscriptionId: null,
         trialEnd: null,
@@ -267,16 +313,27 @@ app.post('/api/stripe/subscription-status', async (req, res) => {
       });
     }
 
-    const sub = subscriptions.data[0];
+    let currentPlan = activeSub.metadata?.plan || null;
+    if (!currentPlan) {
+      const priceAmount = activeSub.items?.data?.[0]?.price?.unit_amount;
+      if (priceAmount === 4990) currentPlan = 'pro';
+      else if (priceAmount === 9990) currentPlan = 'premium';
+      else currentPlan = 'pro';
+    }
+    if (currentPlan === 'free_trial') {
+      currentPlan = activeSub.status === 'trialing' ? 'free' : 'pro';
+    }
+
     res.json({
       hasSubscription: true,
-      status: sub.status,
+      status: activeSub.status,
+      currentPlan,
       customerId: customer.id,
-      subscriptionId: sub.id,
-      trialEnd: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-      currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-      cancelAtPeriodEnd: sub.cancel_at_period_end,
-      cancelAt: sub.cancel_at ? new Date(sub.cancel_at * 1000).toISOString() : null,
+      subscriptionId: activeSub.id,
+      trialEnd: activeSub.trial_end ? new Date(activeSub.trial_end * 1000).toISOString() : null,
+      currentPeriodEnd: activeSub.current_period_end ? new Date(activeSub.current_period_end * 1000).toISOString() : null,
+      cancelAtPeriodEnd: activeSub.cancel_at_period_end,
+      cancelAt: activeSub.cancel_at ? new Date(activeSub.cancel_at * 1000).toISOString() : null,
     });
   } catch (error) {
     console.error('Error getting subscription status:', error.message);
@@ -331,21 +388,31 @@ app.post('/api/stripe/webhook', async (req, res) => {
     console.log(`Webhook event received: ${event.type}`);
 
     switch (event.type) {
-      case 'checkout.session.completed':
-        console.log('Checkout session completed:', event.data.object.id);
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        console.log('Checkout completed:', session.id, 'Plan:', session.metadata?.plan);
         break;
-      case 'invoice.paid':
-        console.log('Invoice paid:', event.data.object.id);
+      }
+      case 'invoice.paid': {
+        const invoice = event.data.object;
+        console.log('Invoice paid:', invoice.id, 'Subscription:', invoice.subscription);
         break;
-      case 'invoice.payment_failed':
-        console.log('Invoice payment failed:', event.data.object.id);
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        console.log('Payment failed:', invoice.id, 'Subscription:', invoice.subscription);
         break;
-      case 'customer.subscription.deleted':
-        console.log('Subscription deleted:', event.data.object.id);
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        console.log('Subscription deleted:', sub.id, 'Customer:', sub.customer);
         break;
-      case 'customer.subscription.updated':
-        console.log('Subscription updated:', event.data.object.id);
+      }
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        console.log('Subscription updated:', sub.id, 'Status:', sub.status);
         break;
+      }
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
