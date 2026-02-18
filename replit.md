@@ -150,9 +150,22 @@ Preferred communication style: Simple, everyday language.
   - `POST /api/stripe/create-checkout` - Creates Stripe Checkout Session
   - `POST /api/stripe/create-payment-link` - Creates reusable Stripe Payment Link
   - `GET /api/stripe/health` - Health check endpoint
+  - `POST /api/stripe/subscription/create-checkout` - Creates subscription checkout with 7-day trial
+  - `GET /api/stripe/subscription/status?userId=X` - Checks subscription status from Stripe
+  - `POST /api/stripe/subscription/cancel` - Cancels a subscription at period end
+  - `POST /api/stripe/webhook` - Handles Stripe webhook events
 - **Credentials**: Uses Replit Stripe connector API for secure credential management
 - **Client Service**: `services/stripeApi.ts` handles API calls from the Expo app
 - **UI**: ChargeDetailScreen has "Cobrar com Stripe" and "Gerar Link de Pagamento" buttons for unpaid charges
 - **Port Mapping**: Internal port 3001 maps to external port 3002
+
+### Subscription System
+- **Plan**: Premium - R$97/month with 7-day free trial
+- **SubscriptionContext** (`contexts/SubscriptionContext.tsx`): Manages subscription state, checks Stripe API on load, caches to AsyncStorage
+- **SubscriptionScreen** (`screens/SubscriptionScreen.tsx`): Paywall/management screen showing plan details, benefits, CTA for trial, and cancel/status options
+- **SubscriptionGate** (in `App.tsx`): Wraps MainStackNavigator; blocks access to app if no active subscription
+- **Flow**: Login → SubscriptionGate checks status → If no active subscription, shows SubscriptionScreen paywall → After subscribing via Stripe Checkout, user can refresh status → Active subscription grants access to full app
+- **Profile Integration**: "Minha Assinatura" menu item in ProfileScreen navigates to SubscriptionManagement screen for managing subscription
+- **Auto-created Product/Price**: Server auto-creates Stripe product and price on first subscription request
 
 **Note**: The application currently uses AsyncStorage for local persistence. No external database (like PostgreSQL) is configured, but the data structure supports future migration to a backend database system.
