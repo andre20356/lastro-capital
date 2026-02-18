@@ -69,6 +69,45 @@ export async function createPaymentLink(params: {
   });
 }
 
+export async function createSubscriptionCheckout(params: {
+  email: string;
+  userId?: string;
+}): Promise<{ url: string; sessionId: string }> {
+  return apiRequest("/api/stripe/create-subscription-checkout", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export interface SubscriptionStatus {
+  hasSubscription: boolean;
+  status: string | null;
+  customerId: string | null;
+  subscriptionId: string | null;
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd?: boolean;
+  cancelAt?: string | null;
+}
+
+export async function getSubscriptionStatus(email: string): Promise<SubscriptionStatus> {
+  return apiRequest("/api/stripe/subscription-status", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function cancelSubscription(subscriptionId: string): Promise<{
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string;
+}> {
+  return apiRequest("/api/stripe/cancel-subscription", {
+    method: "POST",
+    body: JSON.stringify({ subscriptionId }),
+  });
+}
+
 export async function checkStripeHealth(): Promise<boolean> {
   try {
     await apiRequest("/api/stripe/health");

@@ -25,6 +25,7 @@ import CashReportScreen from "@/screens/CashReportScreen";
 import ArchiveClientScreen from "@/screens/ArchiveClientScreen";
 import PendingRequestsScreen from "@/screens/PendingRequestsScreen";
 import LoanRequestScreen from "@/screens/LoanRequestScreen";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
 
 export type RootStackParamList = {
   MainTabs: { screen?: keyof MainTabParamList } | undefined;
@@ -39,6 +40,7 @@ export type RootStackParamList = {
   ArchiveClient: { clientId: string };
   PendingRequests: undefined;
   LoanRequest: undefined;
+  SubscriptionManagement: undefined;
 };
 
 export type MainTabParamList = {
@@ -260,6 +262,14 @@ export default function MainStackNavigator() {
         component={LoanRequestScreen}
         options={{
           title: "Solicitar Emprestimo",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <Stack.Screen
+        name="SubscriptionManagement"
+        component={SubscriptionScreen}
+        options={{
+          title: "Minha Assinatura",
           headerBackTitle: "Voltar",
         }}
       />

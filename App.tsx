@@ -13,8 +13,24 @@ import { PublicNavigator } from "@/navigation/PublicNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DataProvider } from "@/contexts/DataContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
+
+function SubscriptionGate({ children }: { children: React.ReactNode }) {
+  const { isLoading, isActive } = useSubscription();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isActive) {
+    return <SubscriptionScreen />;
+  }
+
+  return <>{children}</>;
+}
 
 function RootNavigator() {
   const { isLoading, isSignedIn } = useAuth();
@@ -49,7 +65,15 @@ function RootNavigator() {
     return <PublicNavigator />;
   }
 
-  return isSignedIn ? <MainStackNavigator /> : <AuthNavigator />;
+  if (!isSignedIn) {
+    return <AuthNavigator />;
+  }
+
+  return (
+    <SubscriptionGate>
+      <MainStackNavigator />
+    </SubscriptionGate>
+  );
 }
 
 export default function App() {
@@ -61,12 +85,14 @@ export default function App() {
             <GestureHandlerRootView style={styles.root}>
               <KeyboardProvider>
                 <AuthProvider>
-                  <DataProvider>
-                    <NavigationContainer>
-                      <RootNavigator />
-                    </NavigationContainer>
-                    <StatusBar style="dark" />
-                  </DataProvider>
+                  <SubscriptionProvider>
+                    <DataProvider>
+                      <NavigationContainer>
+                        <RootNavigator />
+                      </NavigationContainer>
+                      <StatusBar style="dark" />
+                    </DataProvider>
+                  </SubscriptionProvider>
                 </AuthProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>

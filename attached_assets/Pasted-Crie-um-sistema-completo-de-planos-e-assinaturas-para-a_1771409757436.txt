@@ -1,0 +1,89 @@
+Crie um sistema completo de planos e assinaturas para a plataforma Lastro Capital.
+
+REQUISITOS:
+
+1) PLANO
+- Nome: Plano Premium
+- 7 dias de teste grátis (trial)
+- Após 7 dias cobrar automaticamente R$ 97,00 por mês
+- Pagamento via Stripe
+
+2) FUNCIONALIDADES NECESSÁRIAS
+
+- Integração completa com Stripe
+- Criar produto e preço recorrente mensal
+- Criar assinatura com trial de 7 dias
+- Webhook para escutar eventos:
+  - checkout.session.completed
+  - invoice.paid
+  - invoice.payment_failed
+  - customer.subscription.deleted
+
+3) REGRAS DE NEGÓCIO
+
+- Usuário pode acessar o sistema normalmente durante os 7 dias grátis
+- Após 7 dias:
+   - Se pagamento aprovado → manter acesso
+   - Se pagamento falhar → bloquear acesso
+- Se cancelar assinatura → acesso permanece até fim do período pago
+- Se assinatura estiver:
+   - active → acesso liberado
+   - trialing → acesso liberado
+   - past_due ou canceled → acesso bloqueado
+
+4) BANCO DE DADOS
+
+Adicionar no modelo de usuário:
+
+- stripeCustomerId
+- stripeSubscriptionId
+- subscriptionStatus
+- trialEndsAt
+
+5) PÁGINA DE ASSINATURA
+
+Criar página moderna e profissional contendo:
+
+- Nome do plano
+- Benefícios do plano
+- Aviso claro: "7 dias grátis, depois R$ 97/mês"
+- Botão: "Começar Teste Grátis"
+- Botão deve criar sessão de checkout Stripe
+
+6) PROTEÇÃO DE ROTAS
+
+Criar middleware que:
+- Verifique status da assinatura
+- Bloqueie acesso se não estiver ativa ou em trial
+- Redirecione para página de assinatura
+
+7) CANCELAMENTO
+
+Criar botão:
+- "Cancelar Assinatura"
+- Cancelamento via API Stripe
+- Mostrar data final de acesso
+
+8) TECNOLOGIA
+
+Usar:
+- Node.js
+- Express
+- Stripe SDK oficial
+- Variáveis de ambiente:
+   STRIPE_SECRET_KEY
+   STRIPE_WEBHOOK_SECRET
+   STRIPE_PRICE_ID
+
+9) FRONTEND
+
+Página responsiva e profissional
+Estilo moderno
+Layout clean
+Call to action claro
+Informar que não há cobrança durante os 7 dias
+
+10) SEGURANÇA
+
+- Nunca expor STRIPE_SECRET_KEY no frontend
+- Validar webhook com assinatura Stripe

@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/hooks/useLanguage";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Feather } from "@expo/vector-icons";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
   const { themeMode, setThemeMode } = useThemeContext();
   const { language, setLanguage, t } = useLanguage();
   const { signOut, user } = useAuth();
+  const { subscriptionData, isActive } = useSubscription();
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -348,6 +350,37 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
+            ASSINATURA
+          </ThemedText>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: theme.backgroundSecondary, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={() => navigation.navigate("SubscriptionManagement")}
+          >
+            <Feather name="credit-card" size={20} color="#635BFF" />
+            <View style={styles.menuContent}>
+              <ThemedText style={styles.menuLabel}>Minha Assinatura</ThemedText>
+              <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
+                {isActive
+                  ? subscriptionData?.status === "trialing"
+                    ? "Plano Premium - Periodo de Teste"
+                    : "Plano Premium - Ativo"
+                  : "Gerenciar assinatura"}
+              </ThemedText>
+            </View>
+            <View style={[styles.subscriptionBadge, { backgroundColor: isActive ? "#10b981" + "20" : "#ef4444" + "20" }]}>
+              <ThemedText style={[styles.subscriptionBadgeText, { color: isActive ? "#10b981" : "#ef4444" }]}>
+                {isActive ? "Ativo" : "Inativo"}
+              </ThemedText>
+            </View>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.secondaryText }]}>
             CAPTACAO DE CLIENTES
           </ThemedText>
 
@@ -624,6 +657,15 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "600",
+  },
+  subscriptionBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.xs,
+  },
+  subscriptionBadgeText: {
+    fontSize: 11,
     fontWeight: "600",
   },
 });
