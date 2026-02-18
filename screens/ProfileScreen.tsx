@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   const { themeMode, setThemeMode } = useThemeContext();
   const { language, setLanguage, t } = useLanguage();
   const { signOut, user } = useAuth();
-  const { subscriptionData, isActive } = useSubscription();
+  const { subscriptionData, isActive, currentPlan } = useSubscription();
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -366,8 +366,8 @@ export default function ProfileScreen() {
               <ThemedText style={[styles.menuDescription, { color: theme.tertiaryText }]}>
                 {isActive
                   ? subscriptionData?.status === "trialing"
-                    ? "Plano Premium - Periodo de Teste"
-                    : "Plano Premium - Ativo"
+                    ? `Plano ${currentPlan === "premium" ? "Premium" : "Pro"} - Periodo de Teste`
+                    : `Plano ${currentPlan === "premium" ? "Premium" : "Pro"} - Ativo`
                   : "Gerenciar assinatura"}
               </ThemedText>
             </View>
