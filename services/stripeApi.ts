@@ -1,17 +1,27 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 function getApiBaseUrl(): string {
-  if (Platform.OS === "web") {
-    const currentHost = window.location.hostname;
-    return `https://${currentHost}:3001`;
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `http://${hostname}:3001`;
+    }
+    return `https://${hostname}:3001`;
   }
+
+  const debuggerHost = Constants.expoConfig?.hostUri || (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+  if (debuggerHost) {
+    const host = debuggerHost.split(":")[0];
+    return `http://${host}:3001`;
+  }
+
   return "http://localhost:3001";
 }
 
-const API_BASE = getApiBaseUrl();
-
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
   const response = await fetch(url, {
     ...options,
     headers: {

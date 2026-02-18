@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { StyleSheet, View, Pressable, Alert } from "react-native";
+import { StyleSheet, View, Pressable, Alert, ActivityIndicator, Share, Platform } from "react-native";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import * as Clipboard from "expo-clipboard";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -13,6 +16,7 @@ import { useData } from "@/contexts/DataContext";
 import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { ChargeStatus, Charge, PaymentMethod } from "@/types";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
+import { createCheckoutSession, createPaymentLink } from "@/services/stripeApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeDetail">;
@@ -68,6 +72,8 @@ export default function ChargeDetailScreen() {
   const [paymentType, setPaymentType] = useState<PaymentType>("juros");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isStripeLoading, setIsStripeLoading] = useState(false);
+  const [isStripeShareLoading, setIsStripeShareLoading] = useState(false);
 
   // Função para calcular o status visual dinâmico
   const getVisualStatus = useCallback((charge: Charge): ChargeStatus => {
@@ -337,6 +343,64 @@ export default function ChargeDetailScreen() {
         `O WhatsApp foi aberto com a mensagem de cobranca para ${client.name}. Envie a mensagem para concluir.`,
         [{ text: "OK" }]
       );
+    }
+  };
+
+  const handleStripeCheckout = async () => {
+    if (!charge || !client) return;
+    setIsStripeLoading(true);
+    try {
+      const totalAmount = calculations.totalDebt > 0 ? calculations.totalDebt : charge.amount;
+      const result = await createCheckoutSession({
+        amount: totalAmount,
+        clientName: client.name,
+        clientEmail: client.email || undefined,
+        chargeDescription: charge.description || `Cobranca - ${client.name}`,
+        chargeId: charge.id,
+        currency: "brl",
+      });
+      if (result.url) {
+        if (Platform.OS === "web") {
+          Linking.openURL(result.url);
+        } else {
+          await WebBrowser.openBrowserAsync(result.url);
+        }
+      }
+    } catch (error: any) {
+      Alert.alert("Erro", "Nao foi possivel abrir o pagamento Stripe. Verifique se o servidor Stripe esta ativo.");
+    } finally {
+      setIsStripeLoading(false);
+    }
+  };
+
+  const handleStripePaymentLink = async () => {
+    if (!charge || !client) return;
+    setIsStripeShareLoading(true);
+    try {
+      const totalAmount = calculations.totalDebt > 0 ? calculations.totalDebt : charge.amount;
+      const result = await createPaymentLink({
+        amount: totalAmount,
+        clientName: client.name,
+        chargeDescription: charge.description || `Cobranca - ${client.name}`,
+        chargeId: charge.id,
+        currency: "brl",
+      });
+      if (result.url) {
+        const message = `Ola ${client.name}, segue o link para pagamento:\n\n${result.url}\n\nValor: ${formatCurrency(totalAmount)}`;
+        if (Platform.OS === "web") {
+          await Clipboard.setStringAsync(result.url);
+          Alert.alert("Link Copiado", `Link de pagamento copiado!\n\n${result.url}`);
+        } else {
+          await Share.share({
+            message,
+            title: "Link de Pagamento - Lastro Capital",
+          });
+        }
+      }
+    } catch (error: any) {
+      Alert.alert("Erro", "Nao foi possivel gerar o link de pagamento. Verifique se o servidor Stripe esta ativo.");
+    } finally {
+      setIsStripeShareLoading(false);
     }
   };
 
@@ -736,6 +800,51 @@ export default function ChargeDetailScreen() {
           </Pressable>
         ) : null}
 
+        {charge.status !== "paid" ? (
+          <View style={[styles.stripeSection, { borderColor: theme.cardBorder }]}>
+            <View style={styles.stripeSectionHeader}>
+              <Feather name="credit-card" size={18} color="#635BFF" />
+              <ThemedText style={[styles.stripeSectionTitle, { color: theme.primaryText }]}>
+                Pagamento via Stripe
+              </ThemedText>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.stripeButton,
+                { opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={handleStripeCheckout}
+              disabled={isStripeLoading}
+            >
+              {isStripeLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Feather name="external-link" size={18} color="#fff" />
+              )}
+              <ThemedText style={styles.stripeButtonText}>
+                {isStripeLoading ? "Abrindo..." : "Cobrar com Stripe"}
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.stripeShareButton,
+                { opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={handleStripePaymentLink}
+              disabled={isStripeShareLoading}
+            >
+              {isStripeShareLoading ? (
+                <ActivityIndicator size="small" color="#635BFF" />
+              ) : (
+                <Feather name="share-2" size={18} color="#635BFF" />
+              )}
+              <ThemedText style={[styles.stripeShareButtonText, { color: "#635BFF" }]}>
+                {isStripeShareLoading ? "Gerando..." : "Gerar Link de Pagamento"}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [
             styles.secondaryButton,
@@ -980,5 +1089,50 @@ const styles = StyleSheet.create({
   installmentSummary: {
     fontSize: 12,
     textAlign: "center",
+  },
+  stripeSection: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  stripeSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  stripeSectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  stripeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "#635BFF",
+    gap: Spacing.sm,
+  },
+  stripeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  stripeShareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: "#635BFF",
+    gap: Spacing.sm,
+  },
+  stripeShareButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
