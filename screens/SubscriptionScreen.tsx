@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Pressable, Alert, ActivityIndicator, Platform } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Alert, ActivityIndicator, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { ScreenScrollView } from "@/components/ScreenScrollView";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -34,6 +34,7 @@ function formatDate(dateString: string): string {
 
 export default function SubscriptionScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const { subscriptionData, isActive, checkSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(false);
@@ -107,7 +108,7 @@ export default function SubscriptionScreen() {
   if (isActive) {
     return (
       <ThemedView style={styles.container}>
-        <ScreenScrollView contentContainerStyle={styles.content}>
+        <ScrollView style={{ backgroundColor: theme.backgroundRoot }} contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl }]}>
           <View style={[styles.activeCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.success }]}>
             <View style={styles.activeHeader}>
               <View style={[styles.activeIcon, { backgroundColor: theme.success + "20" }]}>
@@ -194,14 +195,14 @@ export default function SubscriptionScreen() {
               Atualizar Status
             </ThemedText>
           </Pressable>
-        </ScreenScrollView>
+        </ScrollView>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={{ backgroundColor: theme.backgroundRoot }} contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl }]}>
         <View style={styles.heroSection}>
           <View style={[styles.planIcon, { backgroundColor: "#635BFF" + "15" }]}>
             <Feather name="award" size={40} color="#635BFF" />
@@ -305,7 +306,7 @@ export default function SubscriptionScreen() {
             Sair da conta
           </ThemedText>
         </Pressable>
-      </ScreenScrollView>
+      </ScrollView>
     </ThemedView>
   );
 }
