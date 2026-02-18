@@ -150,22 +150,25 @@ Preferred communication style: Simple, everyday language.
   - `POST /api/stripe/create-checkout` - Creates Stripe Checkout Session
   - `POST /api/stripe/create-payment-link` - Creates reusable Stripe Payment Link
   - `GET /api/stripe/health` - Health check endpoint
-  - `POST /api/stripe/subscription/create-checkout` - Creates subscription checkout with 7-day trial
-  - `GET /api/stripe/subscription/status?userId=X` - Checks subscription status from Stripe
-  - `POST /api/stripe/subscription/cancel` - Cancels a subscription at period end
+  - `POST /api/stripe/create-subscription-checkout` - Creates subscription checkout (supports plan: free/pro/premium)
+  - `POST /api/stripe/subscription-status` - Checks subscription status by email, returns currentPlan
+  - `POST /api/stripe/cancel-subscription` - Cancels a subscription at period end
   - `POST /api/stripe/webhook` - Handles Stripe webhook events
 - **Credentials**: Uses Replit Stripe connector API for secure credential management
-- **Client Service**: `services/stripeApi.ts` handles API calls from the Expo app
+- **Client Service**: `services/stripeApi.ts` handles API calls from the Expo app with PlanType support
 - **UI**: ChargeDetailScreen has "Cobrar com Stripe" and "Gerar Link de Pagamento" buttons for unpaid charges
 - **Port Mapping**: Internal port 3001 maps to external port 3002
 
 ### Subscription System
-- **Plan**: Premium - R$97/month with 7-day free trial
-- **SubscriptionContext** (`contexts/SubscriptionContext.tsx`): Manages subscription state, checks Stripe API on load, caches to AsyncStorage
-- **SubscriptionScreen** (`screens/SubscriptionScreen.tsx`): Paywall/management screen showing plan details, benefits, CTA for trial, and cancel/status options
+- **Plans**: 3 tiers supported:
+  - Free Trial: 7-day trial on Pro plan (R$0 during trial, then R$49.90/month)
+  - Pro: R$49.90/month - Full system access with standard support
+  - Premium: R$99.90/month - Advanced reports, WhatsApp reminders, priority support
+- **Auto-created Products/Prices**: Server auto-creates Stripe products (lastro_pro_subscription, lastro_premium_subscription) and prices on first request, cached for performance
+- **SubscriptionContext** (`contexts/SubscriptionContext.tsx`): Manages subscription state with `currentPlan` (PlanType: free/pro/premium), checks Stripe API on load, caches to AsyncStorage
+- **SubscriptionScreen** (`screens/SubscriptionScreen.tsx`): Paywall with 3 plan cards (Free green, Pro purple, Premium orange with "MAIS POPULAR" badge); also shows active subscription management when subscribed
 - **SubscriptionGate** (in `App.tsx`): Wraps MainStackNavigator; blocks access to app if no active subscription
-- **Flow**: Login → SubscriptionGate checks status → If no active subscription, shows SubscriptionScreen paywall → After subscribing via Stripe Checkout, user can refresh status → Active subscription grants access to full app
-- **Profile Integration**: "Minha Assinatura" menu item in ProfileScreen navigates to SubscriptionManagement screen for managing subscription
-- **Auto-created Product/Price**: Server auto-creates Stripe product and price on first subscription request
+- **Flow**: Login → SubscriptionGate checks status → If no active subscription, shows SubscriptionScreen paywall with 3 plans → Stripe Checkout → Active subscription grants access to full app
+- **Profile Integration**: "Minha Assinatura" menu item in ProfileScreen shows current plan name and status badge
 
 **Note**: The application currently uses AsyncStorage for local persistence. No external database (like PostgreSQL) is configured, but the data structure supports future migration to a backend database system.
