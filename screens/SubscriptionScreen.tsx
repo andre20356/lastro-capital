@@ -10,7 +10,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { createSubscriptionCheckout, cancelSubscription, PlanType } from "@/services/stripeApi";
+import { createSubscriptionCheckout, cancelSubscription, startFreeTrial, PlanType } from "@/services/stripeApi";
 
 const PRO_BENEFITS = [
   "Gestao ilimitada de clientes",
@@ -63,6 +63,12 @@ export default function SubscriptionScreen() {
 
     setLoadingPlan(plan);
     try {
+      if (plan === "free") {
+        await startFreeTrial({ email: user.email, userId: user.id });
+        await checkSubscription();
+        return;
+      }
+
       const result = await createSubscriptionCheckout({
         email: user.email,
         userId: user.id,
@@ -235,7 +241,7 @@ export default function SubscriptionScreen() {
             Escolha seu Plano
           </ThemedText>
           <ThemedText style={[styles.pageSubtitle, { color: theme.secondaryText }]}>
-            Comece gratis por 7 dias ou assine um plano pago
+            Comece gratis por 7 dias sem precisar de cartao, ou assine um plano pago
           </ThemedText>
         </View>
 
@@ -256,7 +262,7 @@ export default function SubscriptionScreen() {
               </ThemedText>
             </View>
             <ThemedText style={[styles.planPriceNote, { color: theme.tertiaryText }]}>
-              Acesso total ao sistema durante o periodo de teste
+              Sem cartao de credito necessario para comecar
             </ThemedText>
             <View style={styles.planBenefits}>
               {PRO_BENEFITS.map((b, i) => (

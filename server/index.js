@@ -235,23 +235,7 @@ app.post('/api/stripe/create-subscription-checkout', async (req, res) => {
     const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}`;
 
     if (selectedPlan === 'free') {
-      const proPriceId = await getOrCreatePlanPrice('pro');
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{ price: proPriceId, quantity: 1 }],
-        mode: 'subscription',
-        subscription_data: {
-          trial_period_days: 7,
-          metadata: { userId: userId || '', source: 'lastro_capital', plan: 'free_trial' },
-        },
-        customer_email: email,
-        success_url: `${baseUrl}?subscription=success`,
-        cancel_url: `${baseUrl}?subscription=cancelled`,
-        metadata: { userId: userId || '', source: 'lastro_capital', plan: 'free_trial' },
-      });
-
-      return res.json({ url: session.url, sessionId: session.id });
+      return res.status(400).json({ error: 'Use /api/stripe/start-free-trial for the free plan' });
     }
 
     const priceId = await getOrCreatePlanPrice(selectedPlan);
@@ -273,6 +257,56 @@ app.post('/api/stripe/create-subscription-checkout', async (req, res) => {
   } catch (error) {
     console.error('Error creating subscription checkout:', error.message);
     res.status(500).json({ error: 'Failed to create subscription checkout' });
+  }
+});
+
+app.post('/api/stripe/start-free-trial', async (req, res) => {
+  try {
+    const { email, userId } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const { stripe } = await getStripe();
+
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    let customer;
+
+    if (customers.data.length > 0) {
+      customer = customers.data[0];
+      const existingSubs = await stripe.subscriptions.list({ customer: customer.id, limit: 1, status: 'all' });
+      const activeSub = existingSubs.data.find(s => ['active', 'trialing', 'past_due'].includes(s.status));
+      if (activeSub) {
+        return res.status(400).json({ error: 'Customer already has a subscription' });
+      }
+    } else {
+      customer = await stripe.customers.create({
+        email,
+        metadata: { userId: userId || '', source: 'lastro_capital' },
+      });
+    }
+
+    const proPriceId = await getOrCreatePlanPrice('pro');
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: proPriceId }],
+      trial_period_days: 7,
+      payment_behavior: 'default_incomplete',
+      payment_settings: { save_default_payment_method: 'on_subscription' },
+      metadata: { userId: userId || '', source: 'lastro_capital', plan: 'free_trial' },
+    });
+
+    res.json({
+      success: true,
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+    });
+  } catch (error) {
+    console.error('Error starting free trial:', error.message);
+    res.status(500).json({ error: 'Failed to start free trial' });
   }
 });
 

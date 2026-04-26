@@ -78,6 +78,16 @@ export async function createSubscriptionCheckout(params: {
   });
 }
 
+export async function startFreeTrial(params: {
+  email: string;
+  userId?: string;
+}): Promise<{ success: boolean; subscriptionId: string; status: string; trialEnd: string | null }> {
+  return apiRequest("/api/stripe/start-free-trial", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 export interface SubscriptionStatus {
   hasSubscription: boolean;
   status: string | null;
