@@ -470,6 +470,115 @@ app.get('/api/stripe/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const ABACATE_PAY_BASE_URL = 'https://api.abacatepay.com/v1';
+
+function getAbacatePayKey() {
+  const key = process.env.ABACATE_PAY_API_KEY;
+  if (!key) throw new Error('ABACATE_PAY_API_KEY not configured');
+  return key;
+}
+
+app.post('/api/abacatepay/create-pix', async (req, res) => {
+  try {
+    const { amount, clientName, clientEmail, clientCpf, description, chargeId } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Amount is required and must be positive' });
+    }
+
+    const apiKey = getAbacatePayKey();
+
+    const amountInCents = Math.round(amount * 100);
+
+    const customer = {
+      name: clientName || 'Cliente',
+      email: clientEmail || undefined,
+      cellphone: undefined,
+      taxId: clientCpf ? clientCpf.replace(/\D/g, '') : undefined,
+    };
+
+    const cleanCustomer = Object.fromEntries(
+      Object.entries(customer).filter(([_, v]) => v !== undefined)
+    );
+
+    const payload = {
+      frequency: 'ONE_TIME',
+      methods: ['PIX'],
+      products: [
+        {
+          externalId: chargeId || `charge_${Date.now()}`,
+          name: description || `Cobranca - ${clientName || 'Cliente'}`,
+          description: description || `Cobranca Lastro Capital`,
+          quantity: 1,
+          price: amountInCents,
+        },
+      ],
+      returnUrl: undefined,
+      completionUrl: undefined,
+      customer: cleanCustomer,
+    };
+
+    const cleanPayload = Object.fromEntries(
+      Object.entries(payload).filter(([_, v]) => v !== undefined)
+    );
+
+    const response = await fetch(`${ABACATE_PAY_BASE_URL}/billing/create`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(cleanPayload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('AbacatePay error:', data);
+      return res.status(response.status).json({ error: data.error || data.message || 'Failed to create PIX charge' });
+    }
+
+    const billing = data.data || data;
+
+    let pixCode = '';
+    let qrCodeUrl = '';
+
+    if (billing.methods && billing.methods.length > 0) {
+      const pixMethod = billing.methods.find(m => m.method === 'PIX') || billing.methods[0];
+      if (pixMethod && pixMethod.pixQrCode) {
+        pixCode = pixMethod.pixQrCode.emvCode || pixMethod.pixQrCode.code || '';
+        qrCodeUrl = pixMethod.pixQrCode.qrCodeLink || pixMethod.pixQrCode.qrCodeUrl || '';
+      }
+    }
+
+    if (!pixCode && billing.pixQrCode) {
+      pixCode = billing.pixQrCode.emvCode || billing.pixQrCode.code || '';
+      qrCodeUrl = billing.pixQrCode.qrCodeLink || billing.pixQrCode.qrCodeUrl || '';
+    }
+
+    if (!pixCode && billing.url) {
+      qrCodeUrl = billing.url;
+    }
+
+    res.json({
+      pixCode,
+      qrCodeUrl: qrCodeUrl || billing.url || '',
+      chargeId: billing.id || chargeId || '',
+      expiresAt: billing.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      amount,
+      rawData: billing,
+    });
+  } catch (error) {
+    console.error('AbacatePay error:', error.message);
+    res.status(500).json({ error: 'Failed to create PIX charge: ' + error.message });
+  }
+});
+
+app.get('/api/abacatepay/health', (req, res) => {
+  const hasKey = !!process.env.ABACATE_PAY_API_KEY;
+  res.json({ status: 'ok', configured: hasKey });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Stripe API server running on port ${PORT}`);
+  console.log(`API server running on port ${PORT}`);
 });

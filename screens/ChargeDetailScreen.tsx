@@ -17,6 +17,7 @@ import { RootStackParamList } from "@/navigation/MainTabNavigator";
 import { ChargeStatus, Charge, PaymentMethod } from "@/types";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
 import { createCheckoutSession, createPaymentLink } from "@/services/stripeApi";
+import { createPixCharge, PixChargeResult } from "@/services/abacatePayApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ChargeDetail">;
@@ -74,6 +75,9 @@ export default function ChargeDetailScreen() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isStripeLoading, setIsStripeLoading] = useState(false);
   const [isStripeShareLoading, setIsStripeShareLoading] = useState(false);
+  const [isPixLoading, setIsPixLoading] = useState(false);
+  const [pixResult, setPixResult] = useState<PixChargeResult | null>(null);
+  const [pixModalVisible, setPixModalVisible] = useState(false);
 
   // Função para calcular o status visual dinâmico
   const getVisualStatus = useCallback((charge: Charge): ChargeStatus => {
@@ -401,6 +405,42 @@ export default function ChargeDetailScreen() {
       Alert.alert("Erro", "Nao foi possivel gerar o link de pagamento. Verifique se o servidor Stripe esta ativo.");
     } finally {
       setIsStripeShareLoading(false);
+    }
+  };
+
+  const handlePixCharge = async () => {
+    if (!charge || !client) return;
+    setIsPixLoading(true);
+    try {
+      const totalAmount = calculations.totalDebt > 0 ? calculations.totalDebt : charge.amount;
+      const result = await createPixCharge({
+        amount: totalAmount,
+        clientName: client.name,
+        clientEmail: client.email || undefined,
+        description: charge.description || `Cobranca - ${client.name}`,
+        chargeId: charge.id,
+      });
+      setPixResult(result);
+      setPixModalVisible(true);
+    } catch (error: any) {
+      Alert.alert("Erro PIX", "Nao foi possivel gerar a cobranca PIX. Verifique se o servidor esta ativo.");
+    } finally {
+      setIsPixLoading(false);
+    }
+  };
+
+  const handleCopyPixCode = async () => {
+    if (!pixResult?.pixCode) return;
+    await Clipboard.setStringAsync(pixResult.pixCode);
+    Alert.alert("Copiado!", "Codigo PIX copiado para a area de transferencia.");
+  };
+
+  const handleOpenPixUrl = async () => {
+    if (!pixResult?.qrCodeUrl) return;
+    if (Platform.OS === "web") {
+      Linking.openURL(pixResult.qrCodeUrl);
+    } else {
+      await WebBrowser.openBrowserAsync(pixResult.qrCodeUrl);
     }
   };
 
@@ -845,6 +885,81 @@ export default function ChargeDetailScreen() {
           </View>
         ) : null}
 
+        {charge.status !== "paid" ? (
+          <View style={[styles.pixSection, { borderColor: theme.cardBorder }]}>
+            <View style={styles.pixSectionHeader}>
+              <Feather name="zap" size={18} color="#00C851" />
+              <ThemedText style={[styles.pixSectionTitle, { color: theme.primaryText }]}>
+                Pagamento via PIX
+              </ThemedText>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.pixButton,
+                { opacity: pressed ? 0.9 : 1 },
+              ]}
+              onPress={handlePixCharge}
+              disabled={isPixLoading}
+            >
+              {isPixLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Feather name="zap" size={18} color="#fff" />
+              )}
+              <ThemedText style={styles.pixButtonText}>
+                {isPixLoading ? "Gerando PIX..." : "Gerar Cobranca PIX"}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {pixModalVisible && pixResult ? (
+          <View style={[styles.pixResultCard, { borderColor: "#00C851", backgroundColor: "#00C85110" }]}>
+            <View style={styles.pixResultHeader}>
+              <Feather name="check-circle" size={20} color="#00C851" />
+              <ThemedText style={[styles.pixResultTitle, { color: "#00C851" }]}>
+                Cobranca PIX Gerada
+              </ThemedText>
+              <Pressable onPress={() => setPixModalVisible(false)}>
+                <Feather name="x" size={20} color={theme.secondaryText} />
+              </Pressable>
+            </View>
+            <ThemedText style={[styles.pixAmountLabel, { color: theme.secondaryText }]}>
+              Valor: {formatCurrency(pixResult.amount)}
+            </ThemedText>
+            {pixResult.pixCode ? (
+              <>
+                <ThemedText style={[styles.pixCodeLabel, { color: theme.tertiaryText }]}>
+                  Codigo PIX (copia e cola):
+                </ThemedText>
+                <View style={[styles.pixCodeBox, { backgroundColor: theme.backgroundSecondary }]}>
+                  <ThemedText style={[styles.pixCodeText, { color: theme.primaryText }]} numberOfLines={3}>
+                    {pixResult.pixCode}
+                  </ThemedText>
+                </View>
+                <Pressable
+                  style={({ pressed }) => [styles.pixCopyButton, { opacity: pressed ? 0.8 : 1 }]}
+                  onPress={handleCopyPixCode}
+                >
+                  <Feather name="copy" size={16} color="#fff" />
+                  <ThemedText style={styles.pixCopyButtonText}>Copiar Codigo PIX</ThemedText>
+                </Pressable>
+              </>
+            ) : null}
+            {pixResult.qrCodeUrl ? (
+              <Pressable
+                style={({ pressed }) => [styles.pixUrlButton, { borderColor: "#00C851", opacity: pressed ? 0.8 : 1 }]}
+                onPress={handleOpenPixUrl}
+              >
+                <Feather name="external-link" size={16} color="#00C851" />
+                <ThemedText style={[styles.pixUrlButtonText, { color: "#00C851" }]}>
+                  Abrir Pagina de Pagamento
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [
             styles.secondaryButton,
@@ -1133,6 +1248,101 @@ const styles = StyleSheet.create({
   },
   stripeShareButtonText: {
     fontSize: 16,
+    fontWeight: "600",
+  },
+  pixSection: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  pixSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  pixSectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  pixButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "#00C851",
+    gap: Spacing.sm,
+  },
+  pixButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  pixResultCard: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  pixResultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  pixResultTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+  pixAmountLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.xs,
+  },
+  pixCodeLabel: {
+    fontSize: 12,
+    marginBottom: Spacing.xs,
+  },
+  pixCodeBox: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+  },
+  pixCodeText: {
+    fontSize: 11,
+    fontFamily: "monospace",
+  },
+  pixCopyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "#00C851",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  pixCopyButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  pixUrlButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    gap: Spacing.sm,
+  },
+  pixUrlButtonText: {
+    fontSize: 14,
     fontWeight: "600",
   },
 });
