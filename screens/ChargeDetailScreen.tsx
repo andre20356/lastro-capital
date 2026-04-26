@@ -417,6 +417,7 @@ export default function ChargeDetailScreen() {
         amount: totalAmount,
         clientName: client.name,
         clientEmail: client.email || undefined,
+        clientPhone: client.phone || undefined,
         description: charge.description || `Cobranca - ${client.name}`,
         chargeId: charge.id,
       });

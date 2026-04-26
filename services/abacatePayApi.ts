@@ -47,6 +47,7 @@ export async function createPixCharge(params: {
   clientName: string;
   clientEmail?: string;
   clientCpf?: string;
+  clientPhone?: string;
   description?: string;
   chargeId?: string;
 }): Promise<PixChargeResult> {

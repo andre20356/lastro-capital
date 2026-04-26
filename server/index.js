@@ -480,7 +480,7 @@ function getAbacatePayKey() {
 
 app.post('/api/abacatepay/create-pix', async (req, res) => {
   try {
-    const { amount, clientName, clientEmail, clientCpf, description, chargeId } = req.body;
+    const { amount, clientName, clientEmail, clientCpf, clientPhone, description, chargeId } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Amount is required and must be positive' });
@@ -490,16 +490,16 @@ app.post('/api/abacatepay/create-pix', async (req, res) => {
 
     const amountInCents = Math.round(amount * 100);
 
-    const customer = {
+    const rawPhone = (clientPhone || '').replace(/\D/g, '');
+    const rawCpf = clientCpf ? clientCpf.replace(/\D/g, '') : '';
+    const cleanCustomer = {
       name: clientName || 'Cliente',
-      email: clientEmail || undefined,
-      cellphone: undefined,
-      taxId: clientCpf ? clientCpf.replace(/\D/g, '') : undefined,
+      cellphone: rawPhone || '00000000000',
+      email: clientEmail || `cliente_${Date.now()}@lastrocapital.com`,
+      taxId: rawCpf || '00000000000',
     };
 
-    const cleanCustomer = Object.fromEntries(
-      Object.entries(customer).filter(([_, v]) => v !== undefined)
-    );
+    const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}`;
 
     const payload = {
       frequency: 'ONE_TIME',
@@ -513,14 +513,10 @@ app.post('/api/abacatepay/create-pix', async (req, res) => {
           price: amountInCents,
         },
       ],
-      returnUrl: undefined,
-      completionUrl: undefined,
+      returnUrl: `${baseUrl}?pix=return`,
+      completionUrl: `${baseUrl}?pix=success&chargeId=${chargeId || ''}`,
       customer: cleanCustomer,
     };
-
-    const cleanPayload = Object.fromEntries(
-      Object.entries(payload).filter(([_, v]) => v !== undefined)
-    );
 
     const response = await fetch(`${ABACATE_PAY_BASE_URL}/billing/create`, {
       method: 'POST',
@@ -528,7 +524,7 @@ app.post('/api/abacatepay/create-pix', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(cleanPayload),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
