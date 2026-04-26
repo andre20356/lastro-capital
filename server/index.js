@@ -107,8 +107,8 @@ async function getOrCreatePlanPrice(planKey) {
 
   const { stripe } = await getStripe();
 
-  const products = await stripe.products.list({ limit: 100 });
-  let product = products.data.find(p => p.metadata?.type === plan.metadataType);
+  const products = await stripe.products.list({ limit: 100, active: true });
+  let product = products.data.find(p => p.metadata?.type === plan.metadataType && p.active);
 
   if (!product) {
     product = await stripe.products.create({
