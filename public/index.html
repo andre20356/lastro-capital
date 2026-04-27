@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lastro Capital</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #0d9488;
+      --primary-light: #14b8a6;
+      --primary-dark: #0f766e;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --text: #1f2937;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --pix: #32BCAD;
+      --pix-bg: #e6f7f5;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-brand .logo-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-brand .logo-circle svg {
+      width: 20px;
+      height: 20px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-brand span {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s ease;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(13,148,136,0.35); }
+
+    .btn-primary:active, .btn-ghost:active { transform: scale(0.97); }
+
+    .btn-lg {
+      padding: 14px 32px;
+      font-size: 16px;
+      border-radius: 12px;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 96px 24px 60px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--pix-bg);
+      color: var(--pix);
+      border: 1px solid rgba(50,188,173,0.3);
+      border-radius: 9999px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 28px;
+      letter-spacing: 0.2px;
+    }
+
+    .badge svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--pix);
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 60px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--text);
+      max-width: 720px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--text-secondary);
+      max-width: 560px;
+      line-height: 1.65;
+      margin-bottom: 40px;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 60px;
+    }
+
+    .pix-callout {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--pix-bg);
+      border: 1px solid rgba(50,188,173,0.25);
+      border-radius: 14px;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--pix);
+    }
+
+    .pix-callout strong { font-weight: 700; }
+
+    .pix-callout svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 80px 24px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      text-align: center;
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 52px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .feature-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* PIX SECTION */
+    .pix-section {
+      padding: 80px 24px;
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%);
+      text-align: center;
+    }
+
+    .pix-section h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.8px;
+      margin-bottom: 14px;
+    }
+
+    .pix-section p {
+      font-size: 17px;
+      color: rgba(255,255,255,0.85);
+      max-width: 500px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+
+    .pix-badge-white {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* CTA SECTION */
+    .cta-section {
+      padding: 80px 24px;
+      text-align: center;
+      background: var(--bg);
+    }
+
+    .cta-section h2 {
+      font-size: clamp(24px, 4vw, 38px);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .cta-section p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--bg-card);
+    }
+
+    footer span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .footer-brand .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 16px; }
+      .nav-brand span { font-size: 16px; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-brand">
+      <div class="logo-circle">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span>Lastro Capital</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost" onclick="window.location.href='/login'">Entrar</button>
+      <button class="btn btn-primary" onclick="window.location.href='/cadastro'">Criar Conta</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="badge">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.28 9.36l-5.64-5.64a2 2 0 0 0-2.83 0L3.72 11.81a2 2 0 0 0 0 2.83l5.64 5.64a2 2 0 0 0 2.83 0l8.09-8.09a2 2 0 0 0 0-2.83z"/></svg>
+      Pagamento via PIX integrado
+    </div>
+
+    <h1>
+      Gerencie seus <span class="highlight">emprestimos</span><br/>com total controle
+    </h1>
+
+    <p>
+      Sistema de gestao financeira com pagamento via PIX. Controle clientes, cobranças, juros e recebimentos em um so lugar.
+    </p>
+
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" onclick="window.location.href='/cadastro'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Criar Conta Gratis
+      </button>
+      <button class="btn btn-ghost btn-lg" onclick="window.location.href='/login'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Entrar
+      </button>
+    </div>
+
+    <div class="pix-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--pix)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.28 9.36l-5.64-5.64a2 2 0 0 0-2.83 0L3.72 11.81a2 2 0 0 0 0 2.83l5.64 5.64a2 2 0 0 0 2.83 0l8.09-8.09a2 2 0 0 0 0-2.83z"/>
+      </svg>
+      <span><strong>Sistema de gestao financeira</strong> com pagamento via PIX</span>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <p class="section-label">Funcionalidades</p>
+    <h2 class="section-title">Tudo que voce precisa</h2>
+    <p class="section-sub">Uma plataforma completa para gestao de emprestimos e cobranças</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#e0f2fe; color:#0284c7;">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Gestao de Clientes</h3>
+        <p>Cadastre e gerencie todos os seus clientes com historico completo de emprestimos e pagamentos.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fef3c7; color:#d97706;">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3>Calculo de Juros</h3>
+        <p>Juros mensais e taxas de atraso calculados automaticamente com base nas suas configuracoes.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#d1fae5; color:#059669;">
+          <svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        </div>
+        <h3>Pagamento via PIX</h3>
+        <p>Gere cobrancas PIX instantaneas e acompanhe os recebimentos em tempo real.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#ede9fe; color:#7c3aed;">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Analise Financeira</h3>
+        <p>Dashboard com graficos e indicadores do seu portfolio de emprestimos.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#fee2e2; color:#dc2626;">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3>Alertas de Atraso</h3>
+        <p>Notificacoes automaticas para cobranças vencidas e lembretes via WhatsApp.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#e0f2fe; color:#0284c7;">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <h3>Acesso Mobile</h3>
+        <p>Disponivel em aplicativo para iOS e Android, gerencie de qualquer lugar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIX SECTION -->
+  <section class="pix-section">
+    <h2>Cobranças instantaneas via PIX</h2>
+    <p>Gere QR Codes e links de pagamento para seus clientes receberem na hora, sem burocracia.</p>
+    <div class="pix-badge-white">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+        <path d="M20.28 9.36l-5.64-5.64a2 2 0 0 0-2.83 0L3.72 11.81a2 2 0 0 0 0 2.83l5.64 5.64a2 2 0 0 0 2.83 0l8.09-8.09a2 2 0 0 0 0-2.83z"/>
+      </svg>
+      Pagamento via PIX &mdash; rapido e seguro
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>Comece a usar agora</h2>
+    <p>Crie sua conta gratuitamente e teste por 7 dias sem compromisso</p>
+    <div class="cta-buttons">
+      <button class="btn btn-primary btn-lg" onclick="window.location.href='/cadastro'">Criar Conta Gratis</button>
+      <button class="btn btn-ghost btn-lg" onclick="window.location.href='/login'">Ja tenho conta</button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">
+      <div class="dot"></div>
+      Lastro Capital
+    </div>
+    <span>Sistema de gestao financeira com pagamento via PIX</span>
+    <span>&copy; 2025 Lastro Capital. Todos os direitos reservados.</span>
+  </footer>
+
+</body>
+</html>

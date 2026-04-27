@@ -1,8 +1,15 @@
 const express = require('express');
 const Stripe = require('stripe').default;
+const path = require('path');
 
 const app = express();
 const PORT = 3001;
+
+app.use(express.static(path.join(__dirname, '../public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 app.use((req, res, next) => {
   if (req.originalUrl === '/api/stripe/webhook') {

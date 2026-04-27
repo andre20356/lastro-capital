@@ -10,6 +10,10 @@ localPort = 3001
 externalPort = 3002
 
 [[ports]]
+localPort = 3099
+externalPort = 3003
+
+[[ports]]
 localPort = 8081
 externalPort = 80
 
@@ -61,6 +65,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Backend"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -70,6 +78,18 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 8081
 ensurePreviewReachable = "/status"
+
+[[workflows.workflow]]
+name = "Start Backend"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "EXPO"
