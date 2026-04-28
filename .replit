@@ -46,7 +46,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node server/index.js"
+args = "npx vite build && node server/index.js"
 waitForPort = 3000
 
 [agent]

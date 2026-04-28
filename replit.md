@@ -1,39 +1,56 @@
 # Lastro Capital
 
-Plataforma web de investimentos com pagamento via PIX, construída com Node.js + Express.
+Plataforma web de investimentos com pagamento via PIX.
 
-## Arquitetura
+## Stack
 
-- **Backend**: Node.js + Express (`server/index.js`)
-- **Frontend**: HTML/CSS estático servido da pasta `public/`
-- **Porta**: 3001 (padrão)
+- **Frontend**: React 19 + TypeScript + Vite (CSS Modules)
+- **Backend**: Node.js + Express
+- **Build**: Vite compila `client/src/` → `public/`
+- **Porta**: 3000
 
-## Estrutura de Arquivos
+## Estrutura
 
 ```
 lastro-capital/
+├── client/                  # Frontend React
+│   ├── index.html
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── main.tsx
+│       ├── App.tsx
+│       ├── index.css          # CSS variables globais
+│       └── components/
+│           ├── Navbar.tsx / .module.css
+│           ├── Hero.tsx / .module.css
+│           ├── Features.tsx / .module.css
+│           ├── PixSection.tsx / .module.css
+│           ├── CtaStrip.tsx / .module.css
+│           └── Footer.tsx / .module.css
 ├── server/
-│   └── index.js        # Servidor Express principal
-├── public/
-│   └── index.html      # Frontend web (Entrar / Criar Conta)
+│   └── index.js             # API Express
+├── public/                  # Build output (gerado pelo Vite)
+├── vite.config.ts           # Config Vite (root: ./client)
 ├── .gitignore
 └── replit.md
 ```
 
 ## Como rodar
 
-```bash
-npm start
-# Servidor disponível em http://localhost:3001
+O workflow roda automaticamente:
+```
+npx vite build && node server/index.js
 ```
 
 ## Rotas
 
-- `GET /`      — Página inicial (Lastro Capital)
-- `GET /api`   — Health check da API
+- `GET /`      — Frontend React (Lastro Capital landing page)
+- `GET /api`   — Health check
 
-## Notas
+## Design
 
-- Projeto migrado de Expo/React Native para Node.js + Express puro.
-- Sem dependências do Expo, React Native, Metro ou QR Code.
-- Arquivos estáticos servidos da pasta `public/`.
+- Fundo: `#050a18` (azul-marinho escuro)
+- Accent: `#2563eb` → `#7c3aed` (gradiente azul-roxo)
+- Verde PIX: `#10b981`
+- Componentes com CSS Modules isolados

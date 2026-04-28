@@ -1,0 +1,39 @@
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.copy {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+}
+
+.links a {
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.links a:hover {
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .footer { padding: 32px 24px; }
+}
