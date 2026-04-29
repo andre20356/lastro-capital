@@ -1,12 +1,13 @@
 import styles from "./Navbar.module.css";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
     <nav className={styles.nav}>
-      <a href="#" className={styles.logo}>
+      <Link to="/" className={styles.logo}>
         <div className={styles.logoMark}>LC</div>
         <span className={styles.logoText}>Lastro Capital</span>
-      </a>
+      </Link>
 
       <ul className={styles.links}>
         <li><a href="#funcionalidades">Funcionalidades</a></li>
@@ -15,12 +16,13 @@ export default function Navbar() {
       </ul>
 
       <div className={styles.actions}>
-        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => alert("Login — em breve!")}>
+        <Link to="/login" className={`${styles.btn} ${styles.btnGhost}`}>
           Entrar
-        </button>
-        <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => alert("Cadastro — em breve!")}>
+        </Link>
+
+        <Link to="/cadastro" className={`${styles.btn} ${styles.btnPrimary}`}>
           Criar Conta
-        </button>
+        </Link>
       </div>
     </nav>
   );
