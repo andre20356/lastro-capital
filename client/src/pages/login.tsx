@@ -1,3 +1,8 @@
 export default function Login() {
-  return <h1>Página de Login</h1>;
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>Login</h1>
+      <p>Página de login funcionando ✅</p>
+    </div>
+  );
 }
